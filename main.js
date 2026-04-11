@@ -1525,14 +1525,17 @@ function clearCompletedLines() {
   });
 
 
-    // 🔔 Patlamadan önce uyarı glow
-  for (let y = 0; y < BOARD_SIZE; y++) {
-    for (let x = 0; x < BOARD_SIZE; x++) {
-     if (toClear[y][x] && board[y][x] !== null) {
-      const cell = cells[y * BOARD_SIZE + x];
-     if (cell) cell.classList.add("pre-glow");
+    // 🔔 Patlamadan önce uyarı glow (animasyon açıksa)
+  const animOn = localStorage.getItem('tgl-anim') !== 'off';
+  if (animOn) {
+    for (let y = 0; y < BOARD_SIZE; y++) {
+      for (let x = 0; x < BOARD_SIZE; x++) {
+        if (toClear[y][x] && board[y][x] !== null) {
+          const cell = cells[y * BOARD_SIZE + x];
+          if (cell) cell.classList.add("pre-glow");
+        }
       }
-    } 
+    }
   }
 
 
@@ -1591,13 +1594,12 @@ function clearCompletedLines() {
   // toplam skor popup
   spawnFloatingScore(Math.floor(BOARD_SIZE/2), Math.floor(BOARD_SIZE/2), bonusScore);
 
+  const _animOn = localStorage.getItem('tgl-anim') !== 'off';
   if (clearStreak >= 2) {
     showComboPopup(clearStreak);
-    flashCombo();
-    shakeBoardBig();
-    spawnComboParticles();
+    if (_animOn) { flashCombo(); shakeBoardBig(); spawnComboParticles(); }
   } else {
-    flashClear();
+    if (_animOn) flashClear();
   }
   triggerScoreBounce();
 
@@ -1615,19 +1617,24 @@ function clearCompletedLines() {
     boardEl.classList.add("shake");
 
       setTimeout(() => {
-
+    // Performans: sadece animasyon class'ı ekle, parçacık sınırlı sayıda
+    const burstCells = [];
     for (let y = 0; y < BOARD_SIZE; y++) {
       for (let x = 0; x < BOARD_SIZE; x++) {
         if (toClear[y][x] && board[y][x] !== null) {
           const cell = cells[y * BOARD_SIZE + x];
           if (cell) {
             cell.classList.add("explode");
-            cell.classList.add("burst");
-            const color = board[y][x].color || '#fff';
-            spawnBurstParticles(cell, color, 6);
+            burstCells.push({ cell, color: board[y][x].color || '#fff' });
           }
         }
       }
+    }
+    // Sadece max 4 hücre için parçacık — telefon performansı için
+    const animEnabled = localStorage.getItem('tgl-anim') !== 'off';
+    if (animEnabled) {
+      const sample = burstCells.filter((_, i) => i % Math.ceil(burstCells.length / 4) === 0).slice(0, 4);
+      sample.forEach(({ cell, color }) => spawnBurstParticles(cell, color, 4));
     }
 
       setTimeout(() => {
