@@ -15,6 +15,9 @@
   <meta name="apple-mobile-web-app-title" content="BlockPop">
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=1000000">
 
   <style>
@@ -41,12 +44,20 @@
     #menuScreen {
       position: fixed;
       inset: 0;
-      background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background: #0d0d14;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
       overflow: hidden;
+    }
+    #menuScreen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124,111,247,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 90%, rgba(167,139,250,0.1) 0%, transparent 60%);
     }
     #menuScreen.hidden { display: none; }
 
@@ -55,7 +66,7 @@
       border-radius: 10px;
       animation: blockFloat var(--dur) ease-in-out infinite;
       animation-delay: var(--delay);
-      opacity: 0.15;
+      opacity: 0.12;
     }
 
     .menu-inner {
@@ -69,72 +80,83 @@
     }
 
     .menu-logo {
-      font-size: 56px;
-      font-weight: 800;
-      letter-spacing: -1px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 60px;
+      font-weight: 900;
+      letter-spacing: -2px;
       line-height: 1;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       text-align: center;
     }
 
     .menu-tagline {
-      font-size: 12px;
-      letter-spacing: 3px;
-      color: rgba(255,255,255,0.4);
+      font-family: 'Nunito', sans-serif;
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: rgba(255,255,255,0.35);
       text-transform: uppercase;
-      margin-bottom: 40px;
+      margin-bottom: 36px;
+      font-weight: 600;
     }
 
     .menu-highscore {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(251,191,36,0.08);
+      border: 1px solid rgba(251,191,36,0.2);
       border-radius: 50px;
       padding: 7px 18px;
-      color: #ffd24d;
+      color: #fbbf24;
       font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 36px;
+      font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+      margin-bottom: 8px;
     }
 
     .menu-btn {
       display: block;
       width: 100%;
-      padding: 17px;
+      padding: 16px;
       border-radius: 16px;
       border: none;
-      font-size: 17px;
-      font-weight: 600;
+      font-size: 16px;
+      font-weight: 800;
+      font-family: 'Nunito', sans-serif;
       cursor: pointer;
-      transition: transform 0.12s, opacity 0.12s;
-      margin-bottom: 12px;
-      letter-spacing: 0.5px;
+      transition: transform 0.12s, filter 0.12s;
+      margin-bottom: 10px;
+      letter-spacing: 0.3px;
     }
-    .menu-btn:active { transform: scale(0.96); opacity: 0.85; }
+    .menu-btn:active { transform: scale(0.96); filter: brightness(0.9); }
 
     .btn-play {
-      background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+      background: linear-gradient(135deg, #7c6ff7, #a78bfa);
       color: #fff;
+      box-shadow: 0 4px 20px rgba(124,111,247,0.35);
+    }
+    .btn-timeattack {
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(239,68,68,0.3);
     }
     .btn-settings-menu {
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-      border: 1.5px solid rgba(255,255,255,0.2) !important;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.75);
+      border: 1px solid rgba(255,255,255,0.12) !important;
     }
 
     .btn-themes {
-      background: rgba(255,215,0,0.12);
-      color: #ffd24d;
-      border: 1.5px solid rgba(255,215,0,0.25) !important;
+      background: rgba(251,191,36,0.08);
+      color: #fbbf24;
+      border: 1px solid rgba(251,191,36,0.2) !important;
     }
 
     /* ===== TEMA EKRANI ===== */
     #themesScreen {
       position: fixed;
       inset: 0;
-      background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background: #0d0d14;
       z-index: 1001;
       display: flex;
       flex-direction: column;
@@ -281,7 +303,7 @@
     #settingsScreen {
       position: fixed;
       inset: 0;
-      background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background: #0d0d14;
       z-index: 1001;
       display: flex;
       flex-direction: column;
@@ -524,11 +546,17 @@
         <span>★</span>
         <span id="menuHighScore">En Yüksek: 0</span>
       </div>
+      <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:50px;padding:5px 14px;color:#f87171;font-size:12px;font-weight:700;">
+          <span>⏱</span><span id="menuTimeHS">En İyi: 0</span>
+        </div>
+      </div>
       <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,210,77,0.08);border:1px solid rgba(255,210,77,0.2);border-radius:50px;padding:5px 14px;color:#ffd24d;font-size:12px;font-weight:600;margin-bottom:28px;">
         <span>⭐</span><span id="xpDisplay">XP: 0</span>
       </div>
 
-      <button class="menu-btn btn-play" id="btnPlay">▶ &nbsp; OYNA</button>
+      <button class="menu-btn btn-play" id="btnPlay">▶ &nbsp; Klasik Mod</button>
+      <button class="menu-btn btn-timeattack" id="btnPlayTime">⏱ &nbsp; Zaman Modu</button>
       <button class="menu-btn btn-themes" id="btnOpenThemes">🎨 &nbsp; Temalar</button>
       <button class="menu-btn btn-settings-menu" id="btnOpenSettings">⚙ &nbsp; Ayarlar</button>
 
@@ -643,6 +671,17 @@
       </div>
     </div>
 
+    <!-- Timer (zaman modu) -->
+    <div id="timerBar" style="display:none; width:100%; padding:0 2px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;">⏱ Zaman Modu</span>
+        <span id="timerText" style="font-size:22px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;letter-spacing:-1px;">60</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.08);border-radius:50px;height:6px;overflow:hidden;">
+        <div id="timerFill" style="height:100%;width:100%;background:linear-gradient(90deg,#7c6ff7,#a78bfa);border-radius:50px;transition:width 0.1s linear;"></div>
+      </div>
+    </div>
+
     <div id="board"></div>
     <div id="pieces"></div>
 
@@ -665,15 +704,20 @@
   <script>
     // ===== YARDIMCI =====
     function refreshMenuHS() {
-      const hs = localStorage.getItem('bb_high_score') || 0;
+      const hs     = localStorage.getItem('bb_high_score') || 0;
+      const timeHS = localStorage.getItem('bp_time_high_score') || 0;
       document.getElementById('menuHighScore').textContent = 'En Yüksek: ' + hs;
+      const timeEl = document.getElementById('menuTimeHS');
+      if (timeEl) timeEl.textContent = 'En İyi: ' + timeHS;
     }
 
     function goToMenu() {
+      stopTimer();
       const gc = document.getElementById('game-container');
       gc.style.visibility = 'hidden';
       gc.style.position = 'absolute';
       gc.style.pointerEvents = 'none';
+      document.getElementById('timerBar').style.display = 'none';
       document.getElementById('gameOverScreen').style.visibility = 'hidden';
       document.getElementById('inGameSettingsPanel').classList.add('hidden');
       document.getElementById('menuScreen').classList.remove('hidden');
@@ -737,16 +781,110 @@
     });
     onlyMainToggles.forEach(t => bindToggle(t.id, t.key, null));
 
-    // ===== MENÜ BUTONLARI =====
-    document.getElementById('btnPlay').addEventListener('click', () => {
+    // ===== MOD SİSTEMİ =====
+    let currentGameMode = 'classic';
+    window.currentGameMode = currentGameMode;
+
+    const TIME_ATTACK_DURATION = 60;
+    let timeLeft = TIME_ATTACK_DURATION;
+    let timerInterval = null;
+    window.timeLeft = timeLeft;
+
+    function addTime(seconds) {
+      if (window.currentGameMode !== 'timeattack') return;
+      timeLeft = Math.min(timeLeft + seconds, TIME_ATTACK_DURATION);
+      window.timeLeft = timeLeft;
+
+      // +süre göster
+      const popup = document.createElement('div');
+      popup.textContent = '+' + seconds + 's';
+      popup.style.cssText = `
+        position:fixed; right:16px; top:120px;
+        color:#34d399; font-size:20px; font-weight:900;
+        font-family:'Nunito',sans-serif;
+        pointer-events:none; z-index:9999;
+        animation: xpToastAnim 1.2s ease forwards;
+        text-shadow: 0 0 12px rgba(52,211,153,0.6);
+      `;
+      document.body.appendChild(popup);
+      setTimeout(() => popup.remove(), 1200);
+      updateTimerUI();
+    }
+    window.addTime = addTime;
+
+    function startTimer() {
+      timeLeft = TIME_ATTACK_DURATION;
+      window.timeLeft = timeLeft;
+      updateTimerUI();
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timeLeft = Math.max(0, timeLeft - 0.1);
+        window.timeLeft = timeLeft;
+        updateTimerUI();
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          endTimeAttack();
+        }
+      }, 100);
+    }
+
+    function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+    function updateTimerUI() {
+      const text = document.getElementById('timerText');
+      const fill = document.getElementById('timerFill');
+      const secs = Math.ceil(timeLeft);
+      if (text) text.textContent = secs;
+      if (fill) {
+        const pct = (timeLeft / TIME_ATTACK_DURATION) * 100;
+        fill.style.width = pct + '%';
+        if (pct > 50) {
+          fill.style.background = 'linear-gradient(90deg,#7c6ff7,#a78bfa)';
+          if (text) { text.style.color = '#fff'; text.style.animation = ''; }
+        } else if (pct > 25) {
+          fill.style.background = 'linear-gradient(90deg,#f59e0b,#fbbf24)';
+          if (text) { text.style.color = '#fbbf24'; text.style.animation = ''; }
+        } else {
+          fill.style.background = 'linear-gradient(90deg,#ef4444,#f97316)';
+          if (text) {
+            text.style.color = '#f87171';
+            if (secs <= 5) text.style.animation = 'scoreBounce 0.4s ease infinite';
+          }
+        }
+      }
+    }
+
+    function endTimeAttack() {
+      if (typeof vibrate === 'function') vibrate([60,30,60,30,100]);
+      setTimeout(() => { if (typeof showGameOver === 'function') showGameOver(); }, 300);
+    }
+
+    function startGame(mode) {
+      currentGameMode = mode;
+      window.currentGameMode = mode;
       document.getElementById('menuScreen').classList.add('hidden');
       const gc = document.getElementById('game-container');
       gc.style.visibility = 'visible';
       gc.style.position = 'relative';
       gc.style.pointerEvents = '';
+      const timerBar = document.getElementById('timerBar');
+      if (mode === 'timeattack') {
+        timerBar.style.display = 'block';
+        startTimer();
+      } else {
+        timerBar.style.display = 'none';
+        stopTimer();
+      }
       if (typeof renderBoard === 'function') renderBoard();
       if (typeof loadTheme === 'function') loadTheme();
       if (typeof setupPowerups === 'function') setupPowerups();
+    }
+
+    // ===== MENÜ BUTONLARI =====
+    document.getElementById('btnPlay').addEventListener('click', () => startGame('classic'));
+    document.getElementById('btnPlayTime').addEventListener('click', () => {
+      if (typeof resetGame === 'function') resetGame();
+      startGame('timeattack');
     });
 
     document.getElementById('btnOpenSettings').addEventListener('click', () => {
@@ -795,6 +933,7 @@
 
     // ===== GAME OVER =====
     document.getElementById('restartBtn').addEventListener('click', () => {
+      localStorage.removeItem('bp_last_unlock');
       refreshMenuHS();
       goToMenu();
     });
