@@ -21,8 +21,8 @@ let selectedPieceColor = null;
 const THEMES = {
   classic: {
     name: 'Classic',
-    colors: { red:'#ff4d4d', blue:'#4d7cff', green:'#42d67a', yellow:'#ffd24d', orange:'#ff8a4d', purple:'#b04dff' },
-    boardBg: '#222', cellBorder: '#2a2a2a', glow: false,
+    colors: { red:'#f87171', blue:'#60a5fa', green:'#34d399', yellow:'#fbbf24', orange:'#fb923c', purple:'#a78bfa' },
+    boardBg: 'transparent', cellBorder: 'rgba(255,255,255,0.04)', glow: false,
   },
   pastel: {
     name: 'Pastel',
@@ -154,240 +154,95 @@ let sndGameOver = null;
 
 // === PARÇA ŞEKİLLERİ ===
 const PIECES = [
-  // Küçük kare 2x2
-  [
-    [1,1],
-    [1,1]
-  ],
+  // === TEK KARE ===
+  [[1]],
 
-  // Tek kare
-  [
-    [1]
-  ],
+  // === I - Yatay ===
+  [[1,1,1,1]],
+  // I - Dikey
+  [[1],[1],[1],[1]],
 
-  // Yatay 3lü
-  [
-    [1,1,1]
-  ],
+  // === O - 2x2 Kare ===
+  [[1,1],[1,1]],
 
-  // Dikey 2li
-  [
-    [1],
-    [1]
-  ],
+  // === L şekli ===
+  [[1,0],[1,0],[1,1]],
+  // L - 90° döndür
+  [[1,1,1],[1,0,0]],
+  // L - 180°
+  [[1,1],[0,1],[0,1]],
+  // L - 270°
+  [[0,0,1],[1,1,1]],
 
-  // Dikey 3lü
-  [
-    [1],
-    [1],
-    [1]
-  ],
+  // === J şekli (ters L) ===
+  [[0,1],[0,1],[1,1]],
+  // J - 90°
+  [[1,0,0],[1,1,1]],
+  // J - 180°
+  [[1,1],[1,0],[1,0]],
+  // J - 270°
+  [[1,1,1],[0,0,1]],
 
-  // Dikey 4lü
-  [
-    [1],
-    [1],
-    [1],
-    [1]
-  ],
+  // === T şekli ===
+  [[1,1,1],[0,1,0]],
+  // T - 90°
+  [[1,0],[1,1],[1,0]],
+  // T - 180°
+  [[0,1,0],[1,1,1]],
+  // T - 270°
+  [[0,1],[1,1],[0,1]],
 
-  // Yatay 4lü
-  [
-    [1,1,1,1]
-  ],
+  // === S şekli ===
+  [[0,1,1],[1,1,0]],
+  // S - 90°
+  [[1,0],[1,1],[0,1]],
 
-  // L şekli küçük
-  [
-    [1,0],
-    [1,0],
-    [1,1]
-  ],
+  // === Z şekli ===
+  [[1,1,0],[0,1,1]],
+  // Z - 90°
+  [[0,1],[1,1],[1,0]],
 
-  // Büyük L
-  [
-    [1,0,0],
-    [1,0,0],
-    [1,1,1]
-  ],
+  // === Kısa I (3lü) ===
+  [[1,1,1]],
+  [[1],[1],[1]],
 
-  // T şekli
-  [
-    [1,1,1],
-    [0,1,0]
-  ],
-
-  // Uzun T
-  [
-    [1,1,1],
-    [0,1,0],
-    [0,1,0]
-  ],
-
-  // Artı şekli (+)
-  [
-    [0,1,0],
-    [1,1,1],
-    [0,1,0]
-  ],
-
-  // Z şekli (SATIR UZUNLUKLARI EŞİT!)
-  [
-    [1,1,0],
-    [0,1,1]
-  ],
-
-  // Ters Z
-  [
-    [0,1,1],
-    [1,1,0]
-  ],
-
-  // S şekli dikey
-  [
-    [0,1],
-    [1,1],
-    [1,0]
-  ],
-
-  // U şekli
-  [
-    [1,0,1],
-    [1,1,1]
-  ],
-
-  // Köşe 3x3
-  [
-    [1,1,0],
-    [1,0,0],
-    [1,0,0]
-  ],
-
-  // Ters L
-  [
-    [0,1],
-    [0,1],
-    [1,1]
-  ],
-
-  // Ters L büyük
-  [
-    [0,0,1],
-    [0,0,1],
-    [1,1,1]
-  ],
-
-  // Küçük J
-  [
-    [1,1],
-    [1,0],
-    [1,0]
-  ],
-
-  // 3x3 dolu kare
-  [
-    [1,1,1],
-    [1,1,1],
-    [1,1,1]
-  ],
-
-  // Yatay 5li
-  [
-    [1,1,1,1,1]
-  ],
-
-  // Dikey 5li
-  [
-    [1],
-    [1],
-    [1],
-    [1],
-    [1]
-  ],
-
-  // L + 1 uzantı
-  [
-    [1,0],
-    [1,0],
-    [1,1],
-    [0,1]
-  ],
-
-  // Çarpı küçük
-  [
-    [0,1,0],
-    [1,1,1],
-    [0,0,0]
-  ],
+  // === Kısa I (2li) ===
+  [[1,1]],
+  [[1],[1]],
 
   // === SCORE UNLOCK: 10.000 ===
-  // Yıldız şekli
-  [
-    [0,1,0],
-    [1,1,1],
-    [1,0,1]
-  ],
-  // Uzun Z
-  [
-    [1,1,0,0],
-    [0,1,1,0],
-    [0,0,1,1]
-  ],
+  // Büyük L (4'lü)
+  [[1,0],[1,0],[1,0],[1,1]],
+  // Büyük L - ters
+  [[0,1],[0,1],[0,1],[1,1]],
 
   // === SCORE UNLOCK: 30.000 ===
-  // Dev L (4x2)
-  [
-    [1,0],
-    [1,0],
-    [1,0],
-    [1,1]
-  ],
-  // Çift T
-  [
-    [1,1,1],
-    [0,1,0],
-    [1,1,1]
-  ],
+  // Büyük I (5'li yatay)
+  [[1,1,1,1,1]],
+  // Büyük I (5'li dikey)
+  [[1],[1],[1],[1],[1]],
 
   // === SCORE UNLOCK: 50.000 ===
-  // Diyagonal adım
-  [
-    [1,0,0],
-    [1,1,0],
-    [0,1,1]
-  ],
-  // Büyük artı
-  [
-    [0,1,0],
-    [1,1,1],
-    [0,1,0],
-    [0,1,0]
-  ],
+  // Artı şekli
+  [[0,1,0],[1,1,1],[0,1,0]],
+  // U şekli
+  [[1,0,1],[1,1,1]],
 
   // === SCORE UNLOCK: 100.000 ===
-  // Mega blok (2x5)
-  [
-    [1,1],
-    [1,1],
-    [1,1],
-    [1,1],
-    [1,1]
-  ],
-  // Yıldız büyük
-  [
-    [0,1,0,1,0],
-    [1,1,1,1,1],
-    [0,1,0,1,0]
-  ]
+  // 3x3 dolu kare
+  [[1,1,1],[1,1,1],[1,1,1]],
+  // Büyük T (5'li)
+  [[1,1,1,1,1],[0,0,1,0,0]],
 ];
 
 // === SCORE BAZLI PARÇA UNLOCK SİSTEMİ ===
 // Her threshold'dan itibaren o bloklar havuza giriyor
 const PIECE_UNLOCKS = [
-  { minScore: 0,       maxIndex: 25 },  // temel parçalar (0-25)
-  { minScore: 10000,   maxIndex: 27 },  // +2 yeni
-  { minScore: 30000,   maxIndex: 29 },  // +2 yeni
-  { minScore: 50000,   maxIndex: 31 },  // +2 yeni
-  { minScore: 100000,  maxIndex: 33 },  // +2 yeni (son set)
+  { minScore: 0,       maxIndex: 23 },  // temel parçalar (0-23)
+  { minScore: 10000,   maxIndex: 25 },  // +2: Büyük L halleri
+  { minScore: 30000,   maxIndex: 27 },  // +2: Büyük I (5'li)
+  { minScore: 50000,   maxIndex: 29 },  // +2: Artı + U
+  { minScore: 100000,  maxIndex: 31 },  // +2: 3x3 + Büyük T
 ];
 
 function getAvailablePieceIndices() {
@@ -611,7 +466,7 @@ function shakeBoardBig() {
 }
 
 function spawnBgBlocks() {
-  const colors = ['#ff6b6b','#ffd24d','#42d67a','#4d7cff','#b04dff','#ff8a4d'];
+  const colors = ['#7c6ff7','#a78bfa','#60a5fa','#34d399','#f472b6','#fbbf24'];
   const configs = [
     { w:60, h:60, top:'8%',  left:'3%',  r:'-15deg', dur:'4.2s', delay:'0s',    op:0.06 },
     { w:40, h:40, top:'20%', right:'4%', r:'10deg',  dur:'3.5s', delay:'0.6s',  op:0.07 },
@@ -827,36 +682,39 @@ function updateScore() {
 }
 
 function showGameOver(){
-
-  console.log("GAME OVER TETİKLENDİ");
-
   isGameOver = true;
-
-  // Dramatic game over flash
   flashGameover();
   shakeBoardBig();
 
-  const screen = document.getElementById("gameOverScreen");
+  const screen    = document.getElementById("gameOverScreen");
   const scoreText = document.getElementById("finalScore");
+  const isTimeMode = window.currentGameMode === 'timeattack';
 
-  // 🔥 1. HIGH SCORE KONTROL
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem('bb_high_score', highScore);
-    console.log("NEW HIGH SCORE:", highScore);
+  // Zaman modunda ayrı high score
+  const hsKey = isTimeMode ? 'bp_time_high_score' : 'bb_high_score';
+  const savedHS = parseInt(localStorage.getItem(hsKey) || '0');
+
+  if (score > savedHS) {
+    localStorage.setItem(hsKey, score);
+    if (!isTimeMode) { highScore = score; }
     setTimeout(() => triggerNewRecord(), 500);
   }
 
-  // XP ver
-  if (typeof window.onGameEnd === 'function') {
-    window.onGameEnd(score);
+  if (!isTimeMode && score > highScore) {
+    highScore = score;
+    localStorage.setItem('bb_high_score', highScore);
   }
 
-  // skor yazdır
-  scoreText.textContent = "Score: " + score;
+  // XP ver (zaman modunda 1.5x)
+  if (typeof window.onGameEnd === 'function') {
+    window.onGameEnd(isTimeMode ? Math.floor(score * 1.5) : score);
+  }
+
+  // Ekran mesajı
+  const modeLabel = isTimeMode ? '⏱ Zaman Modu' : '🎮 Klasik Mod';
+  scoreText.innerHTML = `<span style="font-size:12px;opacity:0.5;display:block;margin-bottom:4px;">${modeLabel}</span>Score: ${score}`;
 
   screen.style.visibility = "visible";
-
 }
 
 // === STATE KOPYALAMA ===
@@ -1206,7 +1064,6 @@ function canPlaceShapeAnywhere(shape) {
   const h = shape.length;
   const w = shape[0].length;
 
-  // Tüm olası başlangıç pozisyonlarını dene
   for (let startY = 0; startY <= BOARD_SIZE - h; startY++) {
     for (let startX = 0; startX <= BOARD_SIZE - w; startX++) {
       let fits = true;
@@ -1220,35 +1077,47 @@ function canPlaceShapeAnywhere(shape) {
       if (fits) return true;
     }
   }
+
+  // Sığmıyorsa board'u logla
+  console.log(`${h}x${w} sığmıyor. Board:`);
+  for (let y = 0; y < BOARD_SIZE; y++) {
+    let row = '';
+    for (let x = 0; x < BOARD_SIZE; x++) row += board[y][x] === null ? '.' : '#';
+    console.log(row);
+  }
   return false;
 }
 
 // === GAME OVER KONTROLÜ ===
 function checkGameOver() {
+  // Zaman modunda timer bitince bitiyor, hamle kontrolü yapma
+  if (window.currentGameMode === 'timeattack') return;
+
   const piecesEl = document.getElementById('pieces');
   if (!piecesEl) return;
 
-  // Mevcut parçaları al (sadece dolu slotlar)
   const pieceNodes = piecesEl.querySelectorAll('.piece-slot .piece');
-  
-  // Hiç parça yoksa yeni set geliyor, game over değil
   if (pieceNodes.length === 0) return;
 
-  // En az bir parça board'a sığıyorsa devam et
+  let anyCanPlace = false;
   for (const p of pieceNodes) {
     const idx = parseInt(p.dataset.shapeIndex, 10);
     if (isNaN(idx)) continue;
     const shape = PIECES[idx];
     if (!shape) continue;
-    if (canPlaceShapeAnywhere(shape)) return; // hamle var
+    const can = canPlaceShapeAnywhere(shape);
+    console.log(`Parça ${idx} (${shape.length}x${shape[0].length}) → sığar mı: ${can}`);
+    if (can) { anyCanPlace = true; break; }
   }
 
-  // Hiç hamle yok — mevcut powerup charge'ı var mı?
+  if (anyCanPlace) return;
+
   if (clearRowCharges > 0 || rerollCharges > 0 || undoCharges > 0) {
-    return; // powerup hakkı var, oyun devam ediyor
+    console.log('Powerup var, devam et');
+    return;
   }
 
-  // Gerçek game over
+  console.log('GAME OVER — board durumu:', board.map(r => r.map(c => c ? 1 : 0)));
   isGameOver = true;
   updatePowerupUI();
   playSound(sndGameOver, 0.8);
@@ -1256,97 +1125,64 @@ function checkGameOver() {
   setTimeout(() => showGameOver(), 50);
 }
 
-// === PARÇAYI YERLEŞTİRME (AĞIRLIK MERKEZİ PİVOT) ===
-function tryPlacePiece(boardX, boardY) {
+// === PARÇAYI YERLEŞTİRME (direkt startX, startY) ===
+function tryPlacePieceAt(startX, startY) {
   if (!selectedShape) return;
   if (isGameOver) return;
 
   const h = selectedShape.length;
   const w = selectedShape[0].length;
 
-  const { cx: centerX, cy: centerY } = getShapeCenter(selectedShape);
-
-  const startX = boardX - centerX;
-  const startY = boardY - centerY;
-
   // Sınır kontrolü
-  if (
-    startX < 0 ||
-    startY < 0 ||
-    startX + w > BOARD_SIZE ||
-    startY + h > BOARD_SIZE
-  ) {
-    console.log('Yerleştirilemedi (sınır dışında)');
-    return;
-  }
+  if (startX < 0 || startY < 0 || startX + w > BOARD_SIZE || startY + h > BOARD_SIZE) return;
 
   // Çakışma kontrolü
-  let collision = false;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      if (selectedShape[y][x] === 1) {
-        if (board[startY + y][startX + x] !== null) {
-          collision = true;
-          break;
-        }
-      }
+      if (selectedShape[y][x] === 1 && board[startY + y][startX + x] !== null) return;
     }
-    if (collision) break;
-  }
-
-  if (collision) {
-    console.log('Yerleştirilemedi (çakışma)');
-    return;
   }
 
   // Geçerli hamle → state kaydet
   saveState();
 
   let placedCount = 0;
-
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       if (selectedShape[y][x] === 1) {
         const type = getRandomElementType();
-        const finalColor =
-          (type === 'normal')
+        const finalColor = (type === 'normal')
           ? (colorToHex(selectedPieceColor) || getColorForType(type))
           : getColorForType(type);
 
-          board[startY + y][startX + x] = {
-          type,
-          color: finalColor,
+        board[startY + y][startX + x] = {
+          type, color: finalColor,
           colorName: (type === 'normal') ? selectedPieceColor : null,
           justPlaced: true
-      };
-          const cellEl = document.querySelector(
-            `.board-cell[data-x="${startX + x}"][data-y="${startY + y}"]`
-          );
-          if (cellEl) {
-            cellEl.classList.add("pop");
-            cellEl.classList.add("color-pop");
-            setTimeout(() => cellEl.classList.remove("color-pop"), 300);
-          }
+        };
 
+        const cellEl = document.querySelector(`.board-cell[data-x="${startX + x}"][data-y="${startY + y}"]`);
+        if (cellEl) {
+          cellEl.classList.add("pop", "color-pop");
+          setTimeout(() => cellEl.classList.remove("color-pop"), 300);
+        }
         placedCount++;
       }
     }
   }
 
-  // Parça yerleştirme sesi
   playSound(sndPlace, 0.7);
   vibrate(30);
-
-  // Yerleştirme puanı: kaç kare koyduysan o kadar
   score += placedCount;
 
-  // Satır/sütun temizleme + bonuslar
+  // Zaman modunda blok başına +0.5s
+  if (typeof window.addTime === 'function') window.addTime(0.5);
+
   const bonus = clearCompletedLines();
   score += bonus;
-
   updateScore();
 
-  // Seçili parçayı sil — slot yerinde kalsın, sadece içi boşalsın
+  // Seçili parçayı sil
   if (selectedPiece) {
     const slot = selectedPiece.closest('.piece-slot') || selectedPiece;
     slot.innerHTML = '';
@@ -1358,17 +1194,36 @@ function tryPlacePiece(boardX, boardY) {
 
   renderBoard();
 
-  // Tüm slotlar boşaldıysa yeni parça seti üret
   const remainingPieces = document.querySelectorAll('.piece-slot .piece');
-  if (remainingPieces.length === 0) {
-    generatePieces();
-  }
+  if (remainingPieces.length === 0) generatePieces();
 
-  // animasyon bittikten sonra game over kontrolü
   setTimeout(() => {
     checkGameOver();
     saveGameState();
-  }, 220);
+  }, 350);
+}
+
+// === PARÇAYI YERLEŞTİRME (eski — ağırlık merkezi bazlı, click için) ===
+function tryPlacePiece(boardX, boardY) {
+  if (!selectedShape) return;
+  if (isGameOver) return;
+
+  const h = selectedShape.length;
+  const w = selectedShape[0].length;
+  const { cx: centerX, cy: centerY } = getShapeCenter(selectedShape);
+
+  const startX = Math.round(boardX - centerX);
+  const startY = Math.round(boardY - centerY);
+
+  if (startX < 0 || startY < 0 || startX + w > BOARD_SIZE || startY + h > BOARD_SIZE) return;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (selectedShape[y][x] === 1 && board[startY + y][startX + x] !== null) return;
+    }
+  }
+
+  tryPlacePieceAt(startX, startY);
 }
 
 // === SATIR SİLME ===
@@ -1603,6 +1458,11 @@ function clearCompletedLines() {
   }
   triggerScoreBounce();
 
+  // Zaman modunda satır/sütun başına +3s
+  if (typeof window.addTime === 'function') {
+    window.addTime(lineCount * 3);
+  }
+
   // Ses: satır/sütun kırılma + combo/streak
   if (lineCount > 0) {
     vibrate(lineCount >= 2 ? [40,20,40] : 50);
@@ -1616,40 +1476,41 @@ function clearCompletedLines() {
     const boardEl = document.getElementById("board");
     boardEl.classList.add("shake");
 
-      setTimeout(() => {
-    // Performans: sadece animasyon class'ı ekle, parçacık sınırlı sayıda
-    const burstCells = [];
+    // Board'u ANINDA temizle — game over kontrolü doğru çalışsın
     for (let y = 0; y < BOARD_SIZE; y++) {
       for (let x = 0; x < BOARD_SIZE; x++) {
         if (toClear[y][x] && board[y][x] !== null) {
-          const cell = cells[y * BOARD_SIZE + x];
-          if (cell) {
-            cell.classList.add("explode");
-            burstCells.push({ cell, color: board[y][x].color || '#fff' });
-          }
+          board[y][x] = null;
         }
       }
     }
-    // Sadece max 4 hücre için parçacık — telefon performansı için
-    const animEnabled = localStorage.getItem('tgl-anim') !== 'off';
-    if (animEnabled) {
-      const sample = burstCells.filter((_, i) => i % Math.ceil(burstCells.length / 4) === 0).slice(0, 4);
-      sample.forEach(({ cell, color }) => spawnBurstParticles(cell, color, 4));
-    }
 
-      setTimeout(() => {
+    // Görsel animasyon için timeout
+    setTimeout(() => {
+      const burstCells = [];
       for (let y = 0; y < BOARD_SIZE; y++) {
         for (let x = 0; x < BOARD_SIZE; x++) {
-          if (toClear[y][x] && board[y][x] !== null) {
-            board[y][x] = null;
+          if (toClear[y][x]) {
+            const cell = cells[y * BOARD_SIZE + x];
+            if (cell) {
+              cell.classList.add("explode");
+              burstCells.push({ cell, color: '#fff' });
+            }
           }
-        } 
+        }
       }
+      const animEnabled = localStorage.getItem('tgl-anim') !== 'off';
+      if (animEnabled) {
+        const sample = burstCells.filter((_, i) => i % Math.ceil(burstCells.length / 4) === 0).slice(0, 4);
+        sample.forEach(({ cell, color }) => spawnBurstParticles(cell, color, 4));
+      }
+
+      setTimeout(() => {
         renderBoard();
         boardEl.classList.remove("shake");
       }, 200);
 
-    }, 250);
+    }, 50);
 
     setTimeout(() => {
     document.querySelectorAll('.line-warning').forEach(el => {
@@ -1793,6 +1654,9 @@ function clearGameSave() {
 // === OYUNU SIFIRLA ===
 function resetGame() {
   clearGameSave();
+  // Yeni oyunda unlock'ları sıfırla — score arttıkça tekrar açılsın
+  lastUnlockNotified = 0;
+  localStorage.removeItem('bp_last_unlock');
   isGameOver = false;
   score = 0;
   clearRowCharges = 1;
@@ -1884,14 +1748,13 @@ function onPointerUp(e) {
   setTimeout(() => document.body.classList.remove("snap-slow"), 80);
 
 
-  // BLOK NEREYE GİTSİN? → En son geçerli ghost hücresine
+  // lastGhostCell artık [startX, startY] — direkt tryPlacePiece'e ver
   if (lastGhostCell && selectedShape) {
-    const [bx, by] = lastGhostCell;
-    tryPlacePiece(bx, by);
+    const [startX, startY] = lastGhostCell;
+    tryPlacePieceAt(startX, startY);
   } else if (selectedShape) {
-    // Ghost yoksa bırakılan noktada bir kez daha snap dene
     const snapped = trySnapToValid(e.clientX, e.clientY - dragLiftY);
-    if (snapped) tryPlacePiece(snapped[0], snapped[1]);
+    if (snapped) tryPlacePieceAt(snapped[0], snapped[1]);
   }
 
   isDragging = false;
@@ -1950,7 +1813,7 @@ function updateGhostFromEvent(e) {
   updateGhostPreview(clientX, clientY);
 }
 
-// Geçerli pozisyon bulunca şekli oraya snap et
+// Parmak pozisyonundan en yakın geçerli yerleştirme pozisyonunu bul
 function trySnapToValid(clientX, clientY) {
   if (!selectedShape) return null;
   const boardEl = document.getElementById("board");
@@ -1958,36 +1821,32 @@ function trySnapToValid(clientX, clientY) {
   const cellSize = rect.width / BOARD_SIZE;
   const h = selectedShape.length;
   const w = selectedShape[0].length;
+
+  // Parmak board dışındaysa null
+  if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null;
+
+  const fingerBx = Math.floor((clientX - rect.left) / cellSize);
+  const fingerBy = Math.floor((clientY - rect.top) / cellSize);
   const { cx: centerX, cy: centerY } = getShapeCenter(selectedShape);
 
-  // Parmak pozisyonundan board koordinatına
-  const rawBx = Math.floor((clientX - rect.left) / cellSize);
-  const rawBy = Math.floor((clientY - rect.top)  / cellSize);
-
-  // Çevre hücreleri de dene (±1 snap manyetizması)
-  const offsets = [
-    [0,0], [-1,0],[1,0],[0,-1],[0,1],
-    [-1,-1],[1,-1],[-1,1],[1,1]
-  ];
+  // Önce tam pozisyonu dene, sonra ±1 hafif manyetizma
+  const offsets = [[0,0], [-1,0],[1,0],[0,-1],[0,1]];
 
   for (const [ox, oy] of offsets) {
-    const bx = rawBx + ox;
-    const by = rawBy + oy;
-    const startX = bx - centerX;
-    const startY = by - centerY;
+    const startX = Math.round(fingerBx - centerX) + ox;
+    const startY = Math.round(fingerBy - centerY) + oy;
 
     if (startX < 0 || startY < 0 || startX + w > BOARD_SIZE || startY + h > BOARD_SIZE) continue;
 
-    let ok = true;
-    for (let y = 0; y < h && ok; y++) {
-      for (let x = 0; x < w && ok; x++) {
-        if (selectedShape[y][x] === 1 && board[startY + y][startX + x] !== null) {
-          ok = false;
-        }
+    let fits = true;
+    for (let y = 0; y < h && fits; y++) {
+      for (let x = 0; x < w && fits; x++) {
+        if (selectedShape[y][x] === 1 && board[startY + y][startX + x] !== null) fits = false;
       }
     }
-    if (ok) return [bx, by];
+    if (fits) return [startX, startY];
   }
+
   return null;
 }
 
@@ -1998,19 +1857,14 @@ function updateGhostPreview(clientX, clientY) {
 
   if (!isDragging || !selectedShape || isGameOver) return;
 
-  // Snap manyetizması ile en yakın geçerli hücreyi bul
   const snapped = trySnapToValid(clientX, clientY);
   if (!snapped) return;
 
-  const [bx, by] = snapped;
+  const [startX, startY] = snapped;
   const h = selectedShape.length;
   const w = selectedShape[0].length;
-  const { cx: centerX, cy: centerY } = getShapeCenter(selectedShape);
-  const startX = bx - centerX;
-  const startY = by - centerY;
 
-  // Geçerli hedef → kaydet
-  lastGhostCell = [bx, by];
+  lastGhostCell = [startX, startY];
 
   // Ghost çiz
   const cells = document.querySelectorAll('.board-cell');
@@ -2019,16 +1873,13 @@ function updateGhostPreview(clientX, clientY) {
       if (selectedShape[y][x] === 1) {
         const idx = (startY + y) * BOARD_SIZE + (startX + x);
         const cellEl = cells[idx];
-        if (cellEl) {
-          cellEl.classList.add('ghost-valid');
-        }
+        if (cellEl) cellEl.classList.add('ghost-valid');
       }
     }
   }
 
-  // ===== CLEAR PREDICTOR =====
+  // Clear predictor
   const tempBoard = board.map(r => r.slice());
-
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       if (selectedShape[y][x] === 1) {
@@ -2040,7 +1891,6 @@ function updateGhostPreview(clientX, clientY) {
       }
     }
   }
-
   showClearPrediction(tempBoard);
 }
 
