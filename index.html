@@ -634,6 +634,10 @@
         <div class="toggle off" id="tgl-music-ig"></div>
       </div>
       <div class="igs-row">
+        <span>Titreşim</span>
+        <div class="toggle" id="tgl-haptic-ig"></div>
+      </div>
+      <div class="igs-row">
         <span>Animasyonlar</span>
         <div class="toggle" id="tgl-anim-ig"></div>
       </div>
@@ -679,13 +683,14 @@
     // ===== TOGGLE SİSTEMİ =====
     // Ana ayarlar + oyun içi ayarlar eşleşiyor
     const togglePairs = [
-      { main: 'tgl-sfx',   ig: 'tgl-sfx-ig',   key: 'tgl-sfx',   default: 'on'  },
-      { main: 'tgl-music', ig: 'tgl-music-ig',  key: 'tgl-music', default: 'off' },
-      { main: 'tgl-anim',  ig: 'tgl-anim-ig',   key: 'tgl-anim',  default: 'on'  },
+      { main: 'tgl-sfx',    ig: 'tgl-sfx-ig',    key: 'tgl-sfx',    default: 'on'  },
+      { main: 'tgl-music',  ig: 'tgl-music-ig',   key: 'tgl-music',  default: 'off' },
+      { main: 'tgl-haptic', ig: 'tgl-haptic-ig',  key: 'tgl-haptic', default: 'on'  },
+      { main: 'tgl-anim',   ig: 'tgl-anim-ig',    key: 'tgl-anim',   default: 'on'  },
     ];
 
     // Sadece ana menü ayarlarında olan toggle
-    const onlyMainToggles = [{ id: 'tgl-haptic', key: 'tgl-haptic', default: 'on' }];
+    const onlyMainToggles = [];
 
     function applyToggle(key, isOn) {
       if (key === 'tgl-sfx') window.sfxEnabled = isOn;
