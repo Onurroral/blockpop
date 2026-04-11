@@ -1,594 +1,739 @@
+/* ========================================
+   BLOCKPOP — OBSIDIAN GLASS THEME
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+:root {
+  --bg-deep:    #0d0d14;
+  --bg-mid:     #13131f;
+  --bg-surface: #1a1a2e;
+  --bg-glass:   rgba(255,255,255,0.04);
+  --bg-glass2:  rgba(255,255,255,0.07);
+  --border:     rgba(255,255,255,0.08);
+  --border2:    rgba(255,255,255,0.14);
+  --text-1:     #ffffff;
+  --text-2:     rgba(255,255,255,0.6);
+  --text-3:     rgba(255,255,255,0.3);
+  --accent:     #7c6ff7;
+  --accent2:    #a78bfa;
+  --gold:       #fbbf24;
+  --radius-sm:  8px;
+  --radius-md:  14px;
+  --radius-lg:  20px;
+  --radius-xl:  28px;
+  --font:       'Nunito', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-  margin: 0;
-  background: #111;
-  color: #fff;
-  font-family: sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-1);
+  font-family: var(--font);
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
+/* ── Arka plan ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124,111,247,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(167,139,250,0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ========================================
+   GAME CONTAINER
+   ======================================== */
 #game-container {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
   align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 400px;
+  padding: 0 8px;
+}
+
+/* ========================================
+   TOP BAR
+   ======================================== */
+#game-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 4px 0;
 }
 
 #top-info {
-  text-align: center;
-  font-size: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
+#high-score {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+#score {
+  font-size: 38px;
+  font-weight: 900;
+  color: var(--text-1);
+  line-height: 1;
+  letter-spacing: -1.5px;
+}
+
+.topbar-btn {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-glass2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-md);
+  color: var(--text-2);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  backdrop-filter: blur(8px);
+}
+.topbar-btn:active { transform: scale(0.92); background: var(--bg-glass); }
+
+/* ========================================
+   BOARD
+   ======================================== */
 #board {
-  width: 320px;
-  height: 320px;
-  background: #222;
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 360px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
   gap: 3px;
-  padding: 3px;
-  border-radius: 10px;
-
-  /* Mobil sürüklemenin çalışması için EN ÖNEMLİ AYAR */
+  padding: 6px;
   touch-action: none;
-}
-
-.board-cell {
-  background: transparent;      /* ⬅ gri zemin GİTTİ */
-  border-radius: 4px;
-  transition: background 0.15s ease;
-  border: 1px solid #2a2a2a;     /* ⬅ sadece hafif grid çizgisi kalsın */
-}
-
-/* Tahta hücreleri için: animasyonlara zemin hazırlayalım */
-.board-cell {
   position: relative;
-  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+  backdrop-filter: blur(4px);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
-/* Yeni konan blok: hafif pop efekti */
-.board-cell.placed {
-  animation: cellPop 0.18s ease-out;
+.board-cell {
+  border-radius: 6px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.1s, transform 0.1s;
+  position: relative;
+  overflow: hidden;
 }
 
+/* Dolu hücre — cam efekti */
+.board-cell[style*="background"] {
+  border: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    inset 0 -1px 0 rgba(0,0,0,0.2),
+    0 2px 8px rgba(0,0,0,0.3);
+}
+
+.board-cell[style*="background"]::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.18), transparent);
+  border-radius: 5px 5px 0 0;
+  pointer-events: none;
+}
+
+/* Ghost */
+.board-cell.ghost-valid {
+  background: rgba(124,111,247,0.2) !important;
+  border: 1.5px dashed rgba(124,111,247,0.6) !important;
+  box-shadow: none !important;
+}
+.board-cell.ghost-valid::after { display: none; }
+
+/* Predict clear */
+.predict-clear {
+  background: rgba(251,191,36,0.25) !important;
+  border: 1.5px solid rgba(251,191,36,0.5) !important;
+  animation: predictPulse 0.4s ease-in-out infinite alternate;
+}
+@keyframes predictPulse {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+
+/* Animasyonlar */
 @keyframes cellPop {
-  0% {
-    transform: scale(0.3);
-    opacity: 0;
-    box-shadow: 0 0 0 rgba(74, 232, 128, 0);
-  }
-  60% {
-    transform: scale(1.15);
-    opacity: 1;
-    box-shadow: 0 0 14px rgba(74, 232, 128, 0.9);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-    box-shadow: 0 0 0 rgba(74, 232, 128, 0);
-  }
+  0%   { transform: scale(0.6); opacity: 0.7; }
+  60%  { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
 }
-
-.board-cell.ghost-valid {
-  background: transparent !important;   /* ⬅ yeşil dolgu GİTTİ */
-  outline: 2px dashed #4a8;             /* ⬅ sadece nereye koyacağını gösteren çizgi */
-}
-
-.board-cell.ghost-valid {
-  outline: 2px dashed #4a8;
-  outline-offset: -1px;
-  animation: ghostPulse 0.7s ease-in-out infinite;
-}
-
-@keyframes ghostPulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.06);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-}
-
-.board-cell.clearing {
-  background: #ff5555 !important;
-}
-
-/* Temizlenen bloklar: patlama efekti */
-.board-cell.clearing {
-  animation: cellExplode 0.25s ease-out forwards;
-}
+.board-cell.placed { animation: cellPop 0.18s cubic-bezier(0.2,1.4,0.4,1); }
 
 @keyframes cellExplode {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-    box-shadow: 0 0 0 rgba(250, 250, 250, 0);
-  }
-  40% {
-    transform: scale(1.25);
-    opacity: 1;
-    box-shadow: 0 0 18px rgba(250, 250, 250, 0.95);
-  }
-  100% {
-    transform: scale(0.4);
-    opacity: 0;
-    box-shadow: 0 0 0 rgba(250, 250, 250, 0);
-  }
+  0%   { transform: scale(1); opacity: 1; }
+  40%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.board-cell.explode { animation: cellExplode 0.22s ease-out forwards; }
+
+@keyframes popIn {
+  0%   { transform: scale(0.7); filter: brightness(1.5); }
+  60%  { transform: scale(1.08); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+.board-cell.pop { animation: popIn 0.2s cubic-bezier(0.2,1.3,0.4,1); }
+
+@keyframes colorPop {
+  0%   { filter: brightness(2); }
+  100% { filter: brightness(1); }
+}
+.board-cell.color-pop { animation: colorPop 0.25s ease-out; }
+
+/* Board shake */
+@keyframes boardShakeBig {
+  0%,100% { transform: translate(0,0); }
+  15%  { transform: translate(-4px,2px); }
+  30%  { transform: translate(4px,-3px); }
+  45%  { transform: translate(-3px,3px); }
+  60%  { transform: translate(3px,-2px); }
+  80%  { transform: translate(-1px,1px); }
+}
+#board.shake-big { animation: boardShakeBig 0.28s ease-out; }
+
+@keyframes boardShakeGentle {
+  0%,100% { transform: translate(0,0); }
+  33%  { transform: translate(-2px,1px); }
+  66%  { transform: translate(2px,-1px); }
+}
+#board.shake-gentle { animation: boardShakeGentle 0.25s ease-in-out; }
+
+@keyframes boardShakeElectric {
+  0%,100% { transform: translate(0,0) rotate(0deg); }
+  20%  { transform: translate(-5px,3px) rotate(-0.8deg); }
+  40%  { transform: translate(5px,-4px) rotate(0.8deg); }
+  60%  { transform: translate(-3px,3px) rotate(-0.4deg); }
+  80%  { transform: translate(3px,-2px) rotate(0.4deg); }
+}
+#board.shake-electric { animation: boardShakeElectric 0.3s ease-out; }
+
+@keyframes boardShakeHard {
+  0%,100% { transform: translate(0,0); }
+  20%  { transform: translate(-6px,0); }
+  40%  { transform: translate(6px,0); }
+  60%  { transform: translate(-4px,0); }
+  80%  { transform: translate(4px,0); }
+}
+#board.shake-hard { animation: boardShakeHard 0.22s steps(4); }
+
+@keyframes boardShakeCosmic {
+  0%,100% { transform: translate(0,0) rotate(0deg) scale(1); }
+  25%  { transform: translate(-3px,2px) rotate(-0.5deg) scale(1.01); }
+  50%  { transform: translate(3px,-3px) rotate(0.5deg) scale(0.99); }
+  75%  { transform: translate(-2px,2px) rotate(-0.3deg) scale(1); }
+}
+#board.shake-cosmic { animation: boardShakeCosmic 0.35s ease-out; }
+
+@keyframes boardShakeQuake {
+  0%,100% { transform: translate(0,0); }
+  10%  { transform: translate(-6px,4px); }
+  25%  { transform: translate(6px,-5px); }
+  40%  { transform: translate(-5px,4px); }
+  55%  { transform: translate(5px,-3px); }
+  70%  { transform: translate(-3px,2px); }
+  85%  { transform: translate(2px,-1px); }
+}
+#board.shake-quake { animation: boardShakeQuake 0.35s ease-out; }
+
+@keyframes boardShakeBounce {
+  0%,100% { transform: translate(0,0) scale(1); }
+  25%  { transform: translate(0,-6px) scale(1.02,0.98); }
+  50%  { transform: translate(0,3px) scale(0.98,1.02); }
+  75%  { transform: translate(0,-2px) scale(1.01,0.99); }
+}
+#board.shake-bounce { animation: boardShakeBounce 0.35s cubic-bezier(0.36,0.07,0.19,0.97); }
+
+@keyframes boardShakeWave {
+  0%,100% { transform: translate(0,0) skewX(0); }
+  25%  { transform: translate(-3px,0) skewX(-1deg); }
+  50%  { transform: translate(3px,0) skewX(1deg); }
+  75%  { transform: translate(-1px,0) skewX(-0.5deg); }
+}
+#board.shake-wave { animation: boardShakeWave 0.3s ease-in-out; }
+
+/* Element tipleri */
+.board-cell.type-fire { box-shadow: 0 0 10px rgba(255,100,50,0.4), inset 0 1px 0 rgba(255,255,255,0.2) !important; }
+.board-cell.type-fire::before { content: '🔥'; position: absolute; right: 1px; bottom: 0; font-size: 10px; line-height: 1; }
+.board-cell.type-water { box-shadow: 0 0 10px rgba(66,165,245,0.4), inset 0 1px 0 rgba(255,255,255,0.2) !important; }
+.board-cell.type-water::before { content: '💧'; position: absolute; right: 1px; bottom: 0; font-size: 10px; line-height: 1; }
+
+.board-cell.row-target { background: rgba(255,230,0,0.2) !important; }
+.board-cell.clearing { animation: cellExplode 0.22s ease-out forwards; }
+.board-cell.pre-glow { box-shadow: 0 0 12px rgba(255,255,255,0.5) !important; }
+.board-cell.line-warning { filter: brightness(1.5); }
+.board-cell.final-pulse { animation: finalFlash 0.12s linear infinite; }
+@keyframes finalFlash {
+  from { filter: brightness(1); }
+  to   { filter: brightness(2); }
 }
 
-
-.board-cell.row-target {
-  background: rgba(255, 255, 0, 0.3) !important;
-}
-
+/* ========================================
+   PIECES
+   ======================================== */
 #pieces {
   display: flex;
   gap: 6px;
   justify-content: center;
   align-items: center;
-  margin-top: 12px;
-  background: transparent;
-  padding: 4px 4px;
-  touch-action: none;
-  height: 130px;
+  height: 110px;
   flex-shrink: 0;
-  overflow: visible;
+  touch-action: none;
+  width: 100%;
 }
 
 .piece-slot {
-  width: 100px;
-  height: 120px;
+  flex: 1;
+  max-width: 110px;
+  height: 106px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  overflow: visible;
-  background: transparent;
-  border-radius: 12px;
-  border: none;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
+.piece-slot:hover { background: var(--bg-glass2); border-color: var(--border2); }
 
 .piece {
   display: inline-flex;
   flex-direction: column;
-  gap: 0px;
-  background: transparent;
-  border-radius: 0;
-  padding: 0;
-  box-shadow: none;
+  gap: 0;
   touch-action: none;
-  max-width: 98px;
-  max-height: 118px;
+  transition: transform 0.15s;
 }
+.piece.selected { transform: scale(1.08); }
 
-.piece-row {
-  display: flex;
-  gap: 0px;
-}
+.piece-row { display: flex; }
 
 .piece-cell {
-  width: 16px;
-  height: 16px;
-  margin: 1px;
+  width: 18px;
+  height: 18px;
+  margin: 1.5px;
+  border-radius: 4px;
   background: transparent;
-  border-radius: 3px;
   flex-shrink: 0;
 }
 
 .piece-cell.filled {
-  background: #5fa;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.3),
+    inset 0 -1px 0 rgba(0,0,0,0.2),
+    0 2px 6px rgba(0,0,0,0.25);
+  position: relative;
+  overflow: hidden;
+}
+.piece-cell.filled::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.22), transparent);
+  border-radius: 3px 3px 0 0;
 }
 
-.piece.selected .piece-cell.filled {
-  filter: brightness(1.3);
-  box-shadow: 0 0 6px rgba(255,255,255,0.3);
-}
+.drag-preview { background: transparent !important; opacity: 0.88; }
+.drag-preview .piece-cell.filled { opacity: 0.9; }
 
-.piece.selected {
-  outline: none;
-}
-
-.drag-preview {
-  background: transparent !important;
-  box-shadow: none !important;
-  border-radius: 0;
-}
-
-
+/* ========================================
+   POWERUPS
+   ======================================== */
 #powerups {
   display: flex;
-  gap: 15px;
+  gap: 8px;
+  width: 100%;
 }
 
-button {
-  padding: 10px 15px;
-  border: none;
-  background: #444;
-  color: #fff;
-  border-radius: 8px;
-  font-size: 16px;
+#powerups button {
+  flex: 1;
+  padding: 10px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font);
+  border-radius: var(--radius-sm);
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  color: var(--text-2);
   cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.2px;
+  min-width: 0;
+}
+#powerups button:hover { background: var(--bg-glass2); border-color: var(--border2); color: var(--text-1); }
+#powerups button:active { transform: scale(0.95); }
+#powerups button:disabled { opacity: 0.3; cursor: not-allowed; }
+#powerups button.active {
+  background: rgba(124,111,247,0.15);
+  border-color: rgba(124,111,247,0.4);
+  color: var(--accent2);
 }
 
-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.pu-count {
+  display: inline-block;
+  background: rgba(255,255,255,0.12);
+  border-radius: 50px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 3px;
 }
-
-/* Parça yeni konduğunda hafif büyüyüp geri gelsin */
-.board-cell.placed {
-  animation: cellPop 0.18s ease-out;
-}
-
-@keyframes cellPop {
-  0%   { transform: scale(0.7); }
-  70%  { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-/* Satır/sütun temizlenirken titreşim + fade */
-.board-cell.clearing {
-  animation: cellClear 0.25s ease-in-out;
-}
-
-@keyframes cellClear {
-  0%   { transform: scale(1);   opacity: 1;   }
-  40%  { transform: scale(1.1); opacity: 0.4; }
-  100% { transform: scale(0.6); opacity: 0;   }
-}
-
-/* Skor arttığında minik zıplama */
-#score {
-  transition: transform 0.12s ease, color 0.12s ease;
-}
-
-#score.score-bump {
-  transform: scale(1.25);
-  color: #4ade80;
-}
-
-/* Powerup butonu kullanıldığında kısa göz kırpma efekti için (istersen) */
-button.used-flash {
-  animation: usedFlash 0.25s ease-out;
-}
-
-@keyframes usedFlash {
-  0%   { transform: scale(1);   box-shadow: 0 0 0 rgba(0,0,0,0); }
-  60%  { transform: scale(1.08); box-shadow: 0 0 10px rgba(250,250,250,0.4); }
-  100% { transform: scale(1);   box-shadow: 0 0 0 rgba(0,0,0,0); }
+.pu-xp-buy {
+  display: inline-block;
+  background: rgba(251,191,36,0.2);
+  color: var(--gold);
+  border-radius: 50px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 3px;
 }
 
 button.used-flash {
-  animation: usedFlash 0.25s ease-out;
+  animation: usedFlash 0.2s ease-out;
 }
-
 @keyframes usedFlash {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
-  }
-  60% {
-    transform: scale(1.08);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
-  }
-}
-
-.cell.filled { 
-  border-radius: 8px;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
-  transition: transform 120ms ease, filter 120ms ease;
-}
-
-/* Renk paleti */
-.cell.filled[data-color="red"]    { background: #ff4d4d; }
-.cell.filled[data-color="blue"]   { background: #4d7cff; }
-.cell.filled[data-color="green"]  { background: #42d67a; }
-.cell.filled[data-color="yellow"] { background: #ffd24d; }
-.cell.filled[data-color="orange"] { background: #ff8a4d; }
-.cell.filled[data-color="purple"] { background: #b04dff; }
-
-/* Hafif “jelly” hissi */
-@keyframes placePop {
-  0% { transform: scale(0.96); filter: brightness(0.95); }
-  60% { transform: scale(1.06); filter: brightness(1.10); }
-  100% { transform: scale(1.00); filter: brightness(1.00); }
-}
-.cell.place-pop { animation: placePop 180ms ease-out; }
-
-/* Element bloklar: normal bloklardan farklı görünüm */
-.board-cell.type-fire,
-.board-cell.type-water {
-  position: relative;
-  outline: 2px solid rgba(255,255,255,0.35);
-  box-shadow: 0 0 12px rgba(255,255,255,0.18);
-}
-
-/* Fire: sıcak glow + ikon */
-.board-cell.type-fire {
-  box-shadow: 0 0 12px rgba(255,112,67,0.55), inset 0 0 0 1px rgba(255,255,255,0.12);
-}
-.board-cell.type-fire::after {
-  content: "🔥";
-  position: absolute;
-  right: 3px;
-  bottom: 2px;
-  font-size: 14px;
-  line-height: 1;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
-}
-
-/* Water: soğuk glow + ikon */
-.board-cell.type-water {
-  box-shadow: 0 0 12px rgba(66,165,245,0.55), inset 0 0 0 1px rgba(255,255,255,0.12);
-}
-.board-cell.type-water::after {
-  content: "💧";
-  position: absolute;
-  right: 3px;
-  bottom: 2px;
-  font-size: 14px;
-  line-height: 1;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
-}
-
-@keyframes popIn {
-  0% { transform: scale(0.85); filter: brightness(0.9); }
-  60% { transform: scale(1.12); filter: brightness(1.2); }
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); filter: brightness(1.3); }
   100% { transform: scale(1); filter: brightness(1); }
 }
 
-.board-cell.pop {
-  animation: popIn 180ms cubic-bezier(.2,1.3,.4,1);
-}
-@keyframes preGlow {
-  0% { filter: brightness(1); }
-  100% { filter: brightness(1.8); }
-}
-.board-cell.pre-glow {
-  animation: preGlow 200ms ease-in-out infinite alternate;
-  box-shadow: 0 0 12px rgba(255,255,255,0.4);
-}
-
-@keyframes explode {
-  0% { transform: scale(1); opacity: 1; }
-  70% { transform: scale(1.25); opacity: 1; }
-  100% { transform: scale(0.3); opacity: 0; }
-}
-.board-cell.explode {
-  animation: explode 220ms ease-out forwards;
-}
-
-@keyframes boardShake {
-  0% { transform: translate(0,0); }
-  25% { transform: translate(3px,0); }
-  50% { transform: translate(-3px,0); }
-  75% { transform: translate(2px,0); }
-  100% { transform: translate(0,0); }
-}
-#board.shake {
-  animation: boardShake 160ms ease-in-out;
-}
-.pre-glow {
-  animation: preGlow 0.25s ease-in-out infinite alternate;
-}
-
-@keyframes preGlow {
-  from { box-shadow: 0 0 5px #fff; }
-  to   { box-shadow: 0 0 16px #fff; }
-}
-
-.explode {
-  animation: explode 0.25s ease forwards;
-}
-
-@keyframes explode {
-  to {
-    transform: scale(0.3) rotate(25deg);
-    opacity: 0;
-  }
-}
-
-#board.shake {
-  animation: shakeBoard 0.2s linear;
-}
-
-@keyframes shakeBoard {
-  0% { transform: translate(0,0); }
-  25% { transform: translate(2px,0); }
-  50% { transform: translate(-2px,0); }
-  75% { transform: translate(2px,0); }
-}
-
-.line-warning {
-  animation: linePulse 0.35s ease-in-out infinite alternate;
-  filter: brightness(1.7);
-  box-shadow: 0 0 18px rgba(255,255,255,0.8);
-}
-
-@keyframes linePulse {
-  from { transform: scale(1); }
-  to   { transform: scale(1.15); }
-}
-.final-pulse {
-  animation: finalFlash 0.15s linear infinite;
-}
-
-@keyframes finalFlash {
-  from { filter: brightness(1); }
-  to { filter: brightness(2.3); }
-}
-
-.predict-clear {
-  background: linear-gradient(45deg, #fff176, #ffca28, #ffa000);
-  box-shadow: 0 0 20px #ffeb3b;
-  animation: predictPulse 0.35s ease-in-out infinite alternate;
-}
-
-@keyframes predictPulse {
-  from { transform: scale(1); }
-  to   { transform: scale(1.12); }
-}
-
-.combo-popup {
+/* ========================================
+   GAME OVER
+   ======================================== */
+#gameOverScreen {
   position: fixed;
-  left: 50%;
-  top: 42%;
-  transform: translate(-50%, -50%) scale(0.3);
-  font-size: 48px;
-  font-weight: bold;
-  color: #ffeb3b;
-  text-shadow: 0 0 20px #ff9800;
-  pointer-events: none;
-  animation: comboPop 0.6s ease forwards;
-  z-index: 9999;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  visibility: hidden;
+  z-index: 999;
 }
 
-@keyframes comboPop {
-  0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
-  30%  { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+.gameover-box {
+  background: rgba(20,20,35,0.95);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-xl);
+  padding: 36px 32px 28px;
+  text-align: center;
+  width: 280px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  animation: gameoverPop 0.4s cubic-bezier(0.2,1.3,0.4,1) both;
+}
+@keyframes gameoverPop {
+  0%   { transform: scale(0.7) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-.score-float {
-  position: absolute;
+.gameover-box h1 {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gameover-box p {
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+#gameOverScreen button {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #fff;
   font-size: 16px;
-  pointer-events: none;
-  animation: floatScore 0.8s ease-out forwards;
+  font-weight: 800;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+  box-shadow: 0 4px 20px rgba(124,111,247,0.4);
+}
+#gameOverScreen button:active { transform: scale(0.97); filter: brightness(0.9); }
+
+/* ========================================
+   OYUN İÇİ AYARLAR PANELİ
+   ======================================== */
+#inGameSettingsPanel {
+  position: fixed;
+  top: 60px;
+  right: 12px;
+  background: rgba(18,18,30,0.97);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 6px 0;
+  z-index: 500;
+  min-width: 210px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  animation: slideDown 0.18s ease both;
+}
+#inGameSettingsPanel.hidden { display: none; }
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes floatScore {
-  from { transform: translateY(0); opacity: 1; }
-  to   { transform: translateY(-30px); opacity: 0; }
+.igs-action-row {
+  padding: 12px 16px;
+  color: var(--text-1);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
 }
+.igs-action-row:hover { background: var(--bg-glass2); }
+.igs-action-row.danger-row { color: #f87171; }
 
-.screen-flash {
-  animation: screenFlash 0.15s linear;
+.igs-divider { height: 1px; background: var(--border2); margin: 4px 0; }
+
+.igs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  border-bottom: 1px solid var(--border);
 }
+.igs-row:last-child { border-bottom: none; }
 
-@keyframes screenFlash {
-  from { background: rgba(255,255,255,0.35); }
-  to   { background: transparent; }
+.toggle {
+  width: 44px; height: 24px;
+  background: var(--accent);
+  border-radius: 50px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
 }
-
-.combo-shake {
-  animation: comboShake .22s;
-}
-
-@keyframes comboShake {
-  0% { transform: translate(0,0) }
-  25% { transform: translate(-6px,4px) }
-  50% { transform: translate(5px,-5px) }
-  75% { transform: translate(-4px,3px) }
-  100% { transform: translate(0,0) }
-}
-
-.slowmo * {
-  animation-duration: 1.4s !important;
-  transition-duration: 1.4s !important;
-}
-
-.combo-particle {
+.toggle.off { background: rgba(255,255,255,0.15); }
+.toggle::after {
+  content: '';
   position: absolute;
-  width: 8px;
-  height: 8px;
-  background: #ffd54f;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle:not(.off)::after { transform: translateX(20px); }
+
+/* ========================================
+   RESET ONAY
+   ======================================== */
+#confirmReset {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 600;
+}
+#confirmReset.hidden { display: none; }
+
+.confirm-box {
+  background: rgba(20,20,35,0.97);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px 22px;
+  text-align: center;
+  width: 260px;
+}
+.confirm-box h3 { color: var(--text-1); font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+.confirm-box p  { color: var(--text-2); font-size: 13px; margin-bottom: 20px; }
+.confirm-btns   { display: flex; gap: 10px; }
+.confirm-btns button {
+  flex: 1; padding: 13px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-size: 14px; font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.confirm-btns button:active { transform: scale(0.96); }
+.btn-cancel-confirm { background: var(--bg-glass2); color: var(--text-1); border: 1px solid var(--border2) !important; }
+.btn-yes-reset { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+
+/* ========================================
+   FLASH OVERLAY
+   ======================================== */
+#flash-overlay {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 998;
+  opacity: 0;
+}
+@keyframes flashFade { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+#flash-overlay.flash-white        { background: rgba(255,255,255,0.15); animation: flashFade 0.18s ease-out forwards; }
+#flash-overlay.flash-combo        { background: rgba(251,191,36,0.18);  animation: flashFade 0.25s ease-out forwards; }
+#flash-overlay.flash-gameover     { background: rgba(239,68,68,0.25);   animation: flashFade 0.4s ease-out forwards; }
+#flash-overlay.flash-pastel       { background: rgba(244,143,177,0.15); animation: flashFade 0.22s ease-out forwards; }
+#flash-overlay.flash-pastel-combo { background: rgba(206,147,216,0.2);  animation: flashFade 0.28s ease-out forwards; }
+#flash-overlay.flash-pastel-gameover { background: rgba(244,143,177,0.3); animation: flashFade 0.4s ease-out forwards; }
+#flash-overlay.flash-ocean        { background: rgba(0,180,216,0.15);   animation: flashFade 0.2s ease-out forwards; }
+#flash-overlay.flash-ocean-combo  { background: rgba(0,119,182,0.22);   animation: flashFade 0.28s ease-out forwards; }
+#flash-overlay.flash-ocean-gameover { background: rgba(0,96,199,0.3);   animation: flashFade 0.4s ease-out forwards; }
+#flash-overlay.flash-neon         { background: rgba(0,255,136,0.18);   animation: neonFlash 0.22s ease-out forwards; }
+#flash-overlay.flash-neon-combo   { background: rgba(0,207,255,0.25);   animation: neonFlash 0.28s ease-out forwards; }
+#flash-overlay.flash-neon-gameover { background: rgba(255,0,60,0.3);    animation: neonFlash 0.4s ease-out forwards; }
+@keyframes neonFlash { 0%{opacity:1} 30%{opacity:0.5} 60%{opacity:0.9} 100%{opacity:0} }
+#flash-overlay.flash-retro        { background: rgba(212,172,13,0.22);  animation: retroFlash 0.18s steps(2) forwards; }
+#flash-overlay.flash-retro-combo  { background: rgba(212,172,13,0.35);  animation: retroFlash 0.22s steps(2) forwards; }
+#flash-overlay.flash-retro-gameover { background: rgba(192,57,43,0.4);  animation: retroFlash 0.3s steps(2) forwards; }
+@keyframes retroFlash { 0%{opacity:1} 50%{opacity:0} 60%{opacity:0.7} 100%{opacity:0} }
+#flash-overlay.flash-galaxy        { background: rgba(156,39,176,0.2);  animation: flashFade 0.25s ease-out forwards; }
+#flash-overlay.flash-galaxy-combo  { background: rgba(63,81,181,0.25);  animation: flashFade 0.3s ease-out forwards; }
+#flash-overlay.flash-galaxy-gameover { background: rgba(123,47,247,0.35); animation: flashFade 0.4s ease-out forwards; }
+#flash-overlay.flash-lava          { background: rgba(255,109,0,0.22);  animation: flashFade 0.22s ease-out forwards; }
+#flash-overlay.flash-lava-combo    { background: rgba(255,23,68,0.3);   animation: flashFade 0.28s ease-out forwards; }
+#flash-overlay.flash-lava-gameover { background: rgba(221,44,0,0.4);    animation: flashFade 0.4s ease-out forwards; }
+#flash-overlay.flash-candy         { background: rgba(244,143,177,0.2); animation: flashFade 0.22s ease-out forwards; }
+#flash-overlay.flash-candy-combo   { background: rgba(206,147,216,0.28);animation: flashFade 0.28s ease-out forwards; }
+#flash-overlay.flash-candy-gameover { background: rgba(255,204,128,0.35);animation: flashFade 0.4s ease-out forwards; }
+
+/* ========================================
+   COMBO & SCORE POPUP
+   ======================================== */
+.combo-popup {
+  position: fixed;
+  left: 50%; top: 42%;
+  transform: translate(-50%,-50%) scale(0.3);
+  font-size: 44px;
+  font-weight: 900;
+  font-family: var(--font);
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(251,191,36,0.6);
+  pointer-events: none;
+  animation: comboBigPop 0.7s ease forwards;
+  z-index: 9999;
+  letter-spacing: -1px;
+}
+@keyframes comboBigPop {
+  0%   { transform: translate(-50%,-50%) scale(0.2) rotate(-5deg); opacity: 0; }
+  40%  { transform: translate(-50%,-50%) scale(1.3) rotate(2deg);  opacity: 1; }
+  70%  { transform: translate(-50%,-50%) scale(1.05) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(1.2) rotate(0deg);  opacity: 0; }
+}
+
+.score-popup {
+  position: fixed;
+  left: 50%; top: 45%;
+  font-size: 26px !important;
+  font-weight: 800 !important;
+  font-family: var(--font);
+  pointer-events: none;
+  z-index: 9998;
+  animation: scoreFloat 0.9s ease-out forwards !important;
+}
+@keyframes scoreFloat {
+  0%   { transform: translateX(-50%) translateY(0) scale(0.6); opacity: 0; }
+  20%  { transform: translateX(-50%) translateY(-8px) scale(1.15); opacity: 1; }
+  70%  { transform: translateX(-50%) translateY(-30px) scale(1); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-50px) scale(0.85); opacity: 0; }
+}
+
+/* Score bounce */
+@keyframes scoreBounce {
+  0%,100% { transform: scale(1); }
+  40%      { transform: scale(1.35); }
+  70%      { transform: scale(0.95); }
+}
+#score.score-bounce { animation: scoreBounce 0.3s cubic-bezier(0.2,1.4,0.4,1); }
+
+/* New record */
+@keyframes newHSGlow {
+  0%,100% { color: var(--gold); }
+  50%      { color: #fff; text-shadow: 0 0 12px var(--gold); }
+}
+#high-score.new-record { animation: newHSGlow 0.5s ease-in-out 3; }
+
+/* ========================================
+   PARÇACIKLAR
+   ======================================== */
+@keyframes particleBurst {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--px),var(--py)) scale(0); opacity: 0; }
+}
+.burst-particle {
+  position: fixed;
   border-radius: 50%;
   pointer-events: none;
-  animation: comboParticle .7s forwards;
+  z-index: 999;
+  animation: particleBurst var(--dur,0.45s) ease-out forwards;
 }
-
+.combo-particle {
+  position: absolute;
+  width: 6px; height: 6px;
+  background: var(--gold);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: comboParticle 0.65s forwards;
+}
 @keyframes comboParticle {
-  to {
-    transform: translate(var(--x), var(--y));
-    opacity: 0;
-  }
+  to { transform: translate(var(--x),var(--y)); opacity: 0; }
 }
 
-.snap-slow * {
-  transition: transform 0.08s ease-out !important;
-}
-
-.piece, .piece * {
-  -webkit-tap-highlight-color: transparent;
-  outline: none !important;
-  border: none !important;
-}
-
-.piece {
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-
-* {
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
-}
-
-#gameOverScreen{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.85);
-
-  display:flex;
-  justify-content:center;
-  align-items:center;
-
-  visibility:hidden;
-  z-index:9999;
-}
-
-.gameover-box{
-  background:#1e1e1e;
-  padding:30px;
-  border-radius:12px;
-  text-align:center;
-  color:white;
-}
-
-.piece {
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.piece.selected {
-  transform: scale(1.1); /* Seçilen parça hafifçe büyüsün */
-  filter: brightness(1.2);
-}
-
-.drag-preview {
-  /* Sürüklenen parça parmağın altında biraz daha büyük ve canlı görünsün */
-  transform: scale(1.15); 
-  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
-}
 /* ========================================
-   BLOCKPOP — GELİŞMİŞ GÖRSEL EFEKTLER
+   BG BLOKLAR
    ======================================== */
-
-/* === ARKA PLAN YÜZEN BLOKLAR === */
 @keyframes bgBlockFloat {
-  0%, 100% { transform: translateY(0px) rotate(var(--r)) scale(1); }
-  33%  { transform: translateY(-14px) rotate(calc(var(--r) + 3deg)) scale(1.04); }
-  66%  { transform: translateY(6px)  rotate(calc(var(--r) - 2deg)) scale(0.97); }
+  0%,100% { transform: translateY(0) rotate(var(--r)); }
+  50%      { transform: translateY(-12px) rotate(calc(var(--r) + 2deg)); }
 }
-
 .bg-block {
   position: fixed;
   border-radius: 12px;
@@ -596,467 +741,38 @@ button.used-flash {
   z-index: 0;
   animation: bgBlockFloat var(--dur) ease-in-out infinite;
   animation-delay: var(--delay);
-  opacity: var(--op, 0.07);
-}
-
-#game-container {
-  position: relative;
-  z-index: 1;
-}
-
-/* === BLOK YERLEŞİNCE RENK GLOW === */
-@keyframes colorPop {
-  0%   { transform: scale(0.5); filter: brightness(2.5); opacity: 0.6; }
-  55%  { transform: scale(1.18); filter: brightness(1.6); opacity: 1; }
-  100% { transform: scale(1);   filter: brightness(1);   opacity: 1; }
-}
-
-.board-cell.color-pop {
-  animation: colorPop 0.22s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
-}
-
-/* === SATIR SİLİNİNCE HÜCRE PATLAMASI === */
-@keyframes cellBurst {
-  0%   { transform: scale(1);    filter: brightness(1);   opacity: 1; }
-  35%  { transform: scale(1.3);  filter: brightness(2.8); opacity: 1; }
-  100% { transform: scale(0.1);  filter: brightness(0.5); opacity: 0; }
-}
-
-.board-cell.burst {
-  animation: cellBurst 0.28s ease-out forwards;
-}
-
-/* === EKRAN FLASH (satır silinince) === */
-@keyframes gameFlash {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.85; }
-  100% { opacity: 1; }
-}
-
-#flash-overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 998;
-  opacity: 0;
-  transition: opacity 0.05s;
-}
-
-#flash-overlay.flash-white {
-  background: rgba(255,255,255,0.22);
-  animation: flashFade 0.18s ease-out forwards;
-}
-
-#flash-overlay.flash-combo {
-  background: rgba(255,215,0,0.2);
-  animation: flashFade 0.25s ease-out forwards;
-}
-
-#flash-overlay.flash-gameover {
-  background: rgba(255,60,60,0.35);
-  animation: flashFade 0.4s ease-out forwards;
-}
-
-@keyframes flashFade {
-  0%   { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-/* === COMBO YAZISI (güçlendirilmiş) === */
-@keyframes comboBigPop {
-  0%   { transform: translate(-50%,-50%) scale(0.2) rotate(-8deg); opacity: 0; }
-  40%  { transform: translate(-50%,-50%) scale(1.4) rotate(3deg);  opacity: 1; }
-  70%  { transform: translate(-50%,-50%) scale(1.1) rotate(0deg);  opacity: 1; }
-  100% { transform: translate(-50%,-50%) scale(1.3) rotate(0deg);  opacity: 0; }
-}
-
-.combo-popup {
-  animation: comboBigPop 0.75s ease forwards !important;
-  font-size: 52px !important;
-  text-shadow: 0 0 30px #ff9800, 0 0 60px #ff5722 !important;
-}
-
-/* === BOARD SHAKE (güçlendirilmiş) === */
-@keyframes boardShakeBig {
-  0%   { transform: translate(0,0)    rotate(0deg); }
-  15%  { transform: translate(-5px,3px) rotate(-1deg); }
-  30%  { transform: translate(5px,-4px) rotate(1deg); }
-  45%  { transform: translate(-4px,4px) rotate(-0.5deg); }
-  60%  { transform: translate(4px,-2px) rotate(0.5deg); }
-  80%  { transform: translate(-2px,1px) rotate(0deg); }
-  100% { transform: translate(0,0)    rotate(0deg); }
-}
-
-#board.shake-big {
-  animation: boardShakeBig 0.3s ease-out;
-}
-
-/* === PARÇACIK SİSTEMİ (satır silinince) === */
-@keyframes particleBurst {
-  0%   { transform: translate(0,0) scale(1); opacity: 1; }
-  100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
-}
-
-.burst-particle {
-  position: fixed;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 999;
-  animation: particleBurst var(--dur,0.5s) ease-out forwards;
-}
-
-/* === SKOR ZIPLAMA (güçlendirilmiş) === */
-@keyframes scoreBounce {
-  0%   { transform: scale(1); }
-  30%  { transform: scale(1.4); color: #4ade80; }
-  60%  { transform: scale(0.9); }
-  100% { transform: scale(1); }
-}
-
-#score.score-bounce {
-  animation: scoreBounce 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
-}
-
-/* === GAME OVER DRAMATIC GİRİŞ === */
-@keyframes gameoverPop {
-  0%   { transform: scale(0.5); opacity: 0; }
-  60%  { transform: scale(1.08); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.gameover-box {
-  animation: gameoverPop 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) both;
-}
-
-/* === YENİ HIGH SCORE PARLAMA === */
-@keyframes newHSGlow {
-  0%, 100% { text-shadow: 0 0 8px #ffd24d; color: #ffd24d; }
-  50%       { text-shadow: 0 0 24px #ff9800, 0 0 48px #ff5722; color: #ffcc00; }
-}
-
-#high-score.new-record {
-  animation: newHSGlow 0.6s ease-in-out 3;
-}
-
-/* === SCORE POPUP (güçlendirilmiş) === */
-.score-popup {
-  font-size: 28px !important;
-  font-weight: 800 !important;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  animation: scoreFloat 0.95s cubic-bezier(0.2, 1, 0.4, 1) forwards !important;
-}
-
-@keyframes scoreFloat {
-  0%   { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
-  20%  { transform: translate(-50%, -10px) scale(1.2); opacity: 1; }
-  70%  { transform: translate(-50%, -35px) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -55px) scale(0.8); opacity: 0; }
+  opacity: var(--op, 0.06);
 }
 
 /* ========================================
-   TEMA: NEON GLOW
+   NEON TEMA
    ======================================== */
 body.theme-glow .board-cell[style] {
-  box-shadow: 0 0 8px currentColor, 0 0 2px currentColor;
-  filter: brightness(1.15);
+  filter: brightness(1.1);
 }
 body.theme-glow .piece-cell.filled {
-  box-shadow: 0 0 10px currentColor;
-  filter: brightness(1.2);
+  filter: brightness(1.15);
 }
-body[data-theme="retro"] .board-cell {
-  border-radius: 2px !important;
-}
-body[data-theme="retro"] .piece-cell {
-  border-radius: 2px !important;
-}
-body[data-theme="pastel"] #board {
-  border: 2px solid rgba(255,255,255,0.08);
-}
-
-/* ========================================
-   SKIN-AWARE FLASH EFEKTLERİ
-   ======================================== */
-
-/* PASTEL */
-#flash-overlay.flash-pastel       { background: rgba(244,143,177,0.2); animation: flashFade 0.22s ease-out forwards; }
-#flash-overlay.flash-pastel-combo { background: rgba(206,147,216,0.28); animation: flashFade 0.28s ease-out forwards; }
-#flash-overlay.flash-pastel-gameover { background: rgba(244,143,177,0.4); animation: flashFade 0.45s ease-out forwards; }
-
-/* OCEAN */
-#flash-overlay.flash-ocean        { background: rgba(0,180,216,0.2); animation: flashFade 0.2s ease-out forwards; }
-#flash-overlay.flash-ocean-combo  { background: rgba(0,119,182,0.3); animation: flashFade 0.3s ease-out forwards; }
-#flash-overlay.flash-ocean-gameover { background: rgba(0,96,199,0.45); animation: flashFade 0.5s ease-out forwards; }
-
-/* NEON */
-@keyframes neonFlash {
-  0%   { opacity:1; }
-  20%  { opacity:0.6; }
-  40%  { opacity:1; }
-  100% { opacity:0; }
-}
-#flash-overlay.flash-neon        { background: rgba(0,255,136,0.25); animation: neonFlash 0.22s ease-out forwards; }
-#flash-overlay.flash-neon-combo  { background: rgba(0,207,255,0.35); animation: neonFlash 0.3s ease-out forwards; }
-#flash-overlay.flash-neon-gameover { background: rgba(255,0,60,0.4); animation: neonFlash 0.4s ease-out forwards; }
-
-/* RETRO */
-@keyframes retroFlash {
-  0%   { opacity:1; }
-  50%  { opacity:0; }
-  60%  { opacity:0.8; }
-  100% { opacity:0; }
-}
-#flash-overlay.flash-retro        { background: rgba(212,172,13,0.3); animation: retroFlash 0.2s steps(2) forwards; }
-#flash-overlay.flash-retro-combo  { background: rgba(212,172,13,0.45); animation: retroFlash 0.25s steps(2) forwards; }
-#flash-overlay.flash-retro-gameover { background: rgba(192,57,43,0.5); animation: retroFlash 0.3s steps(2) forwards; }
-
-/* GALAXY */
-@keyframes galaxyFlash {
-  0%   { opacity:1; filter:hue-rotate(0deg); }
-  50%  { opacity:0.7; filter:hue-rotate(90deg); }
-  100% { opacity:0; filter:hue-rotate(180deg); }
-}
-#flash-overlay.flash-galaxy        { background: rgba(156,39,176,0.25); animation: galaxyFlash 0.25s ease-out forwards; }
-#flash-overlay.flash-galaxy-combo  { background: rgba(63,81,181,0.35); animation: galaxyFlash 0.35s ease-out forwards; }
-#flash-overlay.flash-galaxy-gameover { background: rgba(123,47,247,0.45); animation: galaxyFlash 0.5s ease-out forwards; }
-
-/* LAVA */
-@keyframes lavaFlash {
-  0%   { opacity:1; }
-  30%  { opacity:0.8; }
-  60%  { opacity:0.5; }
-  100% { opacity:0; }
-}
-#flash-overlay.flash-lava        { background: rgba(255,109,0,0.3); animation: lavaFlash 0.22s ease-out forwards; }
-#flash-overlay.flash-lava-combo  { background: rgba(255,23,68,0.4); animation: lavaFlash 0.3s ease-out forwards; }
-#flash-overlay.flash-lava-gameover { background: rgba(221,44,0,0.55); animation: lavaFlash 0.5s ease-out forwards; }
-
-/* CANDY */
-@keyframes candyFlash {
-  0%   { opacity:1; filter:saturate(2); }
-  100% { opacity:0; filter:saturate(1); }
-}
-#flash-overlay.flash-candy        { background: rgba(244,143,177,0.25); animation: candyFlash 0.22s ease-out forwards; }
-#flash-overlay.flash-candy-combo  { background: rgba(206,147,216,0.35); animation: candyFlash 0.3s ease-out forwards; }
-#flash-overlay.flash-candy-gameover { background: rgba(255,204,128,0.4); animation: candyFlash 0.45s ease-out forwards; }
-
-/* ========================================
-   SKIN-AWARE BOARD SHAKE EFEKTLERİ
-   ======================================== */
-
-/* GENTLE (Pastel) — narin titreme */
-@keyframes boardShakeGentle {
-  0%,100% { transform: translate(0,0); }
-  25%  { transform: translate(-2px, 1px); }
-  50%  { transform: translate(2px,-1px); }
-  75%  { transform: translate(-1px, 2px); }
-}
-#board.shake-gentle { animation: boardShakeGentle 0.3s ease-in-out; }
-
-/* WAVE (Ocean) — dalga hareketi */
-@keyframes boardShakeWave {
-  0%   { transform: translate(0,0) skewX(0deg); }
-  25%  { transform: translate(-3px,0) skewX(-1deg); }
-  50%  { transform: translate(3px,0) skewX(1deg); }
-  75%  { transform: translate(-2px,0) skewX(-0.5deg); }
-  100% { transform: translate(0,0) skewX(0deg); }
-}
-#board.shake-wave { animation: boardShakeWave 0.35s ease-in-out; }
-
-/* ELECTRIC (Neon) — elektrik çarpması */
-@keyframes boardShakeElectric {
-  0%   { transform: translate(0,0) rotate(0deg); }
-  10%  { transform: translate(-6px,4px) rotate(-1.5deg); }
-  20%  { transform: translate(6px,-5px) rotate(1.5deg); }
-  30%  { transform: translate(-5px,5px) rotate(-1deg); }
-  40%  { transform: translate(5px,-3px) rotate(1deg); }
-  50%  { transform: translate(-3px,3px) rotate(-0.5deg); }
-  60%  { transform: translate(3px,-2px) rotate(0.5deg); }
-  80%  { transform: translate(-1px,1px); }
-  100% { transform: translate(0,0) rotate(0deg); }
-}
-#board.shake-electric { animation: boardShakeElectric 0.35s ease-out; }
-
-/* HARD (Retro) — sert darbe */
-@keyframes boardShakeHard {
-  0%   { transform: translate(0,0); }
-  15%  { transform: translate(-8px,0); }
-  30%  { transform: translate(8px,0); }
-  45%  { transform: translate(-6px,0); }
-  60%  { transform: translate(6px,0); }
-  100% { transform: translate(0,0); }
-}
-#board.shake-hard { animation: boardShakeHard 0.25s steps(4); }
-
-/* COSMIC (Galaxy) — kozmik dönüş */
-@keyframes boardShakeCosmic {
-  0%   { transform: translate(0,0) rotate(0deg) scale(1); }
-  20%  { transform: translate(-4px,3px) rotate(-1deg) scale(1.02); }
-  40%  { transform: translate(4px,-4px) rotate(1deg) scale(0.98); }
-  60%  { transform: translate(-3px,3px) rotate(-0.5deg) scale(1.01); }
-  80%  { transform: translate(2px,-1px) scale(1); }
-  100% { transform: translate(0,0) rotate(0deg) scale(1); }
-}
-#board.shake-cosmic { animation: boardShakeCosmic 0.4s ease-out; }
-
-/* QUAKE (Lava) — yer sarsıntısı */
-@keyframes boardShakeQuake {
-  0%   { transform: translate(0,0); }
-  10%  { transform: translate(-7px,5px); }
-  20%  { transform: translate(7px,-6px); }
-  30%  { transform: translate(-6px,7px); }
-  40%  { transform: translate(6px,-5px); }
-  50%  { transform: translate(-5px,4px); }
-  60%  { transform: translate(4px,-3px); }
-  80%  { transform: translate(-2px,1px); }
-  100% { transform: translate(0,0); }
-}
-#board.shake-quake { animation: boardShakeQuake 0.4s ease-out; }
-
-/* BOUNCE (Candy) — zıplama */
-@keyframes boardShakeBounce {
-  0%   { transform: translate(0,0) scale(1); }
-  20%  { transform: translate(0,-8px) scale(1.03,0.97); }
-  40%  { transform: translate(0,4px) scale(0.97,1.03); }
-  60%  { transform: translate(0,-3px) scale(1.01,0.99); }
-  80%  { transform: translate(0,2px) scale(0.99,1.01); }
-  100% { transform: translate(0,0) scale(1); }
-}
-#board.shake-bounce { animation: boardShakeBounce 0.4s cubic-bezier(0.36,0.07,0.19,0.97); }
-
-/* ========================================
-   COMBO POPUP — SKIN ÖZEL STİLLER
-   ======================================== */
-
-/* Retro: pixel font hissi */
-body[data-theme="retro"] .combo-popup {
-  font-family: monospace !important;
-  letter-spacing: 4px;
-  font-size: 36px !important;
-  text-transform: uppercase;
-}
-
-/* Neon: yanıp söner */
-@keyframes neonPulse {
-  0%,100% { opacity:1; }
-  50%      { opacity:0.6; }
-}
-body[data-theme="neon"] .combo-popup {
-  animation: comboBigPop 0.75s ease forwards, neonPulse 0.15s ease-in-out 3 !important;
-}
-
-/* Galaxy: döner */
-@keyframes galaxySpin {
-  from { transform: translate(-50%,-50%) scale(1.2) rotate(-5deg); }
-  to   { transform: translate(-50%,-50%) scale(1.2) rotate(5deg); }
-}
-body[data-theme="galaxy"] .combo-popup {
-  animation: comboBigPop 0.75s ease forwards !important;
-}
-
-/* Candy: rainbow renk */
+body[data-theme="retro"] .board-cell,
+body[data-theme="retro"] .piece-cell { border-radius: 2px !important; }
+body[data-theme="retro"] .combo-popup { font-family: monospace !important; letter-spacing: 3px; }
+body[data-theme="neon"] .combo-popup { animation: comboBigPop 0.7s ease forwards, neonPulse 0.15s ease 3 !important; }
+@keyframes neonPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+body[data-theme="candy"] .combo-popup { animation: comboBigPop 0.7s ease forwards, rainbowText 0.4s linear infinite !important; }
 @keyframes rainbowText {
-  0%   { color: #f48fb1; }
-  25%  { color: #80deea; }
-  50%  { color: #a5d6a7; }
-  75%  { color: #fff59d; }
-  100% { color: #ce93d8; }
-}
-body[data-theme="candy"] .combo-popup {
-  animation: comboBigPop 0.75s ease forwards, rainbowText 0.4s linear infinite !important;
+  0%{color:#f48fb1} 25%{color:#80deea} 50%{color:#a5d6a7} 75%{color:#fff59d} 100%{color:#ce93d8}
 }
 
 /* ========================================
-   POWERUP XP BUTON STİLLERİ
+   GENEL
    ======================================== */
-.pu-count {
-  display: inline-block;
-  background: rgba(255,255,255,0.15);
-  border-radius: 50px;
-  padding: 1px 7px;
-  font-size: 12px;
-  font-weight: 700;
-  margin-left: 4px;
-}
+* { -webkit-tap-highlight-color: transparent; }
+.piece, .piece * { outline: none !important; user-select: none; -webkit-user-select: none; }
+.snap-slow * { transition: transform 0.08s ease-out !important; }
 
-.pu-xp-buy {
-  display: inline-block;
-  background: rgba(255,210,77,0.2);
-  color: #ffd24d;
-  border-radius: 50px;
-  padding: 1px 7px;
-  font-size: 11px;
-  font-weight: 700;
-  margin-left: 4px;
-}
-
-#powerups button[data-xp-mode="true"] {
-  border: 1px solid rgba(255,210,77,0.3);
-  color: rgba(255,255,255,0.9);
-}
-
-/* ========================================
-   SCORE / HIGH SCORE UI
-   ======================================== */
-#top-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0;
-}
-
-#high-score {
-  font-size: 11px;
-  color: #ffd24d;
-  font-weight: 500;
-  opacity: 0.75;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-}
-
-#score {
-  font-size: 32px;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1;
-  letter-spacing: -1px;
-}
-
-/* ========================================
-   POWERUP ALANI
-   ======================================== */
-#powerups {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  padding: 0 8px;
-  flex-wrap: nowrap;
-}
-
-#powerups button {
-  flex: 1;
-  padding: 10px 6px;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: #fff;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-#powerups button.active {
-  background: rgba(74,214,122,0.2);
-  border-color: rgba(74,214,122,0.4);
-  color: #42d67a;
-}
-
-#powerups button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+@keyframes xpToastAnim {
+  0%   { opacity:0; transform:translateX(-50%) translateY(10px); }
+  15%  { opacity:1; transform:translateX(-50%) translateY(0); }
+  75%  { opacity:1; }
+  100% { opacity:0; transform:translateX(-50%) translateY(-20px); }
 }
