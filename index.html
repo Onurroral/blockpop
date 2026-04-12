@@ -167,24 +167,226 @@
     #btnWelcomeStart:active { transform: scale(0.97); }
 
     #menuScreen {
-      position: fixed;
-      inset: 0;
-      background: #0d0d14;
-      display: flex;
+      position: fixed; inset: 0;
+      background: #1a1a2e;
+      display: flex; flex-direction: column;
       align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      overflow: hidden;
+      z-index: 1000; overflow: hidden;
     }
     #menuScreen::before {
       content: '';
-      position: absolute;
-      inset: 0;
+      position: absolute; inset: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124,111,247,0.15) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 90%, rgba(167,139,250,0.1) 0%, transparent 60%);
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,111,247,0.2) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(52,211,153,0.08) 0%, transparent 60%);
+      pointer-events: none;
     }
     #menuScreen.hidden { display: none; }
+
+    .menu-main-content {
+      position: relative; z-index: 2;
+      width: 100%; max-width: 400px;
+      padding: 48px 20px 100px;
+      display: flex; flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Best score büyük gösterim */
+    /* Üst bar */
+    .menu-top-bar {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      width: 100%; margin-bottom: 12px;
+    }
+    .menu-diamond-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(96,165,250,0.1);
+      border: 1px solid rgba(96,165,250,0.25);
+      border-radius: 50px; padding: 6px 14px;
+      font-size: 14px; font-weight: 800;
+      color: #60a5fa; font-family: 'Nunito', sans-serif;
+    }
+    .menu-daily-btn {
+      position: relative;
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(249,115,22,0.1);
+      border: 1px solid rgba(249,115,22,0.3);
+      border-radius: 50px; padding: 6px 14px;
+      font-size: 14px; font-weight: 800;
+      color: #fb923c; font-family: 'Nunito', sans-serif;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .menu-daily-btn:active { transform: scale(0.95); }
+    .daily-dot {
+      position: absolute; top: -3px; right: -3px;
+      width: 10px; height: 10px;
+      background: #ef4444; border-radius: 50%;
+      border: 2px solid #1a1a2e;
+    }
+
+    /* LB önizleme */
+    .menu-lb-preview {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 12px 14px;
+      margin-bottom: 12px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .menu-lb-preview:active { background: rgba(255,255,255,0.07); }
+    .menu-lb-header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 8px;
+    }
+    .lb-preview-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .lb-preview-row:last-child { border-bottom: none; }
+    .lb-preview-rank { font-size: 13px; min-width: 24px; }
+    .lb-preview-name { flex: 1; font-size: 13px; font-weight: 700; color: #fff; font-family: 'Nunito', sans-serif; }
+    .lb-preview-score { font-size: 13px; font-weight: 900; color: #fff; font-family: 'Nunito', sans-serif; }
+
+    /* Reklam butonu */
+    .menu-ad-btn {
+      width: 100%; padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(99,179,237,0.2);
+      background: rgba(99,179,237,0.06);
+      color: rgba(96,165,250,0.7);
+      font-size: 12px; font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+      cursor: pointer; margin-top: 6px;
+    }
+
+    /* Günlük modal */
+    #dailyModal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(12px);
+      display: flex; align-items: center;
+      justify-content: center; z-index: 1200;
+    }
+    #dailyModal.hidden { display: none; }
+    .daily-modal-box {
+      background: rgba(15,15,25,0.98);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px; padding: 24px 20px;
+      width: 320px; max-height: 85vh;
+      overflow-y: auto;
+      animation: menuFadeIn 0.25s ease both;
+    }
+    .daily-streak-row {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(249,115,22,0.08);
+      border: 1px solid rgba(249,115,22,0.2);
+      border-radius: 14px; padding: 14px;
+      margin-bottom: 14px;
+    }
+    .daily-streak-days {
+      display: flex; gap: 6px;
+      margin-bottom: 14px;
+    }
+    .streak-day {
+      flex: 1; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 8px 4px;
+      text-align: center;
+    }
+    .streak-day.reached {
+      background: rgba(96,165,250,0.12);
+      border-color: rgba(96,165,250,0.3);
+    }
+    .sd-icon { font-size: 16px; }
+    .sd-lbl { font-size: 8px; color: rgba(255,255,255,0.35); font-weight: 700; margin: 2px 0; }
+    .sd-val { font-size: 11px; font-weight: 900; color: #60a5fa; font-family: 'Nunito', sans-serif; }
+    .daily-task-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 14px;
+    }
+
+    .menu-best-score-box {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .menu-best-score-label {
+      font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .menu-best-score-val {
+      font-size: 52px; font-weight: 900;
+      color: #fff; font-family: 'Nunito', sans-serif;
+      letter-spacing: -2px; line-height: 1;
+      margin-bottom: 8px;
+    }
+    .menu-best-score-sub {
+      font-size: 12px; color: rgba(255,255,255,0.4);
+      font-weight: 600;
+    }
+    .menu-best-score-sub b { color: rgba(255,255,255,0.7); }
+
+    /* Alt navigasyon bar */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 64px;
+      background: rgba(40,40,65,0.98);
+      border-top: 1px solid rgba(255,255,255,0.12);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      align-items: center;
+      z-index: 100;
+      backdrop-filter: blur(20px);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-btn {
+      display: flex;
+      align-items: center; justify-content: center;
+      padding: 0; margin: 0;
+      background: none; border: none;
+      cursor: pointer; transition: all 0.15s;
+      width: 100%; height: 100%;
+    }
+    .nav-btn:active { transform: scale(0.82); opacity: 0.7; }
+    .nav-icon { font-size: 30px; line-height: 1; display: block; }
+    .nav-btn.active .nav-icon { filter: drop-shadow(0 0 8px rgba(167,139,250,0.9)); transform: scale(1.15); }
+    .nav-btn-home {
+      background: rgba(124,111,247,0.2);
+      border-radius: 16px;
+      margin: 6px 2px;
+    }
+
+    /* Menü butonları */
+    .menu-btn {
+      display: block; width: 100%;
+      padding: 16px; border-radius: 16px; border: none;
+      font-size: 17px; font-weight: 800;
+      font-family: 'Nunito', sans-serif;
+      cursor: pointer;
+      transition: transform 0.12s, filter 0.12s;
+      margin-bottom: 10px;
+    }
+    .menu-btn:active { transform: scale(0.96); filter: brightness(0.9); }
+    .btn-play {
+      background: linear-gradient(135deg, #7c6ff7, #a78bfa);
+      color: #fff;
+      box-shadow: 0 4px 24px rgba(124,111,247,0.4);
+    }
+    .btn-timeattack {
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+    }
 
     .menu-block {
       position: absolute;
@@ -270,13 +472,20 @@
       box-shadow: 0 4px 16px rgba(239,68,68,0.25);
     }
 
-    /* Alt ikon grid - 4 buton simetrik */
     .menu-icon-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       width: 100%;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
+    }
+    .btn-settings-full {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      font-size: 15px !important;
+      padding: 13px !important;
+      margin-bottom: 12px;
     }
     .menu-icon-btn {
       display: flex; flex-direction: column;
@@ -304,64 +513,31 @@
 
     .menu-logo {
       font-family: 'Nunito', sans-serif;
-      font-size: 60px;
-      font-weight: 900;
-      letter-spacing: -2px;
-      line-height: 1;
-      margin-bottom: 6px;
-      text-align: center;
+      font-size: 56px; font-weight: 900;
+      letter-spacing: -2px; line-height: 1;
+      margin-bottom: 4px; text-align: center;
     }
-
     .menu-tagline {
       font-family: 'Nunito', sans-serif;
-      font-size: 11px;
-      letter-spacing: 4px;
-      color: rgba(255,255,255,0.35);
+      font-size: 11px; letter-spacing: 4px;
+      color: rgba(255,255,255,0.3);
       text-transform: uppercase;
-      margin-bottom: 36px;
-      font-weight: 600;
+      margin-bottom: 20px; font-weight: 600;
     }
-
-    .menu-highscore {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(251,191,36,0.08);
-      border: 1px solid rgba(251,191,36,0.2);
-      border-radius: 50px;
-      padding: 7px 18px;
-      color: #fbbf24;
-      font-size: 13px;
-      font-weight: 700;
-      font-family: 'Nunito', sans-serif;
-      margin-bottom: 8px;
-    }
-
-    .menu-btn {
-      display: block;
+    .menu-daily-card {
       width: 100%;
-      padding: 16px;
-      border-radius: 16px;
-      border: none;
-      font-size: 16px;
-      font-weight: 800;
-      font-family: 'Nunito', sans-serif;
-      cursor: pointer;
-      transition: transform 0.12s, filter 0.12s;
-      margin-bottom: 10px;
-      letter-spacing: 0.3px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 12px 14px;
+      margin-bottom: 14px; text-align: left;
     }
-    .menu-btn:active { transform: scale(0.96); filter: brightness(0.9); }
-
-    .btn-play {
-      background: linear-gradient(135deg, #7c6ff7, #a78bfa);
-      color: #fff;
-      box-shadow: 0 4px 20px rgba(124,111,247,0.35);
+    .menu-daily-top {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 8px;
     }
-    .btn-timeattack {
-      background: linear-gradient(135deg, #ef4444, #f97316);
-      color: #fff;
-      box-shadow: 0 4px 20px rgba(239,68,68,0.3);
+    .menu-version {
+      font-size: 11px; color: rgba(255,255,255,0.15);
+      font-weight: 600; margin-top: 4px;
     }
 
     /* Zorluk Seçim Modalı */
@@ -993,84 +1169,85 @@
 
   <!-- ===== ANA MENÜ ===== -->
   <div id="menuScreen">
-    <div class="menu-block" style="width:52px;height:52px;background:#ff6b6b;top:7%;left:5%;--r:-12deg;--dur:3.2s;--delay:0s;"></div>
-    <div class="menu-block" style="width:34px;height:34px;background:#ffd24d;top:14%;right:9%;--r:8deg;--dur:2.8s;--delay:0.4s;"></div>
-    <div class="menu-block" style="width:44px;height:44px;background:#42d67a;top:68%;left:6%;--r:15deg;--dur:3.5s;--delay:0.7s;"></div>
-    <div class="menu-block" style="width:30px;height:30px;background:#4d7cff;top:74%;right:6%;--r:-6deg;--dur:2.6s;--delay:0.2s;"></div>
-    <div class="menu-block" style="width:60px;height:60px;background:#b04dff;top:38%;left:1%;--r:20deg;--dur:4s;--delay:1s;"></div>
-    <div class="menu-block" style="width:38px;height:38px;background:#ff8a4d;top:52%;right:3%;--r:-18deg;--dur:3.8s;--delay:0.5s;"></div>
-    <div class="menu-block" style="width:26px;height:26px;background:#42d67a;top:88%;left:35%;--r:10deg;--dur:3s;--delay:0.9s;"></div>
-    <div class="menu-block" style="width:42px;height:42px;background:#4d7cff;top:25%;left:40%;--r:-5deg;--dur:4.2s;--delay:0.3s;"></div>
+    <!-- Yüzen arka plan blokları -->
+    <div class="menu-block" style="width:48px;height:48px;background:#7c6ff7;top:6%;left:4%;--r:-12deg;--dur:3.2s;--delay:0s;"></div>
+    <div class="menu-block" style="width:32px;height:32px;background:#fbbf24;top:12%;right:8%;--r:8deg;--dur:2.8s;--delay:0.4s;"></div>
+    <div class="menu-block" style="width:40px;height:40px;background:#34d399;top:55%;left:4%;--r:15deg;--dur:3.5s;--delay:0.7s;"></div>
+    <div class="menu-block" style="width:28px;height:28px;background:#60a5fa;top:60%;right:5%;--r:-6deg;--dur:2.6s;--delay:0.2s;"></div>
+    <div class="menu-block" style="width:36px;height:36px;background:#f472b6;top:30%;left:2%;--r:20deg;--dur:4s;--delay:1s;"></div>
 
-    <div class="menu-inner">
+    <!-- ANA İÇERİK -->
+    <div class="menu-main-content">
+
       <!-- LOGO -->
       <div class="menu-logo">
         <span style="color:#7c6ff7;">B</span><span style="color:#a78bfa;">l</span><span style="color:#60a5fa;">o</span><span style="color:#34d399;">c</span><span style="color:#fbbf24;">k</span><span style="color:#f472b6;">P</span><span style="color:#fff;">op</span>
       </div>
       <div class="menu-tagline">block puzzle game</div>
 
-      <!-- STATS BANDI -->
-      <div class="menu-stats-band">
-        <div class="menu-stat-item">
-          <span class="menu-stat-val" id="menuHighScore">0</span>
-          <span class="menu-stat-lbl">🏆 Best</span>
+      <!-- ÜST BAR: Elmas + Günlük Görev -->
+      <div class="menu-top-bar">
+        <!-- Elmas sayacı -->
+        <div class="menu-diamond-badge">
+          <span>💎</span>
+          <span id="xpDisplay">0</span>
         </div>
-        <div class="menu-stat-divider"></div>
-        <div class="menu-stat-item">
-          <span class="menu-stat-val" id="menuTimeHS">0</span>
-          <span class="menu-stat-lbl">⏱ Time</span>
-        </div>
-        <div class="menu-stat-divider"></div>
-        <div class="menu-stat-item">
-          <span class="menu-stat-val" id="xpDisplay">0</span>
-          <span class="menu-stat-lbl">⭐ XP</span>
-        </div>
-      </div>
 
-      <!-- DAILY CHALLENGE -->
-      <div id="dailyCard" class="menu-daily-card">
-        <div class="menu-daily-top">
-          <span id="dailyLabel" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;">📅 Günlük Görev</span>
-          <span id="dailyStreak" style="font-size:12px;font-weight:800;color:#f97316;">🔥 0 gün</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span id="dailyChallengeIcon" style="font-size:22px;">🎯</span>
-          <div style="flex:1;min-width:0;">
-            <div id="dailyChallengeDesc" style="font-size:13px;font-weight:800;color:#fff;font-family:'Nunito',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Yükleniyor...</div>
-            <div id="dailyChallengeXP" style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;">+80 XP</div>
-          </div>
-          <div id="dailyDone" style="display:none;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:50px;padding:4px 10px;font-size:11px;font-weight:700;color:#34d399;white-space:nowrap;">✓ Tamam</div>
-        </div>
-      </div>
-
-      <!-- OYNA BUTONLARI (büyük) -->
-      <div class="menu-play-btns">
-        <button class="menu-btn btn-play" id="btnPlay">🎮  Klasik Mod</button>
-        <button class="menu-btn btn-timeattack" id="btnPlayTime">⏱  Zaman Modu</button>
-        <button class="menu-btn btn-leaderboard-full" id="btnOpenLeaderboard">🌍  Sıralama</button>
-      </div>
-
-      <!-- ALT İKON GRID - 4 buton simetrik -->
-      <div class="menu-icon-grid">
-        <button class="menu-icon-btn" id="btnOpenAchieve">
-          <span class="mib-icon">🏆</span>
-          <span class="mib-label">Rozetler</span>
-        </button>
-        <button class="menu-icon-btn" id="btnOpenStats">
-          <span class="mib-icon">📊</span>
-          <span class="mib-label">İstatistik</span>
-        </button>
-        <button class="menu-icon-btn" id="btnOpenThemes">
-          <span class="mib-icon">🎨</span>
-          <span class="mib-label">Temalar</span>
-        </button>
-        <button class="menu-icon-btn" id="btnOpenSettings">
-          <span class="mib-icon">🛠️</span>
+        <!-- Günlük görev butonu -->
+        <button class="menu-daily-btn" id="btnDailyModal">
+          <span id="dailyBtnIcon">📅</span>
+          <span id="dailyBtnStreak">🔥 0</span>
+          <div id="dailyBtnDot" class="daily-dot hidden"></div>
         </button>
       </div>
 
-      <div class="menu-version">v1.0.0</div>
+      <!-- HIGH SCORE - sadece bu, temiz -->
+      <div class="menu-best-score-box">
+        <div class="menu-best-score-label">👑 EN YÜKSEK SKOR</div>
+        <div class="menu-best-score-val" id="menuHighScore">0</div>
+        <div class="menu-best-score-sub">
+          <span>⏱ <b id="menuTimeHS">0</b></span>
+        </div>
+      </div>
+
+      <!-- LEADERBOARD ÖNİZLEME - ilk 5 kişi -->
+      <div class="menu-lb-preview" id="menuLbPreview">
+        <div class="menu-lb-header">
+          <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;">🌍 Bu Hafta</span>
+          <button onclick="openLeaderboard()" style="font-size:11px;font-weight:700;color:#a78bfa;background:none;border:none;cursor:pointer;font-family:'Nunito',sans-serif;">Tümünü Gör →</button>
+        </div>
+        <div id="menuLbList"><div style="text-align:center;padding:10px;color:rgba(255,255,255,0.3);font-size:12px;">Yükleniyor...</div></div>
+      </div>
+
+      <!-- OYNA BUTONLARI -->
+      <button class="menu-btn btn-play" id="btnPlay">🎮  Klasik Mod</button>
+      <button class="menu-btn btn-timeattack" id="btnPlayTime">⏱  Zaman Modu</button>
+
+      <!-- REKLAM -->
+      <button onclick="watchAdForDiamonds()" class="menu-ad-btn">
+        📺 &nbsp; Reklam İzle → +15 💎
+      </button>
+
     </div>
+
+    <!-- ALT NAVİGASYON BAR -->
+    <nav class="bottom-nav">
+      <button class="nav-btn" id="btnOpenStats">
+        <span class="nav-icon">📊</span>
+      </button>
+      <button class="nav-btn" id="btnOpenAchieve">
+        <span class="nav-icon">🏆</span>
+      </button>
+      <button class="nav-btn nav-btn-home active" id="navHome">
+        <span class="nav-icon">🏠</span>
+      </button>
+      <button class="nav-btn" id="btnOpenThemes">
+        <span class="nav-icon">🎨</span>
+      </button>
+      <button class="nav-btn" id="btnOpenSettings">
+        <span class="nav-icon">🔧</span>
+      </button>
+    </nav>
   </div>
 
   <!-- ===== LEADERBOARD EKRANI ===== -->
@@ -1123,6 +1300,52 @@
     <div class="settings-title">🏆 Rozetler</div>
     <div id="achieveProgress" style="color:rgba(255,255,255,0.4);font-size:13px;font-weight:600;margin-bottom:16px;text-align:center;"></div>
     <div id="achieveGrid"></div>
+  </div>
+
+  <!-- ===== GÜNLÜK GÖREV MODALİ ===== -->
+  <div id="dailyModal" class="hidden">
+    <div class="daily-modal-box">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-size:20px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">📅 Günlük</div>
+        <button onclick="document.getElementById('dailyModal').classList.add('hidden')" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:32px;height:32px;color:rgba(255,255,255,0.5);font-size:18px;cursor:pointer;">×</button>
+      </div>
+
+      <!-- Streak -->
+      <div class="daily-streak-row">
+        <span style="font-size:28px;">🔥</span>
+        <div>
+          <div style="font-size:22px;font-weight:900;color:#f97316;font-family:'Nunito',sans-serif;" id="modalStreakNum">0</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;">GÜN STREAK</div>
+        </div>
+        <div style="margin-left:auto;text-align:right;">
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;">BUGÜN</div>
+          <div id="modalLoginBonus" style="font-size:14px;font-weight:800;color:#60a5fa;">+? 💎</div>
+        </div>
+      </div>
+
+      <!-- Streak günleri -->
+      <div class="daily-streak-days">
+        <div class="streak-day" id="sd1"><div class="sd-icon">💎</div><div class="sd-lbl">1.gün</div><div class="sd-val">5</div></div>
+        <div class="streak-day" id="sd2"><div class="sd-icon">💎</div><div class="sd-lbl">3.gün</div><div class="sd-val">10</div></div>
+        <div class="streak-day" id="sd3"><div class="sd-icon">💎</div><div class="sd-lbl">7.gün</div><div class="sd-val">20</div></div>
+        <div class="streak-day" id="sd4"><div class="sd-icon">💎</div><div class="sd-lbl">14.gün</div><div class="sd-val">30</div></div>
+        <div class="streak-day" id="sd5"><div class="sd-icon">💎</div><div class="sd-lbl">30.gün</div><div class="sd-val">50</div></div>
+      </div>
+
+      <!-- Günlük görev -->
+      <div class="daily-task-box">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">🎯 Günlük Görev</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span id="modalTaskIcon" style="font-size:28px;">🎯</span>
+          <div style="flex:1;">
+            <div id="modalTaskDesc" style="font-size:15px;font-weight:800;color:#fff;font-family:'Nunito',sans-serif;">Yükleniyor...</div>
+            <div id="modalTaskXP" style="font-size:12px;color:#60a5fa;font-weight:700;margin-top:2px;">+80 💎 ödül</div>
+          </div>
+          <div id="modalTaskDone" style="display:none;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:50px;padding:6px 14px;font-size:12px;font-weight:800;color:#34d399;">✓ Tamam</div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- ===== ZORLUK SEÇİM MODALİ ===== -->
@@ -1213,7 +1436,7 @@
   <div id="themesScreen" class="hidden">
     <button class="settings-back" id="btnBackThemes">← Geri</button>
     <div class="settings-title">Temalar</div>
-    <div id="themeXPInfo">Toplam XP: 0</div>
+    <div id="themeXPInfo">💎 0</div>
     <div id="themeGrid"></div>
   </div>
 
@@ -1369,9 +1592,9 @@
   <script>
     // ===== YARDIMCI =====
     function refreshMenuHS() {
-      const hs     = parseInt(localStorage.getItem('bb_high_score') || '0');
-      const timeHS = parseInt(localStorage.getItem('bp_time_high_score') || '0');
-      const xp     = parseInt(localStorage.getItem('bp_xp') || '0');
+      const hs      = parseInt(localStorage.getItem('bb_high_score') || '0');
+      const timeHS  = parseInt(localStorage.getItem('bp_time_high_score') || '0');
+      const diamonds = parseInt(localStorage.getItem('bp_diamonds') || '0');
 
       function fmt(n) {
         if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
@@ -1384,9 +1607,10 @@
       const timeEl = document.getElementById('menuTimeHS');
       if (timeEl) timeEl.textContent = fmt(timeHS);
       const xpEl = document.getElementById('xpDisplay');
-      if (xpEl) xpEl.textContent = fmt(xp);
+      if (xpEl) xpEl.textContent = fmt(diamonds);
 
       updateDailyCardUI();
+      if (typeof updateDailyBtnDot === 'function') updateDailyBtnDot();
     }
 
     function goToMenu() {
@@ -1406,9 +1630,8 @@
       document.getElementById('nameModal').classList.add('hidden');
       document.getElementById('menuScreen').classList.remove('hidden');
       refreshMenuHS();
+      setTimeout(() => { if (typeof loadLbPreview === 'function') loadLbPreview(); }, 300);
     }
-
-    // ===== TOGGLE SİSTEMİ =====
     // Ana ayarlar + oyun içi ayarlar eşleşiyor
     const togglePairs = [
       { main: 'tgl-sfx',    ig: 'tgl-sfx-ig',    key: 'tgl-sfx',    default: 'on'  },
@@ -1566,6 +1789,98 @@
       if (typeof setupPowerups === 'function') setupPowerups();
     }
 
+    // ===== GÜNLÜK GÖREV MODALİ =====
+    function openDailyModal() {
+      const status = typeof getDailyStatus === 'function' ? getDailyStatus() : {};
+      const today  = typeof getTodayStr === 'function' ? getTodayStr() : '';
+      const streak = status.streak || 0;
+      const done   = status.lastDate === today && status.completed;
+
+      // Streak sayısı
+      document.getElementById('modalStreakNum').textContent = streak;
+
+      // Bugünkü giriş bonusu
+      let bonus = 5;
+      if (streak >= 30) bonus = 50;
+      else if (streak >= 14) bonus = 30;
+      else if (streak >= 7) bonus = 20;
+      else if (streak >= 3) bonus = 10;
+      document.getElementById('modalLoginBonus').textContent = '+' + bonus + ' 💎';
+
+      // Streak günleri highlight
+      const milestones = [1, 3, 7, 14, 30];
+      milestones.forEach((m, i) => {
+        const el = document.getElementById('sd' + (i+1));
+        if (el) el.classList.toggle('reached', streak >= m);
+      });
+
+      // Günlük görev
+      const ch = typeof getDailyChallenge === 'function' ? getDailyChallenge() : null;
+      if (ch) {
+        document.getElementById('modalTaskIcon').textContent = ch.icon;
+        document.getElementById('modalTaskDesc').textContent = ch.desc;
+        document.getElementById('modalTaskXP').textContent  = '+' + ch.xp + ' 💎 ödül';
+        const doneEl = document.getElementById('modalTaskDone');
+        if (doneEl) doneEl.style.display = done ? 'block' : 'none';
+      }
+
+      document.getElementById('dailyModal').classList.remove('hidden');
+    }
+
+    document.getElementById('btnDailyModal').addEventListener('click', openDailyModal);
+
+    // LB önizleme yükle (ilk 5)
+    async function loadLbPreview() {
+      const list = document.getElementById('menuLbList');
+      if (!list || !window.fbGetScores) return;
+      try {
+        const rows = await window.fbGetScores('weekly');
+        if (!rows || rows.length === 0) {
+          list.innerHTML = '<div style="text-align:center;padding:8px;color:rgba(255,255,255,0.3);font-size:12px;">Henüz skor yok</div>';
+          return;
+        }
+        const top5 = rows.slice(0, 5);
+        const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+        list.innerHTML = top5.map((r, i) => `
+          <div class="lb-preview-row">
+            <span class="lb-preview-rank">${medals[i]}</span>
+            <span class="lb-preview-name">${r.name || 'Anonim'}</span>
+            <span class="lb-preview-score">${(r.score||0).toLocaleString()}</span>
+          </div>
+        `).join('');
+      } catch(e) {
+        list.innerHTML = '<div style="text-align:center;padding:8px;color:rgba(255,255,255,0.3);font-size:12px;">Bağlanılamadı</div>';
+      }
+    }
+
+    // Firebase hazır olunca LB yükle
+    if (window.firebaseReady) {
+      setTimeout(loadLbPreview, 500);
+    } else {
+      window.addEventListener('firebaseReady', () => setTimeout(loadLbPreview, 500));
+    }
+
+    // LB preview tıklanınca tam ekran aç
+    document.getElementById('menuLbPreview').addEventListener('click', openLeaderboard);
+
+    // Stats nav butonu listener
+    document.getElementById('btnOpenStats').addEventListener('click', () => {
+      buildStatsScreen();
+      document.getElementById('statsScreen').classList.remove('hidden');
+    });
+
+    // Daily buton dot güncelle
+    function updateDailyBtnDot() {
+      const status = typeof getDailyStatus === 'function' ? getDailyStatus() : {};
+      const today  = typeof getTodayStr === 'function' ? getTodayStr() : '';
+      const done   = status.lastDate === today && status.completed;
+      const streak = status.streak || 0;
+      const dot = document.getElementById('dailyBtnDot');
+      const streakEl = document.getElementById('dailyBtnStreak');
+      if (dot) dot.classList.toggle('hidden', done);
+      if (streakEl) streakEl.textContent = '🔥 ' + streak;
+    }
+
     // ===== LEADERBOARD =====
     let currentLbTab = 'weekly';
     let pendingScore = null; // Gönderiyi bekleyen skor
@@ -1639,7 +1954,6 @@
       loadLeaderboard(currentLbTab);
     }
 
-    document.getElementById('btnOpenLeaderboard').addEventListener('click', openLeaderboard);
     document.getElementById('btnBackLeaderboard').addEventListener('click', () => {
       document.getElementById('leaderboardScreen').classList.add('hidden');
     });
@@ -1778,10 +2092,6 @@
       buildStatsScreen();
       document.getElementById('statsScreen').classList.remove('hidden');
     });
-    document.getElementById('btnBackStats').addEventListener('click', () => {
-      document.getElementById('statsScreen').classList.add('hidden');
-    });
-
     // ===== ACHİEVEMENT EKRANI =====
     function buildAchieveGrid() {
       const grid = document.getElementById('achieveGrid');
@@ -1807,13 +2117,7 @@
       });
     }
 
-    document.getElementById('btnOpenAchieve').addEventListener('click', () => {
-      buildAchieveGrid();
-      document.getElementById('achieveScreen').classList.remove('hidden');
-    });
-    document.getElementById('btnBackAchieve').addEventListener('click', () => {
-      document.getElementById('achieveScreen').classList.add('hidden');
-    });
+    
 
 
     // ===== DİL SİSTEMİ =====
@@ -1959,99 +2263,183 @@
     function t(key) { return (LANGS[currentLang] || LANGS.tr)[key] || key; }
 
     function applyLang() {
-      // Menü butonları
+      const L = currentLang;
+      const tr = (k) => t(k);
+
+      // Oyun butonları
       const btnPlay = document.getElementById('btnPlay');
-      if (btnPlay) btnPlay.innerHTML = t('classicMode');
+      if (btnPlay) btnPlay.innerHTML = tr('classicMode');
       const btnTime = document.getElementById('btnPlayTime');
-      if (btnTime) btnTime.innerHTML = t('timeMode');
-      const btnAch = document.getElementById('btnOpenAchieve');
-      if (btnAch) btnAch.innerHTML = t('achievements');
-      const btnStats = document.getElementById('btnOpenStats');
-      if (btnStats) btnStats.innerHTML = t('statistics');
-      const btnLb = document.getElementById('btnOpenLeaderboard');
-      if (btnLb) btnLb.innerHTML = '🌍  ' + (currentLang === 'en' ? 'Leaderboard' : 'Sıralama');
-      const btnThemes = document.getElementById('btnOpenThemes');
-      if (btnThemes) btnThemes.innerHTML = t('themes');
-      const btnSettings = document.getElementById('btnOpenSettings');
-      if (btnSettings) btnSettings.innerHTML = t('settings');
+      if (btnTime) btnTime.innerHTML = tr('timeMode');
 
-      // Ayarlar
+      // Ayarlar ekranı
       const stTitle = document.querySelector('#settingsScreen .settings-title');
-      if (stTitle) stTitle.textContent = t('settingsTitle');
+      if (stTitle) stTitle.textContent = tr('settingsTitle');
       const nameInput = document.getElementById('settingsNameInput');
-      if (nameInput) nameInput.placeholder = t('namePlaceholder');
+      if (nameInput) nameInput.placeholder = tr('namePlaceholder');
       const btnSaveName = document.getElementById('btnSaveName');
-      if (btnSaveName) btnSaveName.textContent = t('save');
+      if (btnSaveName) btnSaveName.textContent = tr('save');
 
-      // Powerup butonları
-      const puClear = document.getElementById('pu-clear-row');
-      if (puClear && !puClear.disabled) puClear.innerHTML = puClear.innerHTML.replace(/Satır Sil|Clear Row/, t('rowDelete'));
-      const puReroll = document.getElementById('pu-reroll');
-      if (puReroll && !puReroll.disabled) puReroll.innerHTML = puReroll.innerHTML.replace(/Yenile|Refresh/, t('refresh'));
-      const puUndo = document.getElementById('pu-undo');
-      if (puUndo && !puUndo.disabled) puUndo.innerHTML = puUndo.innerHTML.replace(/Geri Al|Undo/, t('undo'));
+      // Ayarlar toggle etiketleri
+      document.querySelectorAll('.settings-row span:first-child, .igs-row span:first-child').forEach(el => {
+        const txt = el.textContent.trim();
+        const map = {
+          'Ses Efektleri':'Sound Effects','Sound Effects':'Ses Efektleri',
+          'Müzik':'Music','Music':'Müzik',
+          'Titreşim':'Vibration','Vibration':'Titreşim',
+          'Animasyonlar':'Animations','Animations':'Animasyonlar',
+          'Dil / Language':'Dil / Language',
+        };
+        if (L === 'en' && map[txt]) el.textContent = map[txt];
+        else if (L === 'tr') {
+          const rev = Object.entries(map).find(([,v])=>v===txt);
+          if (rev) el.textContent = rev[0];
+        }
+      });
+
+      // Oyuncu adı etiketi
+      const pnLabel = document.querySelector('#settingsScreen [style*="Oyuncu"]');
+      // Data-i18n yaklaşımı daha güvenli
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (LANGS[L] && LANGS[L][key]) el.textContent = LANGS[L][key];
+      });
 
       // Game over
       const goTitle = document.querySelector('.gameover-box h1');
-      if (goTitle) goTitle.textContent = t('gameOver');
+      if (goTitle) goTitle.textContent = tr('gameOver');
       const restartBtn = document.getElementById('restartBtn');
-      if (restartBtn) restartBtn.textContent = t('playAgain');
+      if (restartBtn) restartBtn.textContent = tr('playAgain');
 
       // Reset modal
       const resetTitle = document.querySelector('#confirmReset .confirm-box h3');
-      if (resetTitle) resetTitle.textContent = t('resetTitle');
+      if (resetTitle) resetTitle.textContent = tr('resetTitle');
       const resetDesc = document.querySelector('#confirmReset .confirm-box p');
-      if (resetDesc) resetDesc.textContent = t('resetDesc');
+      if (resetDesc) resetDesc.textContent = tr('resetDesc');
       const btnCancel = document.getElementById('btnCancelReset');
-      if (btnCancel) btnCancel.textContent = t('giveUp');
+      if (btnCancel) btnCancel.textContent = tr('giveUp');
       const btnYes = document.getElementById('btnYesReset');
-      if (btnYes) btnYes.textContent = t('reset');
+      if (btnYes) btnYes.textContent = tr('reset');
 
-      // Welcome
-      const welTitle = document.querySelector('#welcomeScreen [data-i18n="welcomeTitle"]');
-      if (welTitle) welTitle.textContent = t('welcomeTitle');
-      const welDesc = document.querySelector('#welcomeScreen [data-i18n="welcomeDesc"]');
-      if (welDesc) welDesc.textContent = t('welcomeDesc');
+      // Welcome ekranı
       const welInput = document.getElementById('welcomeNameInput');
-      if (welInput) welInput.placeholder = t('namePlaceholder');
+      if (welInput) welInput.placeholder = tr('namePlaceholder');
       const welBtn = document.getElementById('btnWelcomeStart');
-      if (welBtn) welBtn.textContent = t('letsPlay');
+      if (welBtn) welBtn.textContent = tr('letsPlay');
       const welSkip = document.getElementById('btnWelcomeSkip');
-      if (welSkip) welSkip.textContent = t('skipName');
+      if (welSkip) welSkip.textContent = tr('skipName');
 
-      // Leaderboard tabları
+      // Leaderboard ekranı
+      const lbTitleEl = document.querySelector('#leaderboardScreen .settings-title');
+      if (lbTitleEl) lbTitleEl.textContent = L === 'en' ? '🌍 Leaderboard' : '🌍 Sıralama';
       const tabs = document.querySelectorAll('.lb-tab');
-      if (tabs[0]) tabs[0].textContent = t('thisWeek');
-      if (tabs[1]) tabs[1].textContent = t('allTime');
-      if (tabs[2]) tabs[2].textContent = t('timeModeTab');
+      if (tabs[0]) tabs[0].textContent = tr('thisWeek');
+      if (tabs[1]) tabs[1].textContent = tr('allTime');
+      if (tabs[2]) tabs[2].textContent = tr('timeModeTab');
 
-      // İkon grid etiketleri (4 buton)
-      const mibLabels = document.querySelectorAll('.mib-label');
-      const mibTR = ['Rozetler','İstatistik','Temalar','Ayarlar'];
-      const mibEN = ['Badges','Stats','Themes','Settings'];
-      mibLabels.forEach((el, i) => {
-        el.textContent = currentLang === 'en' ? (mibEN[i]||'') : (mibTR[i]||'');
-      });
+      // Rozet ekranı
+      const achTitle = document.querySelector('#achieveScreen .settings-title');
+      if (achTitle) achTitle.textContent = L === 'en' ? '🏆 Achievements' : '🏆 Rozetler';
 
-      // Stats band etiketleri
-      const statLbls = document.querySelectorAll('.menu-stat-lbl');
-      const statTR = ['🏆 Rekor','⏱ Zaman','⭐ XP'];
-      const statEN = ['🏆 Best','⏱ Time','⭐ XP'];
-      statLbls.forEach((el, i) => {
-        el.textContent = currentLang === 'en' ? (statEN[i]||'') : (statTR[i]||'');
+      // İstatistik ekranı
+      const statsTitle = document.querySelector('#statsScreen .settings-title');
+      if (statsTitle) statsTitle.textContent = L === 'en' ? '📊 Statistics' : '📊 İstatistikler';
+
+      // Temalar ekranı
+      const themesTitle = document.querySelector('#themesScreen .settings-title');
+      if (themesTitle) themesTitle.textContent = L === 'en' ? 'Themes' : 'Temalar';
+
+      // Geri butonları
+      document.querySelectorAll('.settings-back').forEach(b => {
+        b.textContent = L === 'en' ? '← Back' : '← Geri';
       });
 
       // Daily label
       const dlabel = document.getElementById('dailyLabel');
-      if (dlabel) dlabel.textContent = t('dailyLabel');
-      const ddone = document.getElementById('dailyDone');
-      if (ddone) ddone.textContent = t('dailyDone');
+      if (dlabel) dlabel.textContent = L === 'en' ? '📅 Daily Challenge' : '📅 Günlük Görev';
 
-      // Dil toggle güncelle
+      // Reklam butonu
+      const adBtn = document.querySelector('.menu-ad-btn');
+      if (adBtn) adBtn.textContent = L === 'en' ? '📺  Watch Ad → +15 💎' : '📺  Reklam İzle → +15 💎';
+
+      // Zorluk seçim modalı
+      const diffTitle = document.querySelector('#difficultyModal .diff-title');
+      if (diffTitle) diffTitle.textContent = L === 'en' ? '🎮 Classic Mode' : '🎮 Klasik Mod';
+      const diffSub = document.querySelector('#difficultyModal .diff-sub');
+      if (diffSub) diffSub.textContent = L === 'en' ? 'Choose a difficulty' : 'Bir zorluk seviyesi seç';
+
+      // Zorluk butonları
+      const easyName = document.querySelector('#btnEasy .diff-name');
+      if (easyName) easyName.textContent = L === 'en' ? 'Easy' : 'Kolay';
+      const easyDesc = document.querySelector('#btnEasy .diff-desc');
+      if (easyDesc) easyDesc.textContent = L === 'en' ? 'Helper blocks, powerups on' : 'Yardımcı bloklar, powerup var';
+      const normalName = document.querySelector('#btnNormal .diff-name');
+      if (normalName) normalName.textContent = L === 'en' ? 'Normal' : 'Normal';
+      const normalDesc = document.querySelector('#btnNormal .diff-desc');
+      if (normalDesc) normalDesc.textContent = L === 'en' ? '70% helper, powerups on' : '%70 yardımcı, powerup var';
+      const hardName = document.querySelector('#btnHard .diff-name');
+      if (hardName) hardName.textContent = L === 'en' ? 'Hard' : 'Zor';
+      const hardDesc = document.querySelector('#btnHard .diff-desc');
+      if (hardDesc) hardDesc.textContent = L === 'en' ? 'Fully random, no powerups' : 'Tamamen rastgele, powerup yok';
+      const diffCancel = document.getElementById('btnDiffCancel');
+      if (diffCancel) diffCancel.textContent = L === 'en' ? 'Cancel' : 'İptal';
+
+      // Zaman modu seviye modalı
+      const timeLvlTitle = document.querySelector('#timeLevelModal .diff-title');
+      if (timeLvlTitle) timeLvlTitle.textContent = L === 'en' ? '⏱ Time Mode' : '⏱ Zaman Modu';
+      const timeLvlSub = document.querySelector('#timeLevelModal .diff-sub');
+      if (timeLvlSub) timeLvlSub.textContent = L === 'en' ? 'Choose level' : 'Seviye seç';
+      [1,2,3,4,5].forEach(lvl => {
+        const btn = document.getElementById(`btnTimeL${lvl}`);
+        if (!btn) return;
+        const nameEl = btn.querySelector('.diff-name');
+        if (nameEl) nameEl.textContent = L === 'en' ? `Level ${lvl}` : `Seviye ${lvl}`;
+      });
+      const timeLvlCancel = document.getElementById('btnTimeLevelCancel');
+      if (timeLvlCancel) timeLvlCancel.textContent = L === 'en' ? 'Cancel' : 'İptal';
+
+      // High score label
+      const hsLabel = document.querySelector('.menu-best-score-label');
+      if (hsLabel) hsLabel.textContent = L === 'en' ? '👑 YOUR BEST SCORE' : '👑 EN YÜKSEK SKOR';
+
+      // LB önizleme başlık
+      const lbPreviewLabel = document.querySelector('.menu-lb-header span');
+      if (lbPreviewLabel) lbPreviewLabel.textContent = L === 'en' ? '🌍 This Week' : '🌍 Bu Hafta';
+      const lbPreviewBtn = document.querySelector('.menu-lb-header button');
+      if (lbPreviewBtn) lbPreviewBtn.textContent = L === 'en' ? 'See All →' : 'Tümünü Gör →';
+
+      // Oyun içi ayarlar paneli etiketleri
+      document.querySelectorAll('.igs-action-row').forEach(el => {
+        const txt = el.textContent.trim();
+        if (txt.includes('Menü') || txt.includes('Menu')) el.textContent = L === 'en' ? '🏠 Menu' : '🏠 Menü';
+        if (txt.includes('Sıfırla') || txt.includes('Reset')) el.textContent = L === 'en' ? '↺ Reset' : '↺ Sıfırla';
+      });
+
+      // Powerup butonları
+      const puClear = document.getElementById('pu-clear-row');
+      if (puClear && !puClear.disabled) {
+        const cnt = puClear.querySelector('.pu-count, .pu-xp-buy');
+        const cntHtml = cnt ? cnt.outerHTML : '';
+        puClear.innerHTML = (L === 'en' ? 'Clear Row' : 'Satır Sil') + ' ' + cntHtml;
+      }
+      const puReroll = document.getElementById('pu-reroll');
+      if (puReroll && !puReroll.disabled) {
+        const cnt = puReroll.querySelector('.pu-count, .pu-xp-buy');
+        const cntHtml = cnt ? cnt.outerHTML : '';
+        puReroll.innerHTML = (L === 'en' ? 'Refresh' : 'Yenile') + ' ' + cntHtml;
+      }
+      const puUndo = document.getElementById('pu-undo');
+      if (puUndo && !puUndo.disabled) {
+        const cnt = puUndo.querySelector('.pu-count, .pu-xp-buy');
+        const cntHtml = cnt ? cnt.outerHTML : '';
+        puUndo.innerHTML = (L === 'en' ? 'Undo' : 'Geri Al') + ' ' + cntHtml;
+      }
+
+      // Dil toggle
       const langTR = document.getElementById('langTR');
       const langEN = document.getElementById('langEN');
-      if (langTR) langTR.classList.toggle('lang-active', currentLang === 'tr');
-      if (langEN) langEN.classList.toggle('lang-active', currentLang === 'en');
+      if (langTR) langTR.classList.toggle('lang-active', L === 'tr');
+      if (langEN) langEN.classList.toggle('lang-active', L === 'en');
     }
 
     function setLang(lang) {
@@ -2065,6 +2453,100 @@
 
     // İlk dil uygula
     applyLang();
+
+    // ===== ELMAS SİSTEMİ =====
+    function getDiamonds() { return parseInt(localStorage.getItem('bp_diamonds') || '0'); }
+    function addDiamondsAmount(amount) {
+      const current = getDiamonds();
+      localStorage.setItem('bp_diamonds', current + amount);
+      if (typeof updateDiamondDisplay === 'function') updateDiamondDisplay();
+    }
+    window.addDiamonds = addDiamondsAmount;
+    window.getDiamonds = getDiamonds;
+
+    // Günlük giriş elması
+    function checkDailyLoginBonus() {
+      const today = new Date().toDateString();
+      const lastLogin = localStorage.getItem('bp_last_login');
+      if (lastLogin === today) return;
+      
+      localStorage.setItem('bp_last_login', today);
+      
+      // Streak hesapla
+      const status = typeof getDailyStatus === 'function' ? getDailyStatus() : {};
+      const streak = status.streak || 1;
+      
+      // Streak'e göre elmas: 1.gün=5, 7.gün=20, 30.gün=50
+      let bonus = 5;
+      if (streak >= 30) bonus = 50;
+      else if (streak >= 14) bonus = 30;
+      else if (streak >= 7) bonus = 20;
+      else if (streak >= 3) bonus = 10;
+      
+      addDiamondsAmount(bonus);
+      
+      // Bildirim
+      setTimeout(() => {
+        const toast = document.createElement('div');
+        toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);
+          background:linear-gradient(135deg,rgba(15,15,25,0.98),rgba(20,20,40,0.98));
+          border:1px solid rgba(99,179,237,0.4);border-radius:18px;padding:16px 20px;
+          display:flex;align-items:center;gap:12px;z-index:9999;pointer-events:none;
+          box-shadow:0 8px 32px rgba(99,179,237,0.2);animation:achieveSlide 3s ease forwards;min-width:240px;`;
+        toast.innerHTML = `
+          <div style="font-size:32px">💎</div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:1px;text-transform:uppercase;">Günlük Giriş Bonusu!</div>
+            <div style="font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">+${bonus} Elmas 💎</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.5);">🔥 ${streak}. gün streaki!</div>
+          </div>`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      }, 1000);
+    }
+
+    // Reklam ile elmas (placeholder - gerçek reklam SDK'sı entegre edilecek)
+    window.watchAdForDiamonds = function() {
+      const adModal = document.getElementById('adModal');
+      if (!adModal) {
+        // Basit simulasyon
+        const bar = document.createElement('div');
+        bar.innerHTML = `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9999;">
+          <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px 24px;text-align:center;width:280px;">
+            <div style="font-size:40px;margin-bottom:12px;">📺</div>
+            <div style="font-size:18px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin-bottom:8px;">Reklam İzle</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:20px;">5 saniye izle, +15 💎 kazan!</div>
+            <div style="background:rgba(255,255,255,0.08);border-radius:50px;height:8px;overflow:hidden;margin-bottom:16px;">
+              <div id="adBarFill" style="height:100%;width:0%;background:linear-gradient(90deg,#7c6ff7,#a78bfa);border-radius:50px;transition:width 0.1s;"></div>
+            </div>
+            <div id="adTimer" style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);">5</div>
+          </div>
+        </div>`;
+        document.body.appendChild(bar);
+        let t = 5;
+        const interval = setInterval(() => {
+          t -= 0.1;
+          const pct = ((5-t)/5)*100;
+          const fill = document.getElementById('adBarFill');
+          const timer = document.getElementById('adTimer');
+          if (fill) fill.style.width = pct + '%';
+          if (timer) timer.textContent = Math.ceil(t);
+          if (t <= 0) {
+            clearInterval(interval);
+            bar.remove();
+            addDiamondsAmount(15);
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(99,179,237,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:15px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
+            toast.textContent = '+15 💎 Kazandın!';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+          }
+        }, 100);
+      }
+    };
+
+    // İlk yüklemede günlük giriş bonusu kontrol et
+    setTimeout(checkDailyLoginBonus, 500);
 
     // ===== WELCOME EKRANI =====
     function checkFirstLaunch() {
@@ -2100,13 +2582,7 @@
     });
 
     // Ayarlardan isim değiştirme
-    document.getElementById('btnOpenSettings').addEventListener('click', () => {
-      document.getElementById('settingsScreen').classList.remove('hidden');
-      // Mevcut ismi göster
-      const nameInput = document.getElementById('settingsNameInput');
-      if (nameInput) nameInput.value = getPlayerName();
-    });
-
+  
     document.getElementById('btnSaveName').addEventListener('click', () => {
       const input = document.getElementById('settingsNameInput');
       const name = input.value.trim();
@@ -2126,7 +2602,32 @@
     checkFirstLaunch();
 
     // ===== MENÜ BUTONLARI =====
-    // Klasik mod → zorluk seçim
+    document.getElementById('navHome').addEventListener('click', () => {});
+    document.getElementById('btnOpenSettings').addEventListener('click', () => {
+      document.getElementById('settingsScreen').classList.remove('hidden');
+      const nameInput = document.getElementById('settingsNameInput');
+      if (nameInput) nameInput.value = getPlayerName();
+    });
+    document.getElementById('btnOpenThemes').addEventListener('click', () => {
+      document.getElementById('themesScreen').classList.remove('hidden');
+      if (typeof buildThemeGrid === 'function') buildThemeGrid();
+    });
+    document.getElementById('btnOpenAchieve').addEventListener('click', () => {
+      buildAchieveGrid();
+      document.getElementById('achieveScreen').classList.remove('hidden');
+    });
+
+    // Geri tuşları
+    document.getElementById('btnBackAchieve').addEventListener('click', () => {
+      document.getElementById('achieveScreen').classList.add('hidden');
+    });
+    document.getElementById('btnBackStats').addEventListener('click', () => {
+      document.getElementById('statsScreen').classList.add('hidden');
+    });
+    document.getElementById('btnBack').addEventListener('click', () => {
+      document.getElementById('settingsScreen').classList.add('hidden');
+    });
+
     document.getElementById('btnPlay').addEventListener('click', () => {
       document.getElementById('difficultyModal').classList.remove('hidden');
     });
@@ -2166,9 +2667,8 @@
       document.getElementById('timeLevelModal').classList.add('hidden');
     });
 
-    document.getElementById('btnBack').addEventListener('click', () => {
       document.getElementById('settingsScreen').classList.add('hidden');
-    });
+  
 
     // ===== OYUN İÇİ BUTONLAR =====
 
@@ -2267,18 +2767,18 @@
     };
 
     // ===== XP SİSTEMİ =====
-    function getXP() { return parseInt(localStorage.getItem('bp_xp') || '0'); }
-    function setXP(v) { localStorage.setItem('bp_xp', v); updateXPDisplay(); }
+    function getDiamonds_ui() { return parseInt(localStorage.getItem('bp_diamonds') || '0'); }
+    function setDiamonds(v) { localStorage.setItem('bp_diamonds', v); if(typeof updateDiamondDisplay==='function')updateDiamondDisplay(); }
     function addXP(amount) {
       const newXP = getXP() + amount;
       setXP(newXP);
       showXPToast(amount);
     }
 
-    window.updateXPDisplay = function() {
-      const xp = getXP();
+    window.updateDiamondDisplay = function() {
+      const diamonds = parseInt(localStorage.getItem('bp_diamonds') || '0');
       const el = document.getElementById('xpDisplay');
-      if (el) el.textContent = 'XP: ' + xp;
+      if (el) el.textContent = diamonds;
     };
 
     function showXPToast(amount) {
@@ -2310,18 +2810,16 @@
 
     // Oyun bitince XP ver — main.js'deki showGameOver'dan sonra çağrılır
     window.onGameEnd = function(finalScore) {
-      const xpFromScore = Math.floor(finalScore / 10);
-      const xpFromGame  = 50;
-      const total = xpFromScore + xpFromGame;
-      addXP(total);
-      // Auto-unlock XP skinleri kontrol et
+      // Elmas: her 500 puan = 1 elmas, min 1, max 10
+      const diamondsFromScore = Math.min(10, Math.max(1, Math.floor(finalScore / 500)));
+      addDiamondsAmount(diamondsFromScore);
       autoUnlockXPThemes();
     };
 
     function autoUnlockXPThemes() {
-      const xp = getXP();
+      const diamonds = parseInt(localStorage.getItem('bp_diamonds') || '0');
       Object.entries(THEME_DEFS).forEach(([key, def]) => {
-        if (def.unlock === 'xp' && xp >= def.xpCost) {
+        if (def.unlock === 'xp' && diamonds >= def.xpCost) {
           unlockTheme(key);
         }
       });
@@ -2363,16 +2861,16 @@
 
       const unlocked = getUnlockedThemes();
       const current  = getCurrentTheme();
-      const xp       = getXP();
+      const diamonds = parseInt(localStorage.getItem('bp_diamonds') || '0');
 
-      if (xpInfoEl) xpInfoEl.textContent = 'Toplam XP: ' + xp;
+      if (xpInfoEl) xpInfoEl.textContent = '💎 ' + diamonds;
 
       Object.entries(THEME_DEFS).forEach(([key, def]) => {
         const isUnlocked = unlocked.includes(key);
         const isActive   = key === current;
         const isXP       = def.unlock === 'xp';
         const isAd       = def.unlock === 'ad';
-        const progress   = isXP ? Math.min(1, xp / def.xpCost) : 0;
+        const progress   = isXP ? Math.min(1, diamonds / def.xpCost) : 0;
 
         const card = document.createElement('div');
         card.className = 'theme-card'
@@ -2397,18 +2895,18 @@
         card.appendChild(preview);
         card.appendChild(name);
 
-        // XP progress bar (kilitli XP skinleri için)
+        // Elmas progress bar (kilitli elmas skinleri için)
         if (isXP && !isUnlocked) {
           const barWrap = document.createElement('div');
           barWrap.style.cssText = 'background:rgba(255,255,255,0.08);border-radius:50px;height:5px;margin:6px 0 4px;overflow:hidden;';
           const barFill = document.createElement('div');
-          barFill.style.cssText = `height:100%;width:${Math.round(progress*100)}%;background:#ffd24d;border-radius:50px;transition:width 0.4s;`;
+          barFill.style.cssText = `height:100%;width:${Math.round(progress*100)}%;background:#60a5fa;border-radius:50px;transition:width 0.4s;`;
           barWrap.appendChild(barFill);
           card.appendChild(barWrap);
 
           const xpLabel = document.createElement('div');
           xpLabel.style.cssText = 'font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:4px;';
-          xpLabel.textContent = xp + ' / ' + def.xpCost + ' XP';
+          xpLabel.textContent = '💎 ' + diamonds + ' / ' + def.xpCost;
           card.appendChild(xpLabel);
         }
 
@@ -2420,7 +2918,7 @@
         } else if (isUnlocked) {
           badge.className += ' badge-unlocked'; badge.textContent = 'Seç';
         } else if (isXP) {
-          badge.className += ' badge-xp'; badge.textContent = def.desc;
+          badge.className += ' badge-xp'; badge.textContent = '💎 ' + def.xpCost;
         } else {
           badge.className += ' badge-ad'; badge.textContent = '📺 ' + def.desc;
         }
@@ -2430,7 +2928,7 @@
           if (isActive) return;
           if (!isUnlocked) {
             if (isAd) showAdModal(key);
-            else if (isXP) showXPModal(key, def, xp);
+            else if (isXP) showXPModal(key, def, diamonds);
           } else {
             selectTheme(key);
           }
@@ -2441,30 +2939,25 @@
     }
 
     // Tema ekranı aç/kapat
-    document.getElementById('btnOpenThemes').addEventListener('click', () => {
-      autoUnlockXPThemes();
-      buildThemeGrid();
-      document.getElementById('themesScreen').classList.remove('hidden');
-    });
     document.getElementById('btnBackThemes').addEventListener('click', () => {
       document.getElementById('themesScreen').classList.add('hidden');
     });
 
     // ===== XP MODALİ (yetersiz XP) =====
-    function showXPModal(key, def, currentXP) {
-      const needed = def.xpCost - currentXP;
+    function showXPModal(key, def, currentDiamonds) {
+      const needed = def.xpCost - currentDiamonds;
       const modal = document.createElement('div');
       modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:1200;`;
       modal.innerHTML = `
-        <div style="background:#1e2a45;border:1px solid rgba(255,255,255,0.15);border-radius:24px;padding:28px 24px;text-align:center;width:270px;">
+        <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:28px 24px;text-align:center;width:270px;">
           <div style="font-size:36px;margin-bottom:8px;">${def.emoji}</div>
-          <div style="color:#fff;font-size:18px;font-weight:700;margin-bottom:6px;">${def.name}</div>
-          <div style="color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:20px;">Bu skin için <b style="color:#ffd24d">${def.xpCost} XP</b> gerekiyor.<br>Şu an: <b style="color:#fff">${currentXP} XP</b> — <b style="color:#ff8a4d">${needed} XP eksik</b></div>
+          <div style="color:#fff;font-size:18px;font-weight:800;margin-bottom:6px;font-family:'Nunito',sans-serif;">${def.name}</div>
+          <div style="color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:20px;">Bu skin için <b style="color:#60a5fa">💎 ${def.xpCost}</b> gerekiyor.<br>Şu an: <b style="color:#fff">💎 ${currentDiamonds}</b> — <b style="color:#f87171">💎 ${needed} eksik</b></div>
           <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px;margin-bottom:16px;font-size:12px;color:rgba(255,255,255,0.5);">
-            Her oyun: <b style="color:#ffd24d">+50 XP</b><br>
-            Her skor puanı: <b style="color:#ffd24d">+1 XP / 10 puan</b>
+            Reklam izle: <b style="color:#60a5fa">+15 💎</b><br>
+            Günlük giriş: <b style="color:#60a5fa">+5–50 💎</b>
           </div>
-          <button id="xpModalClose" style="width:100%;padding:14px;border-radius:14px;border:none;background:rgba(255,255,255,0.1);color:#fff;font-size:15px;font-weight:600;cursor:pointer;">Tamam, oynayayım!</button>
+          <button id="xpModalClose" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#7c6ff7,#a78bfa);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">Tamam, kazanayım!</button>
         </div>
       `;
       document.body.appendChild(modal);
@@ -2556,10 +3049,10 @@
     }
 
     // addXPDirect — main.js'deki addXP'yi çağırır
-    window.addXPDirect = function(amount) {
-      const current = parseInt(localStorage.getItem('bp_xp') || '0');
-      localStorage.setItem('bp_xp', current + amount);
-      if (typeof updateXPDisplay === 'function') updateXPDisplay();
+    window.addDiamonds = function(amount) {
+      const current = parseInt(localStorage.getItem('bp_diamonds') || '0');
+      localStorage.setItem('bp_diamonds', current + amount);
+      if (typeof updateDiamondDisplay === 'function') updateDiamondDisplay();
       // Toast
       const t = document.createElement('div');
       t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(255,210,77,0.9);color:#1a1a2e;padding:8px 20px;border-radius:50px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;animation:xpToastAnim 1.8s ease forwards;';
@@ -2579,7 +3072,7 @@
     };
 
     // İlk yüklemede XP göster
-    updateXPDisplay();
+    if(typeof updateDiamondDisplay==='function')updateDiamondDisplay();
     autoUnlockXPThemes();
     updateDailyCardUI();
     refreshMenuHS();
