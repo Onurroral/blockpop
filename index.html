@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2000000">
+  <link rel="stylesheet" href="style.css?v=3000000">
 
   <!-- Firebase -->
   <script type="module">
@@ -1695,12 +1695,14 @@
   </div>
 
   <!-- SESLER -->
+  <audio id="snd-pick" src="assets/sounds/pick.mp3" preload="auto"></audio>
+  <audio id="snd-tick" src="assets/sounds/tick.mp3" preload="auto"></audio>
   <audio id="snd-place" src="assets/sounds/place.mp3" preload="auto"></audio>
   <audio id="snd-clear" src="assets/sounds/clear.mp3" preload="auto"></audio>
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
-  <audio id="snd-gameover" src="assets/sounds/gameover.mp3" preload="auto"></audio>
+  <audio id="snd-gameover1" src="assets/sounds/gameover1.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=2000000"></script>
+  <script src="main.js?v=3000000"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -2114,9 +2116,25 @@
     });
 
     // Game over'dan sonra skoru gönder
-    window.submitScoreToLeaderboard = function(score, mode) {
+    window.submitScoreToLeaderboard = async function(score, mode) {
       if (!score || score <= 0) return;
-      setTimeout(() => showNameModal(score, mode), 800);
+      const name = getPlayerName();
+      if (name) {
+        // İsim kayıtlı — direkt gönder, modal açma
+        if (window.fbSubmitScore) {
+          const ok = await window.fbSubmitScore(name, score, mode);
+          if (ok) {
+            const t = document.createElement('div');
+            t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
+            t.textContent = '✓ Skor gönderildi!';
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2000);
+          }
+        }
+      } else {
+        // İsim yok — sadece bu durumda sor
+        setTimeout(() => showNameModal(score, mode), 800);
+      }
     };
 
     // goToMenu'da leaderboard kapat
@@ -2229,7 +2247,6 @@
         grid.appendChild(card);
       });
     }
-
 
 
     // ===== DİL SİSTEMİ =====
@@ -2702,7 +2719,6 @@
     });
 
     // Ayarlardan isim değiştirme
-
     document.getElementById('btnSaveName').addEventListener('click', () => {
       const input = document.getElementById('settingsNameInput');
       const name = input.value.trim();
@@ -2786,9 +2802,6 @@
     document.getElementById('btnTimeLevelCancel').addEventListener('click', () => {
       document.getElementById('timeLevelModal').classList.add('hidden');
     });
-
-      document.getElementById('settingsScreen').classList.add('hidden');
-    
 
     // ===== OYUN İÇİ BUTONLAR =====
 
