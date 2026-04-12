@@ -749,7 +749,7 @@ window.addEventListener('DOMContentLoaded', () => {
   spawnBgBlocks();
 
   highScore = Number(localStorage.getItem('bb_high_score')) || 0;
-  document.getElementById('high-score').textContent = "En Yüksek Skor: " + highScore;
+  document.getElementById('high-score').textContent = highScore;
 
   initBoard();
   renderBoard();
@@ -896,7 +896,7 @@ function updateScore() {
 
   // High score ekrana yaz
   if (highScoreEl) {
-    highScoreEl.textContent = "En Yüksek Skor: " + highScore;
+    highScoreEl.textContent = highScore;
   }
 
   const step = Math.ceil((score - displayedScore) / 10);
@@ -1472,23 +1472,16 @@ function tryPlacePieceAt(startX, startY) {
 function tryPlacePiece(boardX, boardY) {
   if (!selectedShape) return;
   if (isGameOver) return;
-
   const h = selectedShape.length;
   const w = selectedShape[0].length;
   const { cx: centerX, cy: centerY } = getShapeCenter(selectedShape);
-
-  const startX = Math.round(boardX - centerX);
-  const startY = Math.round(boardY - centerY);
-
-  if (startX < 0 || startY < 0 || startX + w > BOARD_SIZE || startY + h > BOARD_SIZE) return;
-
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      if (selectedShape[y][x] === 1 && board[startY + y][startX + x] !== null) return;
-    }
-  }
-
-  tryPlacePieceAt(startX, startY);
+  const sx = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(boardX - centerX)));
+  const sy = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(boardY - centerY)));
+  let fits = true;
+  for (let y = 0; y < h && fits; y++)
+    for (let x = 0; x < w && fits; x++)
+      if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) fits = false;
+  if (fits) tryPlacePieceAt(sx, sy);
 }
 
 // === SATIR SİLME ===
@@ -1953,12 +1946,11 @@ function startDragPiece(pieceEl, shape, event) {
   dragPointerId = event.pointerId || null;
 
     // Mobilde parmak görüşü kapatmasın diye parçayı yukarı kaldır
-  // Lift miktarını board hücre yüksekliğine göre ayarlıyoruz (cihazdan cihaza tutarlı)
   const boardEl = document.getElementById('board');
   if (boardEl && (event.pointerType === 'touch')) {
     const rect = boardEl.getBoundingClientRect();
     const cellH = rect.height / BOARD_SIZE;
-    dragLiftY = Math.round(cellH * 2.2); // istersen 1.8–2.8 arası oynarsın
+    dragLiftY = Math.round(cellH * 3.5); // BlockBlast lift
   } else {
     dragLiftY = 0; // mouse/PC
   }
@@ -2037,11 +2029,11 @@ function onPointerUp(e) {
 }
 
 function updateDragPosition(e) {
-  if (!dragPreviewEl) return;
-
-  const rect = dragPreviewEl.getBoundingClientRect();
-  dragPreviewEl.style.left = (e.clientX - rect.width / 2) + "px";
-  dragPreviewEl.style.top  = ((e.clientY - dragLiftY) - rect.height / 2) + "px";
+  if (!dragPreviewEl || !selectedShape) return;
+  // Drag preview: bbox ortası parmağa hizalı, dragLiftY kadar yukarıda
+  const previewRect = dragPreviewEl.getBoundingClientRect();
+  dragPreviewEl.style.left = (e.clientX - previewRect.width / 2) + "px";
+  dragPreviewEl.style.top  = (e.clientY - dragLiftY - previewRect.height / 2) + "px";
 }
 
 function getBoardCellFromClient(clientX, clientY) {
@@ -2071,19 +2063,10 @@ function clearGhostPreview() {
 }
 
 function updateGhostFromEvent(e) {
-  // Parmağın/imlecin tam konumunu kullan — smoothing yok, gecikme yok
-  let clientX = e.clientX;
-  let clientY = e.clientY;
-
-  // Mobilde parmağın görüşü kapatmaması için yukarı kaldırma offsetini uygula
-  if (dragLiftY > 0) {
-    clientY -= dragLiftY;
-  }
-
-  updateGhostPreview(clientX, clientY);
+  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
 }
 
-// Parmak pozisyonundan en yakın geçerli yerleştirme pozisyonunu bul
+// BlockBlast mantığı: parçanın ortası parmağa hizalanır, manyetizma yok
 function trySnapToValid(clientX, clientY) {
   if (!selectedShape) return null;
   const boardEl = document.getElementById("board");
@@ -2092,32 +2075,29 @@ function trySnapToValid(clientX, clientY) {
   const h = selectedShape.length;
   const w = selectedShape[0].length;
 
-  // Parmak board dışındaysa null
-  if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null;
+  // Board dışındaysa null
+  if (clientX < rect.left || clientX > rect.right ||
+      clientY < rect.top  || clientY > rect.bottom) return null;
 
-  const fingerBx = Math.floor((clientX - rect.left) / cellSize);
-  const fingerBy = Math.floor((clientY - rect.top) / cellSize);
-  const { cx: centerX, cy: centerY } = getShapeCenter(selectedShape);
+  // Parmağın grid koordinatı (float)
+  const fingerBx = (clientX - rect.left) / cellSize;
+  const fingerBy = (clientY - rect.top)  / cellSize;
 
-  // Önce tam pozisyonu dene, sonra ±1 hafif manyetizma
-  const offsets = [[0,0], [-1,0],[1,0],[0,-1],[0,1]];
+  // Parçanın bbox ortası parmağa gelir
+  const startX = Math.round(fingerBx - w / 2);
+  const startY = Math.round(fingerBy - h / 2);
 
-  for (const [ox, oy] of offsets) {
-    const startX = Math.round(fingerBx - centerX) + ox;
-    const startY = Math.round(fingerBy - centerY) + oy;
+  // Sınıra klamp et
+  const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX));
+  const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY));
 
-    if (startX < 0 || startY < 0 || startX + w > BOARD_SIZE || startY + h > BOARD_SIZE) continue;
+  // Çakışma kontrolü
+  let fits = true;
+  for (let y = 0; y < h && fits; y++)
+    for (let x = 0; x < w && fits; x++)
+      if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) fits = false;
 
-    let fits = true;
-    for (let y = 0; y < h && fits; y++) {
-      for (let x = 0; x < w && fits; x++) {
-        if (selectedShape[y][x] === 1 && board[startY + y][startX + x] !== null) fits = false;
-      }
-    }
-    if (fits) return [startX, startY];
-  }
-
-  return null;
+  return fits ? [sx, sy] : null;
 }
 
 function updateGhostPreview(clientX, clientY) {
