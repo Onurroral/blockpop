@@ -2303,7 +2303,8 @@ function onPointerMove(e) {
   if (!isDragging) return;
   if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
   updateDragPosition(e);
-  updateGhostPreview(e.clientX, e.clientY); // ghost = parmağın tam koordinatı
+  // Ghost: blokla aynı pozisyon — dragLiftY kadar yukarıda
+  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
 }
 
 function onPointerUp(e) {
@@ -2332,7 +2333,7 @@ function onPointerUp(e) {
     const [startX, startY] = lastGhostCell;
     tryPlacePieceAt(startX, startY);
   } else if (selectedShape) {
-    const snapped = trySnapToValid(e.clientX, e.clientY);
+    const snapped = trySnapToValid(e.clientX, e.clientY - dragLiftY);
     if (snapped) tryPlacePieceAt(snapped[0], snapped[1]);
   }
 
@@ -2379,8 +2380,7 @@ function clearGhostPreview() {
 }
 
 function updateGhostFromEvent(e) {
-  // Ghost parmağın tam koordinatına göre — lift yok
-  updateGhostPreview(e.clientX, e.clientY);
+  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
 }
 
 // Ghost: parmağın altındaki hücreye göre en yakın geçerli pozisyon
