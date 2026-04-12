@@ -723,7 +723,7 @@ window.addEventListener('DOMContentLoaded', () => {
   sndPlace    = document.getElementById('snd-place');
   sndClear    = document.getElementById('snd-clear');
   sndCombo    = document.getElementById('snd-combo');
-  sndGameOver = document.getElementById('snd-gameover');
+  sndGameOver = document.getElementById('snd-gameover1');
 
   createFlashOverlay();
   spawnBgBlocks();
@@ -2498,13 +2498,27 @@ function trySnapToValid(clientX, clientY) {
   const startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(col - shapeCX)));
   const startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(row - shapeCY)));
 
-  // Çakışma kontrolü
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++)
+  // Çakışma kontrolü — önce tam pozisyon
+  let fits = true;
+  for (let y = 0; y < h && fits; y++)
+    for (let x = 0; x < w && fits; x++)
       if (selectedShape[y][x] === 1 && board[startY+y][startX+x] !== null)
-        return null;
+        fits = false;
+  if (fits) return [startX, startY];
 
-  return [startX, startY];
+  // Tam pozisyon tutmadıysa ±1 hücre hafif manyetizma
+  for (const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]) {
+    const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX + dx));
+    const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY + dy));
+    let ok = true;
+    for (let y = 0; y < h && ok; y++)
+      for (let x = 0; x < w && ok; x++)
+        if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null)
+          ok = false;
+    if (ok) return [sx, sy];
+  }
+
+  return null;
 }
 
 function updateGhostPreview(clientX, clientY) {
