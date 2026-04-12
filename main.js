@@ -8,7 +8,12 @@ let highScore = 0;
 let isGameOver = false;
 let lastX = 0, lastY = 0;
 let scorePopupActive = false;
-let displayedScore = 0; 
+let displayedScore = 0;
+
+// Oyun istatistikleri (achievement için)
+let gameBlocksPlaced = 0;
+let gameLinesCleared = 0;
+let gameMaxCombo = 0; 
 
 // Seçili parça
 let selectedPiece = null;   // DOM elemanı
@@ -499,6 +504,239 @@ function createFlashOverlay() {
   document.body.appendChild(el);
 }
 
+// === ACHİEVEMENT SİSTEMİ ===
+const ACHIEVEMENTS = [
+  // Skor
+  { id:'score_100',    icon:'🌱', name:'İlk Adım',       desc:'100 puan kazan',          cat:'skor',  check: s => s.totalScore >= 100 },
+  { id:'score_500',    icon:'⭐', name:'Yükselen Yıldız', desc:'500 puan kazan',          cat:'skor',  check: s => s.totalScore >= 500 },
+  { id:'score_1k',     icon:'🏅', name:'Bin Puan',        desc:'1,000 puan kazan',        cat:'skor',  check: s => s.totalScore >= 1000 },
+  { id:'score_5k',     icon:'🥈', name:'Usta',            desc:'5,000 puan kazan',        cat:'skor',  check: s => s.totalScore >= 5000 },
+  { id:'score_10k',    icon:'🥇', name:'Efsane',          desc:'10,000 puan kazan',       cat:'skor',  check: s => s.totalScore >= 10000 },
+  { id:'score_50k',    icon:'💎', name:'Elmas Seviye',    desc:'50,000 puan kazan',       cat:'skor',  check: s => s.totalScore >= 50000 },
+  { id:'score_100k',   icon:'👑', name:'Kral',            desc:'100,000 puan kazan',      cat:'skor',  check: s => s.totalScore >= 100000 },
+
+  // Combo
+  { id:'combo_2',      icon:'🔥', name:'Combo!',          desc:'2x combo yap',            cat:'combo', check: s => s.maxCombo >= 2 },
+  { id:'combo_3',      icon:'💥', name:'Üçlü Kombo',      desc:'3x combo yap',            cat:'combo', check: s => s.maxCombo >= 3 },
+  { id:'combo_5',      icon:'⚡', name:'Beşli Fırtına',   desc:'5x combo yap',            cat:'combo', check: s => s.maxCombo >= 5 },
+  { id:'combo_10',     icon:'🌪️', name:'Kasırga',         desc:'10x combo yap',           cat:'combo', check: s => s.maxCombo >= 10 },
+
+  // Blok
+  { id:'blocks_100',   icon:'🧱', name:'İnşaatçı',        desc:'100 blok yerleştir',      cat:'blok',  check: s => s.totalBlocks >= 100 },
+  { id:'blocks_500',   icon:'🏗️', name:'Mimar',           desc:'500 blok yerleştir',      cat:'blok',  check: s => s.totalBlocks >= 500 },
+  { id:'blocks_1000',  icon:'🏰', name:'Kale Ustası',     desc:'1000 blok yerleştir',     cat:'blok',  check: s => s.totalBlocks >= 1000 },
+  { id:'blocks_5000',  icon:'🌆', name:'Şehir Kurucusu',  desc:'5000 blok yerleştir',     cat:'blok',  check: s => s.totalBlocks >= 5000 },
+
+  // Mod
+  { id:'mode_hard',    icon:'💀', name:'Cesur Yürek',     desc:'Zor modda oyna',          cat:'mod',   check: s => s.playedHard },
+  { id:'mode_time',    icon:'⏱️', name:'Zamana Karşı',    desc:'Zaman modunda oyna',      cat:'mod',   check: s => s.playedTime },
+  { id:'mode_time_l5', icon:'🚀', name:'Işık Hızı',       desc:'Zaman Modu Seviye 5 oyna',cat:'mod',   check: s => s.playedTimeL5 },
+  { id:'mode_hard_5k', icon:'🗡️', name:'Demir İrade',     desc:'Zor modda 5000 puan kazan',cat:'mod',  check: s => s.hardModeScore >= 5000 },
+
+  // Satır
+  { id:'lines_10',     icon:'💫', name:'Satır Avcısı',    desc:'10 satır/sütun temizle',  cat:'satır', check: s => s.totalLines >= 10 },
+  { id:'lines_50',     icon:'🌟', name:'Temizlikçi',      desc:'50 satır/sütun temizle',  cat:'satır', check: s => s.totalLines >= 50 },
+  { id:'lines_200',    icon:'✨', name:'Süpürge',         desc:'200 satır/sütun temizle', cat:'satır', check: s => s.totalLines >= 200 },
+
+  // Oyun sayısı
+  { id:'games_5',      icon:'🎮', name:'Oyun Sever',      desc:'5 oyun oyna',             cat:'oyun',  check: s => s.totalGames >= 5 },
+  { id:'games_20',     icon:'🎯', name:'Bağımlı',         desc:'20 oyun oyna',            cat:'oyun',  check: s => s.totalGames >= 20 },
+  { id:'games_100',    icon:'🏆', name:'Veteran',         desc:'100 oyun oyna',           cat:'oyun',  check: s => s.totalGames >= 100 },
+];
+
+function getAchievementStats() {
+  const raw = localStorage.getItem('bp_ach_stats');
+  return raw ? JSON.parse(raw) : {
+    totalScore: 0, maxCombo: 0, totalBlocks: 0,
+    totalLines: 0, totalGames: 0,
+    playedHard: false, playedTime: false, playedTimeL5: false,
+    hardModeScore: 0, bestScore: 0, totalPlayTime: 0,
+    easyGames: 0, normalGames: 0, hardGames: 0, timeGames: 0,
+  };
+}
+
+function saveAchievementStats(stats) {
+  localStorage.setItem('bp_ach_stats', JSON.stringify(stats));
+}
+
+function getUnlockedAchievements() {
+  const raw = localStorage.getItem('bp_achievements');
+  return raw ? JSON.parse(raw) : [];
+}
+
+function checkAchievements(stats) {
+  const unlocked = getUnlockedAchievements();
+  const newOnes = [];
+
+  for (const ach of ACHIEVEMENTS) {
+    if (unlocked.includes(ach.id)) continue;
+    if (ach.check(stats)) {
+      unlocked.push(ach.id);
+      newOnes.push(ach);
+    }
+  }
+
+  if (newOnes.length > 0) {
+    localStorage.setItem('bp_achievements', JSON.stringify(unlocked));
+    newOnes.forEach((ach, i) => {
+      setTimeout(() => showAchievementToast(ach), i * 1200);
+    });
+  }
+}
+
+function showAchievementToast(ach) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position:fixed; top:20px; left:50%; transform:translateX(-50%);
+    background:rgba(15,15,25,0.97);
+    border:1px solid rgba(124,111,247,0.4);
+    border-radius:16px; padding:12px 20px;
+    display:flex; align-items:center; gap:12px;
+    z-index:9999; pointer-events:none;
+    box-shadow:0 8px 32px rgba(124,111,247,0.25);
+    animation:achieveSlide 3s ease forwards;
+    min-width:240px; max-width:320px;
+  `;
+  toast.innerHTML = `
+    <div style="font-size:28px;flex-shrink:0">${ach.icon}</div>
+    <div>
+      <div style="font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">🏆 Rozet Kazandın!</div>
+      <div style="font-size:15px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">${ach.name}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);">${ach.desc}</div>
+    </div>
+  `;
+
+  if (!document.getElementById('achieveStyle')) {
+    const s = document.createElement('style');
+    s.id = 'achieveStyle';
+    s.textContent = `@keyframes achieveSlide {
+      0%  { opacity:0; transform:translateX(-50%) translateY(-20px); }
+      12% { opacity:1; transform:translateX(-50%) translateY(0); }
+      75% { opacity:1; transform:translateX(-50%) translateY(0); }
+      100%{ opacity:0; transform:translateX(-50%) translateY(-10px); }
+    }`;
+    document.head.appendChild(s);
+  }
+
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+  if (typeof vibrate === 'function') vibrate([30, 20, 60]);
+}
+
+function updateAchievementStats(gameScore, blocksPlaced, linesCleared, comboMax) {
+  const stats = getAchievementStats();
+  stats.totalScore   = (stats.totalScore || 0) + gameScore;
+  stats.totalBlocks  = (stats.totalBlocks || 0) + blocksPlaced;
+  stats.totalLines   = (stats.totalLines || 0) + linesCleared;
+  stats.totalGames   = (stats.totalGames || 0) + 1;
+  stats.maxCombo     = Math.max(stats.maxCombo || 0, comboMax);
+  stats.bestScore    = Math.max(stats.bestScore || 0, gameScore);
+
+  const mode = window.currentGameMode || 'normal';
+  if (mode === 'easy')        stats.easyGames   = (stats.easyGames || 0) + 1;
+  else if (mode === 'normal') stats.normalGames = (stats.normalGames || 0) + 1;
+  else if (mode === 'hard')   { stats.hardGames = (stats.hardGames || 0) + 1; stats.playedHard = true; stats.hardModeScore = Math.max(stats.hardModeScore || 0, gameScore); }
+  else if (mode === 'timeattack') { stats.timeGames = (stats.timeGames || 0) + 1; stats.playedTime = true; if (window.currentTimeLevel >= 5) stats.playedTimeL5 = true; }
+
+  saveAchievementStats(stats);
+  checkAchievements(stats);
+}
+
+// === DAILY CHALLENGE + STREAK SİSTEMİ ===
+
+const DAILY_CHALLENGES = [
+  { id:'score_300',   icon:'🎯', desc:'300 puan kazan',        check: (s,b,l,c) => s >= 300,   xp: 80  },
+  { id:'score_500',   icon:'⭐', desc:'500 puan kazan',        check: (s,b,l,c) => s >= 500,   xp: 120 },
+  { id:'score_1000',  icon:'🏅', desc:'1000 puan kazan',       check: (s,b,l,c) => s >= 1000,  xp: 200 },
+  { id:'score_2000',  icon:'💎', desc:'2000 puan kazan',       check: (s,b,l,c) => s >= 2000,  xp: 350 },
+  { id:'combo_3',     icon:'🔥', desc:'3x combo yap',          check: (s,b,l,c) => c >= 3,     xp: 100 },
+  { id:'combo_5',     icon:'⚡', desc:'5x combo yap',          check: (s,b,l,c) => c >= 5,     xp: 200 },
+  { id:'lines_5',     icon:'💫', desc:'5 satır/sütun temizle', check: (s,b,l,c) => l >= 5,     xp: 150 },
+  { id:'lines_10',    icon:'🌟', desc:'10 satır/sütun temizle',check: (s,b,l,c) => l >= 10,    xp: 250 },
+  { id:'blocks_50',   icon:'🧱', desc:'50 blok yerleştir',     check: (s,b,l,c) => b >= 50,    xp: 100 },
+  { id:'blocks_100',  icon:'🏗️', desc:'100 blok yerleştir',   check: (s,b,l,c) => b >= 100,   xp: 180 },
+  { id:'hard_mode',   icon:'💀', desc:'Zor modda oyna',        check: (s,b,l,c) => window.currentGameMode === 'hard', xp: 200 },
+  { id:'time_mode',   icon:'⏱️', desc:'Zaman modunda oyna',   check: (s,b,l,c) => window.currentGameMode === 'timeattack', xp: 150 },
+  { id:'score_no_pu', icon:'🗡️', desc:'Powerupsuz 500 puan',  check: (s,b,l,c) => s >= 500 && (window.currentGameMode === 'hard' || window.currentGameMode === 'timeattack'), xp: 300 },
+];
+
+function getTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function getDailyChallenge() {
+  // Günün challengei — tarihe göre sabit seçim
+  const d = new Date();
+  const seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
+  const idx = seed % DAILY_CHALLENGES.length;
+  return DAILY_CHALLENGES[idx];
+}
+
+function getDailyStatus() {
+  const raw = localStorage.getItem('bp_daily');
+  return raw ? JSON.parse(raw) : { lastDate: '', completed: false, streak: 0, lastStreakDate: '' };
+}
+
+function saveDailyStatus(status) {
+  localStorage.setItem('bp_daily', JSON.stringify(status));
+}
+
+function checkDailyChallenge(score, blocks, lines, combo) {
+  const today = getTodayStr();
+  const status = getDailyStatus();
+  if (status.lastDate === today && status.completed) return; // Zaten tamamlandı
+
+  const challenge = getDailyChallenge();
+  if (!challenge.check(score, blocks, lines, combo)) return;
+
+  // Tamamlandı!
+  const yesterday = (() => {
+    const d = new Date(); d.setDate(d.getDate()-1);
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  })();
+
+  const newStreak = status.lastStreakDate === yesterday ? (status.streak || 0) + 1 : 1;
+
+  saveDailyStatus({ lastDate: today, completed: true, streak: newStreak, lastStreakDate: today });
+
+  // XP ver
+  const xpBonus = challenge.xp + (newStreak * 10); // Streak bonusu
+  if (typeof window.addXPDirect === 'function') window.addXPDirect(xpBonus);
+
+  // Bildirim
+  showDailyCompleteToast(challenge, newStreak, xpBonus);
+
+  // Achievement güncelle
+  if (typeof window.onGameEnd === 'function') {}
+}
+
+function showDailyCompleteToast(challenge, streak, xp) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position:fixed; top:20px; left:50%; transform:translateX(-50%);
+    background:linear-gradient(135deg,rgba(15,15,25,0.98),rgba(20,20,40,0.98));
+    border:1px solid rgba(251,191,36,0.4);
+    border-radius:18px; padding:16px 20px;
+    display:flex; align-items:center; gap:12px;
+    z-index:9999; pointer-events:none;
+    box-shadow:0 8px 32px rgba(251,191,36,0.2);
+    animation:achieveSlide 3.5s ease forwards;
+    min-width:260px;
+  `;
+  toast.innerHTML = `
+    <div style="font-size:32px">${challenge.icon}</div>
+    <div>
+      <div style="font-size:10px;font-weight:700;color:#fbbf24;letter-spacing:1px;text-transform:uppercase;">📅 Günlük Görev Tamamlandı!</div>
+      <div style="font-size:14px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin:2px 0">${challenge.desc}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);">+${xp} XP kazandın · 🔥 ${streak} gün streak</div>
+    </div>
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+  if (typeof vibrate === 'function') vibrate([40, 20, 40, 20, 80]);
+}
+
 // === BAŞLANGIÇ ===
 window.addEventListener('DOMContentLoaded', () => {
   // Sesleri al
@@ -710,11 +948,28 @@ function showGameOver(){
     window.onGameEnd(isTimeMode ? Math.floor(score * 1.5) : score);
   }
 
+  // Achievement güncelle
+  if (typeof updateAchievementStats === 'function') {
+    updateAchievementStats(score, gameBlocksPlaced, gameLinesCleared, gameMaxCombo);
+  }
+
+  // Daily challenge kontrol
+  if (typeof checkDailyChallenge === 'function') {
+    setTimeout(() => checkDailyChallenge(score, gameBlocksPlaced, gameLinesCleared, gameMaxCombo), 500);
+  }
+
   // Ekran mesajı
   const modeLabel = isTimeMode ? '⏱ Zaman Modu' : '🎮 Klasik Mod';
   scoreText.innerHTML = `<span style="font-size:12px;opacity:0.5;display:block;margin-bottom:4px;">${modeLabel}</span>Score: ${score}`;
 
   screen.style.visibility = "visible";
+
+  // Leaderboard'a skor gönder
+  setTimeout(() => {
+    if (typeof window.submitScoreToLeaderboard === 'function') {
+      window.submitScoreToLeaderboard(score, window.currentGameMode || 'normal');
+    }
+  }, 1500);
 }
 
 // === STATE KOPYALAMA ===
@@ -855,9 +1110,16 @@ function updatePowerupUI() {
   const btnClearRow = document.getElementById('pu-clear-row');
   const btnReroll   = document.getElementById('pu-reroll');
   const btnUndo     = document.getElementById('pu-undo');
+  const isHard = window.currentGameMode === 'hard';
+  const isTimeMode = window.currentGameMode === 'timeattack';
 
   function setupPUBtn(btn, charges, mode, label, xpKey, xpCost) {
     if (!btn) return;
+    if (isHard || isTimeMode) {
+      btn.disabled = true;
+      btn.innerHTML = `${label} <span class="pu-count" style="opacity:0.4">—</span>`;
+      return;
+    }
     if (charges > 0 && !isGameOver) {
       btn.disabled = false;
       btn.innerHTML = mode
@@ -1044,15 +1306,22 @@ function generatePieces() {
     return 1.0;
   }
 
+  // Mod bazlı yardım oranı
+  const mode = window.currentGameMode || 'classic';
+  let smartChance;
+  if (mode === 'easy')        smartChance = 1.00; // %100 yardımcı
+  else if (mode === 'hard')   smartChance = 0.00; // %0 tamamen rastgele
+  else if (mode === 'timeattack') smartChance = 0.80; // zaman modunda orta
+  else                        smartChance = 0.70; // normal: %70
+
   for (let k = 0; k < 3; k++) {
     let shapeIndex;
-    if (Math.random() < 0.90 && pool.length > 0) {
+    if (Math.random() < smartChance && pool.length > 0) {
       const weights = pool.map(idx => 1.0 + Math.max(0, helpScore.get(idx) ?? 0) * 0.12 + sizeWeightFor(idx));
       shapeIndex = weightedPick(pool, weights);
     } else {
       shapeIndex = pool[Math.floor(Math.random() * pool.length)];
     }
-    // createPieceElement direkt slotEl döndürüyor
     piecesEl.appendChild(createPieceElement(shapeIndex));
   }
 }
@@ -1090,9 +1359,6 @@ function canPlaceShapeAnywhere(shape) {
 
 // === GAME OVER KONTROLÜ ===
 function checkGameOver() {
-  // Zaman modunda timer bitince bitiyor, hamle kontrolü yapma
-  if (window.currentGameMode === 'timeattack') return;
-
   const piecesEl = document.getElementById('pieces');
   if (!piecesEl) return;
 
@@ -1105,23 +1371,21 @@ function checkGameOver() {
     if (isNaN(idx)) continue;
     const shape = PIECES[idx];
     if (!shape) continue;
-    const can = canPlaceShapeAnywhere(shape);
-    console.log(`Parça ${idx} (${shape.length}x${shape[0].length}) → sığar mı: ${can}`);
-    if (can) { anyCanPlace = true; break; }
+    if (canPlaceShapeAnywhere(shape)) { anyCanPlace = true; break; }
   }
 
   if (anyCanPlace) return;
 
-  if (clearRowCharges > 0 || rerollCharges > 0 || undoCharges > 0) {
-    console.log('Powerup var, devam et');
-    return;
-  }
+  // Zor mod ve zaman modunda powerup yok sayılır
+  const isHard = window.currentGameMode === 'hard';
+  const isTime = window.currentGameMode === 'timeattack';
+  if (!isHard && !isTime && (clearRowCharges > 0 || rerollCharges > 0 || undoCharges > 0)) return;
 
-  console.log('GAME OVER — board durumu:', board.map(r => r.map(c => c ? 1 : 0)));
   isGameOver = true;
   updatePowerupUI();
   playSound(sndGameOver, 0.8);
   vibrate([80, 40, 80, 40, 120]);
+  if (isTime && typeof window.stopTimer === 'function') window.stopTimer();
   setTimeout(() => showGameOver(), 50);
 }
 
@@ -1174,6 +1438,7 @@ function tryPlacePieceAt(startX, startY) {
   playSound(sndPlace, 0.7);
   vibrate(30);
   score += placedCount;
+  gameBlocksPlaced += placedCount;
 
   // Zaman modunda blok başına +0.5s
   if (typeof window.addTime === 'function') window.addTime(0.5);
@@ -1437,6 +1702,8 @@ function clearCompletedLines() {
   // 4) Streak: art arda clear
   clearStreak++;
   comboMovesLeft = 3;
+  gameLinesCleared += lineCount;
+  gameMaxCombo = Math.max(gameMaxCombo, clearStreak);
 
   let comboMultiplier = 1 + (clearStreak - 1) * 0.5;
 
@@ -1654,9 +1921,12 @@ function clearGameSave() {
 // === OYUNU SIFIRLA ===
 function resetGame() {
   clearGameSave();
-  // Yeni oyunda unlock'ları sıfırla — score arttıkça tekrar açılsın
   lastUnlockNotified = 0;
   localStorage.removeItem('bp_last_unlock');
+  // Oyun istatistiklerini sıfırla
+  gameBlocksPlaced = 0;
+  gameLinesCleared = 0;
+  gameMaxCombo = 0;
   isGameOver = false;
   score = 0;
   clearRowCharges = 1;
