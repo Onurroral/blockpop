@@ -2331,7 +2331,7 @@ function startDragPiece(pieceEl, shape, event) {
   const _inner = bRect.width - 6 * 2;
   const _cell = (_inner - 3 * (BOARD_SIZE - 1)) / BOARD_SIZE;
   const _step = _cell + 3;
-  dragLiftY = (event.pointerType === 'touch') ? Math.round(_step * 2.5) : 0;
+  dragLiftY = (event.pointerType === 'touch') ? Math.round(_step * 3.2) : 0;
 
   document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
   pieceEl.classList.add('selected');
