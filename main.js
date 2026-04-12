@@ -2325,17 +2325,13 @@ function startDragPiece(pieceEl, shape, event) {
   dragPieceEl = pieceEl;
   dragPointerId = event.pointerId || null;
 
-  // Lift: padding ve gap dahil gerçek hücre adımına göre
+  // Lift: 2.5 hücre yukarı — parmak parçayı kapatmasın
   const boardEl = document.getElementById('board');
   const bRect = boardEl.getBoundingClientRect();
-  const _style = window.getComputedStyle(boardEl);
-  const _pad = parseFloat(_style.paddingLeft) || 6;
-  const _gap = parseFloat(_style.gap) || 3;
-  const _innerW = bRect.width - _pad * 2;
-  const _cell = (_innerW - _gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
-  const _step = _cell + _gap; // bir hücrenin gerçek adımı
-  // Touch: tam 2 hücre yukarı
-  dragLiftY = 0; // lift yok — preview ve ghost aynı noktadan
+  const _inner = bRect.width - 6 * 2;
+  const _cell = (_inner - 3 * (BOARD_SIZE - 1)) / BOARD_SIZE;
+  const _step = _cell + 3;
+  dragLiftY = (event.pointerType === 'touch') ? Math.round(_step * 2.5) : 0;
 
   document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
   pieceEl.classList.add('selected');
@@ -2363,12 +2359,12 @@ function onPointerMove(e) {
   if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
   updateDragPosition(e);
   // Ghost: parmağın tam koordinatı — preview ile aynı merkez
-  updateGhostPreview(e.clientX, e.clientY);
+  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
 }
 
 function updateGhostFromEvent(e) {
   updateDragPosition(e);
-  updateGhostPreview(e.clientX, e.clientY);
+  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
 }
 
 function onPointerUp(e) {
