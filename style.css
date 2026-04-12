@@ -5,9 +5,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 
 :root {
-  --bg-deep:    #0d0d14;
-  --bg-mid:     #13131f;
-  --bg-surface: #1a1a2e;
+  --bg-deep:    #1a1a2e;
+  --bg-mid:     #1f1f35;
+  --bg-surface: #242440;
   --bg-glass:   rgba(255,255,255,0.04);
   --bg-glass2:  rgba(255,255,255,0.07);
   --border:     rgba(255,255,255,0.08);
@@ -775,4 +775,31 @@ body[data-theme="candy"] .combo-popup { animation: comboBigPop 0.7s ease forward
   15%  { opacity:1; transform:translateX(-50%) translateY(0); }
   75%  { opacity:1; }
   100% { opacity:0; transform:translateX(-50%) translateY(-20px); }
+}
+
+/* === YENİ EFEKT ANİMASYONLARI === */
+@keyframes placeRing {
+  0%   { transform: scale(1); opacity: 1; }
+  60%  { transform: scale(1.5); opacity: 0.6; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes lineFlash {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Blok yerleşince - eski popIn animasyonunu koru, sadece brightness ekle */
+@keyframes cellPlacePop {
+  0%   { filter: brightness(2.2); }
+  100% { filter: brightness(1); }
+}
+
+/* Satır uyarı efekti */
+.board-cell.line-warning {
+  animation: lineWarn 0.3s ease-in-out !important;
+}
+@keyframes lineWarn {
+  0%,100% { filter: brightness(1); }
+  50%     { filter: brightness(2); box-shadow: 0 0 12px rgba(255,255,255,0.8); }
 }
