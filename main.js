@@ -279,29 +279,29 @@ const POWERUP_XP_COST = {
   undo:     50,
 };
 
-function getXPBalance() {
-  return parseInt(localStorage.getItem('bp_xp') || '0');
+function getDiamonds() {
+  return parseInt(localStorage.getItem('bp_diamonds') || '0');
 }
 
-function spendXP(amount) {
-  const current = getXPBalance();
+function spendDiamonds(amount) {
+  const current = getDiamonds();
   if (current < amount) return false;
-  localStorage.setItem('bp_xp', current - amount);
+  localStorage.setItem('bp_diamonds', current - amount);
   // XP göstergesini güncelle (index.html'deki updateXPDisplay)
-  if (typeof updateXPDisplay === 'function') updateXPDisplay();
+  if (typeof updateDiamondDisplay === 'function') updateDiamondDisplay();
   return true;
 }
 
 function buyPowerupWithXP(type) {
   const cost = POWERUP_XP_COST[type];
-  const xp = getXPBalance();
+  const diamonds = getDiamonds();
 
-  if (xp < cost) {
-    showXPShortageToast(cost - xp);
+  if (diamonds < cost) {
+    showXPShortageToast(cost - diamonds);
     return false;
   }
 
-  if (!spendXP(cost)) return false;
+  if (!spendDiamonds(cost)) return false;
 
   if (type === 'clearRow') { clearRowCharges++; }
   else if (type === 'reroll') { rerollCharges++; }
@@ -316,7 +316,7 @@ function buyPowerupWithXP(type) {
 function showXPShortageToast(needed) {
   const t = document.createElement('div');
   t.style.cssText = 'position:fixed;bottom:140px;left:50%;transform:translateX(-50%);background:rgba(255,80,80,0.9);color:#fff;padding:8px 18px;border-radius:50px;font-size:13px;font-weight:600;z-index:9999;pointer-events:none;animation:xpToastAnim 1.8s ease forwards;';
-  t.textContent = `${needed} XP daha lazım!`;
+  t.textContent = `${needed} 💎 daha lazım!`;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 1800);
 }
@@ -1129,7 +1129,7 @@ function updatePowerupUI() {
       btn.dataset.xpMode = 'false';
     } else if (!isGameOver) {
       btn.disabled = false;
-      btn.innerHTML = `${label} <span class="pu-xp-buy">+1 · ${xpCost} XP</span>`;
+      btn.innerHTML = `${label} <span class="pu-xp-buy">💎 +1 · ${xpCost} XP</span>`;
       btn.dataset.xpMode = 'true';
       btn.dataset.xpKey  = xpKey;
       btn.classList.remove('active');
