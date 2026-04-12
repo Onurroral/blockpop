@@ -2267,12 +2267,12 @@ function startDragPiece(pieceEl, shape, event) {
   dragPieceEl = pieceEl;
   dragPointerId = event.pointerId || null;
 
-  // Lift: parça parmağın üstünde görünsün (sadece görsel, ghost etkilenmez)
+  // Lift hesabı: tam hücre sayısına göre (gap dahil)
   const boardEl = document.getElementById('board');
   const bRect = boardEl.getBoundingClientRect();
-  const cellH = bRect.height / BOARD_SIZE;
-  // Touch: 2.5 hücre yukarı. Mouse: 0
-  dragLiftY = (event.pointerType === 'touch') ? Math.round(cellH * 2.5) : 0;
+  const cellSize = bRect.width / BOARD_SIZE; // hücre + gap birlikte
+  // Touch: tam 2 hücre yukarı
+  dragLiftY = (event.pointerType === 'touch') ? Math.round(cellSize * 2) : 0;
 
   document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
   pieceEl.classList.add('selected');
@@ -2303,7 +2303,9 @@ function onPointerMove(e) {
   if (!isDragging) return;
   if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
   updateDragPosition(e);
-  // Ghost: blokla aynı pozisyon — dragLiftY kadar yukarıda
+
+  // Ghost: drag preview'ın merkezi neredeyse ghost orada
+  // Drag preview: (e.clientX, e.clientY - dragLiftY) merkezli
   updateGhostPreview(e.clientX, e.clientY - dragLiftY);
 }
 
@@ -2383,7 +2385,7 @@ function updateGhostFromEvent(e) {
   updateGhostPreview(e.clientX, e.clientY - dragLiftY);
 }
 
-// Ghost: parmağın altındaki hücreye göre en yakın geçerli pozisyon
+// Ghost: drag preview'ın tam grid karşılığı
 function trySnapToValid(clientX, clientY) {
   if (!selectedShape) return null;
   const boardEl = document.getElementById("board");
@@ -2392,21 +2394,22 @@ function trySnapToValid(clientX, clientY) {
   const h = selectedShape.length;
   const w = selectedShape[0].length;
 
-  // Board dışındaysa null
-  if (clientX < rect.left || clientX > rect.right ||
-      clientY < rect.top  || clientY > rect.bottom) return null;
+  // Board dışındaysa null — biraz tolerans ver
+  if (clientX < rect.left - cellSize || clientX > rect.right + cellSize ||
+      clientY < rect.top  - cellSize || clientY > rect.bottom + cellSize) return null;
 
-  // Parçanın ağırlık merkezi parmağa hizala
+  // Koordinatı board içine klamp et
+  const cx2 = Math.max(rect.left, Math.min(rect.right,  clientX));
+  const cy2 = Math.max(rect.top,  Math.min(rect.bottom, clientY));
+
+  // Grid koordinatı
+  const fx = (cx2 - rect.left) / cellSize;
+  const fy = (cy2 - rect.top)  / cellSize;
+
+  // Parça merkezi bu noktaya gelsin
   const { cx, cy } = getShapeCenter(selectedShape);
-  const fx = (clientX - rect.left) / cellSize;
-  const fy = (clientY - rect.top)  / cellSize;
-
-  const startX = Math.round(fx - cx);
-  const startY = Math.round(fy - cy);
-
-  // Sınıra klamp et
-  const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX));
-  const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY));
+  const sx = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(fx - cx)));
+  const sy = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(fy - cy)));
 
   // Çakışma kontrolü
   for (let y = 0; y < h; y++)
