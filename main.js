@@ -353,31 +353,11 @@ function getColorForType(type) {
 function getShapeCenter(shape) {
   const h = shape.length;
   const w = shape[0].length;
-
-  let sumX = 0;
-  let sumY = 0;
-  let count = 0;
-
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      if (shape[y][x] === 1) {
-        sumX += x;
-        sumY += y;
-        count++;
-      }
-    }
-  }
-
-  if (count === 0) {
-    return {
-      cx: Math.floor(w / 2),
-      cy: Math.floor(h / 2)
-    };
-  }
-
+  // BlockBlast gibi: bounding box'ın ortası
+  // Asimetrik parçalarda ağırlık merkezi değil geometrik merkez
   return {
-    cx: Math.round(sumX / count),
-    cy: Math.round(sumY / count)
+    cx: (w - 1) / 2,
+    cy: (h - 1) / 2
   };
 }
 
@@ -743,7 +723,7 @@ window.addEventListener('DOMContentLoaded', () => {
   sndPlace    = document.getElementById('snd-place');
   sndClear    = document.getElementById('snd-clear');
   sndCombo    = document.getElementById('snd-combo');
-  sndGameOver = document.getElementById('snd-gameover');
+  sndGameOver = document.getElementById('snd-gameover1');
 
   createFlashOverlay();
   spawnBgBlocks();
@@ -777,6 +757,177 @@ function playSound(audioEl, volume = 1) {
     console.warn('Ses çalınamadı:', e);
   }
 }
+
+// === WEB AUDIO - KOD İLE SES ===
+let _audioCtx = null;
+function _getCtx() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+function _isOn() { return localStorage.getItem('tgl-sfx') !== 'off'; }
+
+function _tone(freq1, freq2, type, vol, dur, delay) {
+  if (!_isOn()) return;
+  const ctx = _getCtx(); if (!ctx) return;
+  try {
+    const t = ctx.currentTime + (delay||0);
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq1, t);
+    if (freq2) o.frequency.exponentialRampToValueAtTime(freq2, t + dur * 0.7);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.start(t); o.stop(t + dur);
+  } catch(e) {}
+}
+
+// Ses buffer sistemi — tüm MP3'ler için
+const _buffers = {};
+async function _loadBuffer(name, url) {
+  try {
+    const ctx = _getCtx(); if (!ctx) return;
+    const resp = await fetch(url);
+    const arr  = await resp.arrayBuffer();
+    _buffers[name] = await ctx.decodeAudioData(arr);
+  } catch(e) {}
+}
+function _playBuffer(name, volume=0.7) {
+  if (!_isOn()) return;
+  try {
+    const ctx = _getCtx(); if (!ctx) return;
+    const buf = _buffers[name];
+    if (buf) {
+      const src = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      src.buffer = buf;
+      src.connect(gain); gain.connect(ctx.destination);
+      gain.gain.value = volume;
+      src.start(ctx.currentTime);
+    }
+  } catch(e) {}
+}
+
+// Blok alırken: pick.mp3 — Web Audio buffer ile (sıfır delay)
+let _pickBuffer = null;
+async function _loadPickBuffer() {
+  try {
+    const ctx = _getCtx(); if (!ctx) return;
+    const resp = await fetch('assets/sounds/pick.mp3');
+    const arr  = await resp.arrayBuffer();
+    _pickBuffer = await ctx.decodeAudioData(arr);
+  } catch(e) {}
+}
+
+function playSndPick() {
+  if (!_isOn()) return;
+  try {
+    const ctx = _getCtx(); if (!ctx) return;
+    if (_pickBuffer) {
+      // Buffer hazır — anında çal, sıfır delay
+      const src  = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      src.buffer = _pickBuffer;
+      src.connect(gain); gain.connect(ctx.destination);
+      gain.gain.value = 0.7;
+      src.start(ctx.currentTime);
+    } else {
+      // Fallback: normal audio element
+      const el = document.getElementById('snd-pick');
+      if (el) { el.pause(); el.currentTime = 0; el.volume = 0.7; el.play().catch(()=>{}); }
+      _loadPickBuffer(); // arka planda yükle
+    }
+  } catch(e) {}
+}
+
+// Sayfa yüklenince buffer'ı hazırla
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(_loadPickBuffer, 1000);
+  _loadBuffer('tick', 'assets/sounds/tick.mp3');
+});
+
+// Blok koyma: tick.mp3
+function playSndPlace() {
+  if (!_isOn()) return;
+  try {
+    const el = document.getElementById('snd-tick');
+    if (el) { el.pause(); el.currentTime = 0; el.volume = 0.8; el.play().catch(()=>{}); return; }
+  } catch(e) {}
+  // Fallback
+  _tone(1200, 400, 'sine', 0.28, 0.08);
+}
+
+// Satır/sütun temizleme: tok modern patlama
+function playSndClear(count) {
+  if (!_isOn()) return;
+  try {
+    const el = document.getElementById('snd-clear');
+    if (el) { el.pause(); el.currentTime = 0; el.volume = 0.8; el.play().catch(()=>{}); return; }
+  } catch(e) {}
+  // Fallback
+  _tone(1200, 400, 'sine', 0.28, 0.08);
+}
+
+
+// Combo: her seviyede farklı, giderek coşkulu
+function playSndCombo(level) {
+  if (!_isOn()) return;
+  const ctx = _getCtx(); if (!ctx) return;
+  try {
+    const t = ctx.currentTime;
+    const lv = Math.min(Math.max(level, 2), 8);
+
+    // Hızlanan arpej — seviyeye göre daha fazla nota
+    const baseNotes = [523, 659, 784, 880, 1047, 1175, 1319, 1568];
+    const noteCount = Math.min(lv, baseNotes.length);
+    const speed = Math.max(0.025, 0.06 - lv*0.005); // hızlanır
+
+    baseNotes.slice(0, noteCount).forEach((f, i) => {
+      const vol = 0.12 + lv*0.02;
+      _tone(f, f, 'triangle', Math.min(vol, 0.28), 0.22, i*speed);
+    });
+
+    // Yüksek parlama — seviyeye göre artar
+    const sweepVol = 0.1 + lv*0.03;
+    _tone(1000+lv*100, 3000+lv*200, 'sine', Math.min(sweepVol, 0.35), 0.25, 0.05);
+
+    // 3x ve üstü: ekstra "pow" darbe
+    if (lv >= 3) {
+      _tone(200, 600, 'sine', 0.25, 0.18, 0);
+    }
+    // 5x ve üstü: tüm ekrana hissettiren düşük bas
+    if (lv >= 5) {
+      _tone(100, 60, 'sine', 0.3, 0.4, 0.05);
+      _tone(2000, 4000, 'sine', 0.15, 0.2, 0.1);
+    }
+  } catch(e) {}
+}
+
+// Game over: dramatik çöküş
+function playSndGameOver() {
+    if (!_isOn()) return;
+  try {
+    const el = document.getElementById('snd-gameover1');
+    if (el) { el.pause(); el.currentTime = 0; el.volume = 0.8; el.play().catch(()=>{}); return; }
+  } catch(e) {}
+  // Fallback
+  _tone(1200, 400, 'sine', 0.28, 0.08);
+}
+
+// Yeni rekor: parlak fanfare
+function playSndRecord() {
+  [523, 659, 784, 1047, 1319].forEach((f, i) => {
+    _tone(f, f, 'triangle', 0.15, 0.22, i*0.08);
+  });
+  _tone(2000, 2000, 'sine', 0.1, 0.3, 0.15);
+}
+
+// AudioContext'i ilk dokunuşta başlat
+document.addEventListener('pointerdown', _getCtx, { once: true });
 
 // === TAHTA OLUŞTUR ===
 function initBoard() {
@@ -921,55 +1072,169 @@ function updateScore() {
 
 function showGameOver(){
   isGameOver = true;
-  flashGameover();
-  shakeBoardBig();
 
   const screen    = document.getElementById("gameOverScreen");
   const scoreText = document.getElementById("finalScore");
   const isTimeMode = window.currentGameMode === 'timeattack';
 
-  // Zaman modunda ayrı high score
+  // Skor kayıt
   const hsKey = isTimeMode ? 'bp_time_high_score' : 'bb_high_score';
   const savedHS = parseInt(localStorage.getItem(hsKey) || '0');
-
   if (score > savedHS) {
     localStorage.setItem(hsKey, score);
-    if (!isTimeMode) { highScore = score; }
-    setTimeout(() => triggerNewRecord(), 500);
+    if (!isTimeMode) highScore = score;
+    setTimeout(() => { triggerNewRecord(); playSndRecord(); }, 2200);
   }
-
   if (!isTimeMode && score > highScore) {
     highScore = score;
     localStorage.setItem('bb_high_score', highScore);
   }
 
-  // XP ver (zaman modunda 1.5x)
-  if (typeof window.onGameEnd === 'function') {
-    window.onGameEnd(isTimeMode ? Math.floor(score * 1.5) : score);
-  }
-
-  // Achievement güncelle
-  if (typeof updateAchievementStats === 'function') {
-    updateAchievementStats(score, gameBlocksPlaced, gameLinesCleared, gameMaxCombo);
-  }
-
-  // Daily challenge kontrol
-  if (typeof checkDailyChallenge === 'function') {
-    setTimeout(() => checkDailyChallenge(score, gameBlocksPlaced, gameLinesCleared, gameMaxCombo), 500);
-  }
-
-  // Ekran mesajı
+  // Ekran mesajı hazırla (henüz gösterme)
   const modeLabel = isTimeMode ? '⏱ Zaman Modu' : '🎮 Klasik Mod';
   scoreText.innerHTML = `<span style="font-size:12px;opacity:0.5;display:block;margin-bottom:4px;">${modeLabel}</span>Score: ${score}`;
 
-  screen.style.visibility = "visible";
+  // Dramatik game over animasyonu
+  playGameOverSequence(() => {
+    // Animasyon bitti, ekranı göster
+    screen.style.visibility = "visible";
 
-  // Leaderboard'a skor gönder
+    // XP, achievement, daily
+    if (typeof window.onGameEnd === 'function')
+      window.onGameEnd(isTimeMode ? Math.floor(score * 1.5) : score);
+    if (typeof updateAchievementStats === 'function')
+      updateAchievementStats(score, gameBlocksPlaced, gameLinesCleared, gameMaxCombo);
+    if (typeof checkDailyChallenge === 'function')
+      setTimeout(() => checkDailyChallenge(score, gameBlocksPlaced, gameLinesCleared, gameMaxCombo), 300);
+
+    // Leaderboard
+    setTimeout(() => {
+      if (typeof window.submitScoreToLeaderboard === 'function')
+        window.submitScoreToLeaderboard(score, window.currentGameMode || 'normal');
+    }, 800);
+  });
+}
+
+function playGameOverSequence(onDone) {
+  const boardEl = document.getElementById('board');
+  if (!boardEl) { onDone(); return; }
+  const cells = document.querySelectorAll('.board-cell');
+
+  // 1. Orta şerit banner
+  const banner = document.createElement('div');
+  banner.style.cssText = `
+    position:absolute; left:0; right:0;
+    top:50%; transform:translateY(-50%);
+    background:rgba(10,10,20,0.92);
+    border-top:2px solid rgba(239,68,68,0.6);
+    border-bottom:2px solid rgba(239,68,68,0.6);
+    padding:14px 0; text-align:center;
+    z-index:50; pointer-events:none;
+    animation:bannerSlide 0.35s cubic-bezier(0.2,1.3,0.4,1) both;
+  `;
+  banner.innerHTML = `<span style="color:#f87171;font-size:18px;font-weight:900;font-family:'Nunito',sans-serif;letter-spacing:1px;">Boş yer kalmadı!</span>`;
+  boardEl.style.position = 'relative';
+  boardEl.appendChild(banner);
+
+  // Banner animasyon CSS
+  if (!document.getElementById('goAnimStyle')) {
+    const s = document.createElement('style');
+    s.id = 'goAnimStyle';
+    s.textContent = `
+      @keyframes bannerSlide {
+        from { opacity:0; transform:translateY(-50%) scaleX(0.3); }
+        to   { opacity:1; transform:translateY(-50%) scaleX(1); }
+      }
+      @keyframes cellDestroy {
+        0%   { transform:scale(1) rotate(0deg); opacity:1; filter:brightness(2); }
+        40%  { transform:scale(1.3) rotate(var(--rot)); opacity:1; }
+        100% { transform:scale(0) rotate(var(--rot)); opacity:0; }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // 2. Dramatik düşen ses
+  playSndGameOverDrama();
+
+  // 3. 400ms sonra bloklar dalgalanarak patlar
   setTimeout(() => {
-    if (typeof window.submitScoreToLeaderboard === 'function') {
-      window.submitScoreToLeaderboard(score, window.currentGameMode || 'normal');
-    }
-  }, 1500);
+    banner.remove();
+
+    // Dolu hücreleri topla
+    const filled = [];
+    for (let y = 0; y < BOARD_SIZE; y++)
+      for (let x = 0; x < BOARD_SIZE; x++)
+        if (board[y][x] !== null) filled.push({x, y, cell: cells[y*BOARD_SIZE+x]});
+
+    // Ortadan dışa doğru dalga
+    filled.sort((a, b) => {
+      const da = Math.abs(a.x-3.5) + Math.abs(a.y-3.5);
+      const db = Math.abs(b.x-3.5) + Math.abs(b.y-3.5);
+      return da - db;
+    });
+
+    filled.forEach(({cell}, i) => {
+      const delay = i * 18;
+      setTimeout(() => {
+        if (!cell) return;
+        const rot = (Math.random()-0.5)*40 + 'deg';
+        cell.style.setProperty('--rot', rot);
+        cell.style.animation = `cellDestroy 0.35s ease-out forwards`;
+      }, delay);
+    });
+
+    // 4. Hepsi bittikten sonra game over ekranı
+    const totalDelay = filled.length * 18 + 400;
+    setTimeout(() => {
+      flashGameover();
+      onDone();
+    }, totalDelay);
+
+  }, 600);
+}
+
+// Game over dramatik ses: dırırırırı yüksekten alçağa
+function playSndGameOverDrama() {
+  const ctx = _getCtx(); if (!ctx || !_isOn()) return;
+  try {
+    const t = ctx.currentTime;
+
+    // Ana düşen ses — yüksekten alçağa hızlı
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(1200, t);
+    osc.frequency.exponentialRampToValueAtTime(80, t + 1.2);
+    gain.gain.setValueAtTime(0.4, t);
+    gain.gain.setValueAtTime(0.4, t + 0.8);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+    osc.start(t); osc.stop(t + 1.4);
+
+    // Titreşim efekti — LFO ile
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+    lfo.type = 'sine';
+    lfo.frequency.setValueAtTime(18, t);
+    lfo.frequency.linearRampToValueAtTime(6, t + 1.2);
+    lfoGain.gain.setValueAtTime(80, t);
+    lfoGain.gain.linearRampToValueAtTime(20, t + 1.2);
+    lfo.start(t); lfo.stop(t + 1.4);
+
+    // İkinci harmonik
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(600, t);
+    osc2.frequency.exponentialRampToValueAtTime(40, t + 1.3);
+    gain2.gain.setValueAtTime(0.2, t);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+    osc2.start(t); osc2.stop(t + 1.4);
+
+  } catch(e) {}
 }
 
 // === STATE KOPYALAMA ===
@@ -1058,7 +1323,7 @@ function setupPowerups() {
         selectedPiece = null; selectedShape = null;
       }
       renderBoard();
-      playSound(sndPlace, 0.5);
+      playSndPlace();
       btnClearRow.classList.add('used-flash');
       setTimeout(() => btnClearRow.classList.remove('used-flash'), 250);
       updatePowerupUI();
@@ -1075,7 +1340,7 @@ function setupPowerups() {
       saveState();
       rerollPieces();
       rerollCharges--;
-      playSound(sndPlace, 0.5);
+      playSndPlace();
       btnReroll.classList.add('used-flash');
       setTimeout(() => btnReroll.classList.remove('used-flash'), 250);
       updatePowerupUI();
@@ -1092,7 +1357,7 @@ function setupPowerups() {
       restoreState();
       undoCharges--;
       lastState = null;
-      playSound(sndPlace, 0.5);
+      playSndPlace();
       btnUndo.classList.add('used-flash');
       setTimeout(() => btnUndo.classList.remove('used-flash'), 250);
       updatePowerupUI();
@@ -1209,10 +1474,11 @@ function bestHelpScoreForShape(shape) {
 
   for (let by = 0; by < BOARD_SIZE; by++) {
     for (let bx = 0; bx < BOARD_SIZE; bx++) {
-      const startX = bx - cx;
-      const startY = by - cy;
+      const startX = Math.round(bx - cx);
+      const startY = Math.round(by - cy);
 
       if (startX < 0 || startY < 0 || startX + w > BOARD_SIZE || startY + h > BOARD_SIZE) continue;
+      if (!board[startY] || !board[startY + h - 1]) continue; // ekstra güvenlik
 
       // çakışma var mı?
       let collision = false;
@@ -1383,7 +1649,7 @@ function checkGameOver() {
 
   isGameOver = true;
   updatePowerupUI();
-  playSound(sndGameOver, 0.8);
+  playSndGameOver();
   vibrate([80, 40, 80, 40, 120]);
   if (isTime && typeof window.stopTimer === 'function') window.stopTimer();
   setTimeout(() => showGameOver(), 50);
@@ -1435,7 +1701,7 @@ function tryPlacePieceAt(startX, startY) {
     }
   }
 
-  playSound(sndPlace, 0.7);
+  playSndPlace();
   vibrate(30);
   score += placedCount;
   gameBlocksPlaced += placedCount;
@@ -1727,9 +1993,9 @@ function clearCompletedLines() {
   if (lineCount > 0) {
     vibrate(lineCount >= 2 ? [40,20,40] : 50);
     if (lineCount >= 2 || clearStreak >= 2) {
-      playSound(sndCombo, 0.85);  // büyük temizlik/kombo için
+      playSndCombo(clearStreak);
     } else {
-      playSound(sndClear, 0.8);   // tek satır/sütun için
+      playSndClear(lineCount);
     }
   }
 
@@ -1941,19 +2207,17 @@ function resetGame() {
 // === DRAG & DROP (POINTER EVENTS) ===
 function startDragPiece(pieceEl, shape, event) {
   isDragging = true;
+  playSndPick(); // Blok alırken pop sesi
   dragShape = shape;
   dragPieceEl = pieceEl;
   dragPointerId = event.pointerId || null;
 
-    // Mobilde parmak görüşü kapatmasın diye parçayı yukarı kaldır
+  // Lift: parça parmağın üstünde görünsün (sadece görsel, ghost etkilenmez)
   const boardEl = document.getElementById('board');
-  if (boardEl && (event.pointerType === 'touch')) {
-    const rect = boardEl.getBoundingClientRect();
-    const cellH = rect.height / BOARD_SIZE;
-    dragLiftY = Math.round(cellH * 3.5); // BlockBlast lift
-  } else {
-    dragLiftY = 0; // mouse/PC
-  }
+  const bRect = boardEl.getBoundingClientRect();
+  const cellH = bRect.height / BOARD_SIZE;
+  // Touch: 2.5 hücre yukarı. Mouse: 0
+  dragLiftY = (event.pointerType === 'touch') ? Math.round(cellH * 2.5) : 0;
 
   document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
   pieceEl.classList.add('selected');
@@ -1983,10 +2247,8 @@ function startDragPiece(pieceEl, shape, event) {
 function onPointerMove(e) {
   if (!isDragging) return;
   if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
-
   updateDragPosition(e);
-  // Ghost: parmağın tam yerini kullan, gecikme yok
-  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
+  updateGhostPreview(e.clientX, e.clientY); // ghost = parmağın tam koordinatı
 }
 
 function onPointerUp(e) {
@@ -2015,7 +2277,7 @@ function onPointerUp(e) {
     const [startX, startY] = lastGhostCell;
     tryPlacePieceAt(startX, startY);
   } else if (selectedShape) {
-    const snapped = trySnapToValid(e.clientX, e.clientY - dragLiftY);
+    const snapped = trySnapToValid(e.clientX, e.clientY);
     if (snapped) tryPlacePieceAt(snapped[0], snapped[1]);
   }
 
@@ -2030,10 +2292,9 @@ function onPointerUp(e) {
 
 function updateDragPosition(e) {
   if (!dragPreviewEl || !selectedShape) return;
-  // Drag preview: bbox ortası parmağa hizalı, dragLiftY kadar yukarıda
-  const previewRect = dragPreviewEl.getBoundingClientRect();
-  dragPreviewEl.style.left = (e.clientX - previewRect.width / 2) + "px";
-  dragPreviewEl.style.top  = (e.clientY - dragLiftY - previewRect.height / 2) + "px";
+  const pr = dragPreviewEl.getBoundingClientRect();
+  dragPreviewEl.style.left = (e.clientX - pr.width / 2) + "px";
+  dragPreviewEl.style.top  = (e.clientY - dragLiftY - pr.height / 2) + "px";
 }
 
 function getBoardCellFromClient(clientX, clientY) {
@@ -2063,10 +2324,11 @@ function clearGhostPreview() {
 }
 
 function updateGhostFromEvent(e) {
-  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
+  // Ghost parmağın tam koordinatına göre — lift yok
+  updateGhostPreview(e.clientX, e.clientY);
 }
 
-// BlockBlast mantığı: parçanın ortası parmağa hizalanır, manyetizma yok
+// Ghost: parmağın altındaki hücreyi bul, tüm geçerli pozisyonları dene
 function trySnapToValid(clientX, clientY) {
   if (!selectedShape) return null;
   const boardEl = document.getElementById("board");
@@ -2079,25 +2341,46 @@ function trySnapToValid(clientX, clientY) {
   if (clientX < rect.left || clientX > rect.right ||
       clientY < rect.top  || clientY > rect.bottom) return null;
 
-  // Parmağın grid koordinatı (float)
-  const fingerBx = (clientX - rect.left) / cellSize;
-  const fingerBy = (clientY - rect.top)  / cellSize;
+  // Parmağın grid hücresi
+  const fingerCol = Math.floor((clientX - rect.left) / cellSize);
+  const fingerRow = Math.floor((clientY - rect.top)  / cellSize);
 
-  // Parçanın bbox ortası parmağa gelir
-  const startX = Math.round(fingerBx - w / 2);
-  const startY = Math.round(fingerBy - h / 2);
+  // Tüm geçerli startX/startY kombinasyonlarını dene
+  // Parmağın altındaki hücreyi kapsayan pozisyonları bul
+  let bestSx = -1, bestSy = -1, bestDist = Infinity;
 
-  // Sınıra klamp et
-  const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX));
-  const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY));
+  for (let sy = 0; sy <= BOARD_SIZE - h; sy++) {
+    for (let sx = 0; sx <= BOARD_SIZE - w; sx++) {
+      // Bu pozisyon parmağı kapsıyor mu?
+      const coversX = sx <= fingerCol && fingerCol < sx + w;
+      const coversY = sy <= fingerRow && fingerRow < sy + h;
 
-  // Çakışma kontrolü
-  let fits = true;
-  for (let y = 0; y < h && fits; y++)
-    for (let x = 0; x < w && fits; x++)
-      if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) fits = false;
+      // Merkeze olan mesafe
+      const midX = sx + (w - 1) / 2;
+      const midY = sy + (h - 1) / 2;
+      const dist = Math.abs(fingerCol - midX) + Math.abs(fingerRow - midY);
 
-  return fits ? [sx, sy] : null;
+      // Parmağı kapsayan pozisyonlara öncelik ver
+      const adjustedDist = (coversX && coversY) ? dist - 100 : dist;
+
+      // Çakışma kontrolü
+      let fits = true;
+      for (let y = 0; y < h && fits; y++)
+        for (let x = 0; x < w && fits; x++)
+          if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null)
+            fits = false;
+
+      if (fits && adjustedDist < bestDist) {
+        bestDist = adjustedDist;
+        bestSx = sx;
+        bestSy = sy;
+      }
+    }
+  }
+
+  // Çok uzaksa (2 hücreden fazla) gösterme
+  if (bestSx === -1 || bestDist > 2) return null;
+  return [bestSx, bestSy];
 }
 
 function updateGhostPreview(clientX, clientY) {
