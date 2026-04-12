@@ -20,6 +20,71 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=1000000">
 
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, Timestamp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyConiUx9_ppUvV5h6J118CupsbyyEDmQSY",
+      authDomain: "blockpop-7aaad.firebaseapp.com",
+      projectId: "blockpop-7aaad",
+      storageBucket: "blockpop-7aaad.firebasestorage.app",
+      messagingSenderId: "816360446377",
+      appId: "1:816360446377:web:ab62f0dfbe367525788cb8",
+      measurementId: "G-24F5E1R6BD"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // Global fonksiyonlar
+    window.fbSubmitScore = async function(name, score, mode) {
+      try {
+        await addDoc(collection(db, 'scores'), {
+          name: name.trim().substring(0,16),
+          score: Math.floor(score),
+          mode: mode || 'classic',
+          ts: Timestamp.now(),
+          week: getWeekStr(),
+        });
+        return true;
+      } catch(e) { console.warn('Score gönderilemedi:', e); return false; }
+    };
+
+    window.fbGetScores = async function(tab) {
+      try {
+        let q;
+        const col = collection(db, 'scores');
+        if (tab === 'weekly') {
+          const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+          q = query(col, where('ts','>=',Timestamp.fromDate(weekAgo)), orderBy('ts','desc'));
+          // Firestore'dan al, JS'de sırala
+          const snap = await getDocs(q);
+          const rows = snap.docs.map(d=>({...d.data(),id:d.id}));
+          rows.sort((a,b)=>b.score-a.score);
+          return rows.slice(0,50);
+        } else if (tab === 'timeattack') {
+          q = query(col, where('mode','==','timeattack'), orderBy('score','desc'), limit(50));
+        } else {
+          q = query(col, orderBy('score','desc'), limit(50));
+        }
+        const snap = await getDocs(q);
+        return snap.docs.map(d=>({...d.data(),id:d.id}));
+      } catch(e) { console.warn('Skorlar alınamadı:', e); return []; }
+    };
+
+    function getWeekStr() {
+      const d = new Date();
+      const start = new Date(d);
+      start.setDate(d.getDate() - d.getDay());
+      return `${start.getFullYear()}-${start.getMonth()}-${start.getDate()}`;
+    }
+
+    window.firebaseReady = true;
+    window.dispatchEvent(new Event('firebaseReady'));
+  </script>
+
   <style>
     /* ===== GENEL ===== */
     body {
@@ -41,6 +106,66 @@
     }
 
     /* ===== ANA MENÜ ===== */
+    #welcomeScreen {
+      position: fixed; inset: 0;
+      background: #0d0d14;
+      z-index: 1002;
+      overflow: hidden;
+    }
+    #welcomeScreen::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 30% 20%, rgba(124,111,247,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 70% 80%, rgba(52,211,153,0.1) 0%, transparent 60%);
+    }
+    #welcomeScreen.hidden { display: none; }
+    .lang-active {
+      background: rgba(124,111,247,0.2) !important;
+      border-color: rgba(124,111,247,0.5) !important;
+      color: #a78bfa !important;
+    }
+
+    /* CSS Dişli İkon */
+    .gear-icon {
+      width: 26px; height: 26px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 50%;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gear-icon::before {
+      content: '';
+      position: absolute;
+      width: 10px; height: 10px;
+      background: rgba(13,13,20,1);
+      border-radius: 50%;
+      z-index: 2;
+    }
+    .gear-icon::after {
+      content: '';
+      position: absolute;
+      width: 26px; height: 26px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 50%;
+      clip-path: polygon(
+        50% 0%, 56% 8%, 65% 4%, 68% 14%, 78% 13%,
+        77% 23%, 87% 27%, 82% 36%, 90% 43%, 82% 49%,
+        87% 58%, 78% 61%, 78% 72%, 67% 71%, 62% 81%,
+        53% 76%, 47% 76%, 38% 81%, 33% 71%, 22% 72%,
+        22% 61%, 13% 58%, 18% 49%, 10% 43%, 18% 36%,
+        13% 27%, 23% 23%, 22% 13%, 32% 14%, 35% 4%,
+        44% 8%
+      );
+      z-index: 1;
+    }
+    .settings-gear-btn { gap: 0 !important; }
+    #welcomeNameInput:focus {
+      border-color: rgba(124,111,247,0.5) !important;
+      box-shadow: 0 0 0 3px rgba(124,111,247,0.15);
+    }
+    #btnWelcomeStart:active { transform: scale(0.97); }
+
     #menuScreen {
       position: fixed;
       inset: 0;
@@ -70,13 +195,111 @@
     }
 
     .menu-inner {
-      position: relative;
-      z-index: 2;
-      width: 300px;
+      position: relative; z-index: 2;
+      width: 320px;
       animation: menuFadeIn 0.5s ease both;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
       align-items: center;
+    }
+
+    /* Stats bandı */
+    .menu-stats-band {
+      display: flex; align-items: center;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 10px 0;
+      width: 100%; margin-bottom: 12px;
+    }
+    .menu-stat-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 2px;
+    }
+    .menu-stat-val {
+      font-size: 17px; font-weight: 900;
+      color: #fff; font-family: 'Nunito', sans-serif;
+      letter-spacing: -0.5px;
+    }
+    .menu-stat-lbl {
+      font-size: 10px; font-weight: 700;
+      color: rgba(255,255,255,0.35);
+    }
+    .menu-stat-divider {
+      width: 1px; height: 32px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    /* Daily card */
+    .menu-daily-card {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      text-align: left;
+    }
+    .menu-daily-top {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    /* Oyun butonları */
+    .menu-play-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+
+    .menu-btn {
+      display: block; width: 100%;
+      padding: 15px; border-radius: 14px; border: none;
+      font-size: 16px; font-weight: 800;
+      font-family: 'Nunito', sans-serif;
+      cursor: pointer;
+      transition: transform 0.12s, filter 0.12s;
+      letter-spacing: 0.3px;
+    }
+    .menu-btn:active { transform: scale(0.96); filter: brightness(0.9); }
+
+    .btn-play {
+      background: linear-gradient(135deg, #7c6ff7, #a78bfa);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(124,111,247,0.35);
+    }
+    .btn-timeattack {
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(239,68,68,0.25);
+    }
+
+    /* Alt ikon grid - 4 buton simetrik */
+    .menu-icon-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    .menu-icon-btn {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 6px;
+      padding: 14px 4px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'Nunito', sans-serif;
+    }
+    .menu-icon-btn:active { transform: scale(0.93); background: rgba(255,255,255,0.08); }
+    .mib-icon  { font-size: 24px; line-height: 1; }
+    .mib-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.5); text-align: center; }
+
+    /* Leaderboard tam buton */
+    .btn-leaderboard-full {
+      background: rgba(52,211,153,0.1);
+      color: #34d399;
+      border: 1px solid rgba(52,211,153,0.25) !important;
+      font-size: 15px !important;
+      padding: 13px !important;
     }
 
     .menu-logo {
@@ -140,11 +363,218 @@
       color: #fff;
       box-shadow: 0 4px 20px rgba(239,68,68,0.3);
     }
+
+    /* Zorluk Seçim Modalı */
+    #difficultyModal, #timeLevelModal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1100;
+    }
+    #difficultyModal.hidden, #timeLevelModal.hidden { display: none; }
+
+    .diff-box {
+      background: rgba(15,15,25,0.97);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 28px 20px 20px;
+      width: 300px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: menuFadeIn 0.25s ease both;
+    }
+    .diff-title {
+      font-family: 'Nunito', sans-serif;
+      font-size: 22px; font-weight: 900;
+      color: #fff; text-align: center; margin-bottom: 4px;
+    }
+    .diff-sub {
+      font-size: 13px; color: rgba(255,255,255,0.4);
+      text-align: center; margin-bottom: 20px;
+    }
+    .diff-btn {
+      display: flex; align-items: center; gap: 14px;
+      width: 100%; padding: 14px 16px;
+      border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #fff; cursor: pointer;
+      margin-bottom: 10px;
+      transition: all 0.15s; font-family: 'Nunito', sans-serif;
+      text-align: left;
+    }
+    .diff-btn:active { transform: scale(0.97); }
+    .diff-easy  { border-color: rgba(52,211,153,0.3); }
+    .diff-easy:hover  { background: rgba(52,211,153,0.08); }
+    .diff-normal { border-color: rgba(251,191,36,0.3); }
+    .diff-normal:hover { background: rgba(251,191,36,0.08); }
+    .diff-hard  { border-color: rgba(239,68,68,0.3); }
+    .diff-hard:hover  { background: rgba(239,68,68,0.08); }
+    .diff-icon  { font-size: 24px; flex-shrink: 0; }
+    .diff-name  { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+    .diff-desc  { font-size: 12px; color: rgba(255,255,255,0.45); font-weight: 600; }
+    .diff-cancel {
+      display: block; width: 100%; padding: 12px;
+      border-radius: 12px; border: none;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.4);
+      font-size: 14px; font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+      cursor: pointer; margin-top: 4px;
+    }
     .btn-settings-menu {
       background: rgba(255,255,255,0.06);
       color: rgba(255,255,255,0.75);
       border: 1px solid rgba(255,255,255,0.12) !important;
     }
+
+    .btn-leaderboard {
+      background: rgba(52,211,153,0.1);
+      color: #34d399;
+      border: 1px solid rgba(52,211,153,0.25) !important;
+    }
+    #leaderboardScreen {
+      position:fixed; inset:0; background:#0d0d14;
+      z-index:1001; display:flex; flex-direction:column;
+      padding:48px 20px 24px; overflow-y:auto;
+    }
+    #leaderboardScreen.hidden { display:none; }
+
+    .lb-tabs {
+      display:flex; gap:6px; margin-bottom:16px;
+    }
+    .lb-tab {
+      flex:1; padding:9px 6px;
+      border-radius:10px; border:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.04);
+      color:rgba(255,255,255,0.4); font-size:12px; font-weight:700;
+      font-family:'Nunito',sans-serif; cursor:pointer;
+      transition:all 0.15s;
+    }
+    .lb-tab.active {
+      background:rgba(124,111,247,0.15);
+      border-color:rgba(124,111,247,0.4);
+      color:#a78bfa;
+    }
+
+    .lb-my-score {
+      display:flex; align-items:center; gap:10px;
+      background:rgba(124,111,247,0.1);
+      border:1px solid rgba(124,111,247,0.3);
+      border-radius:12px; padding:12px 14px;
+      margin-bottom:12px;
+    }
+    .lb-my-score.hidden { display:none; }
+    #lbMyRank { font-size:14px; font-weight:900; color:#a78bfa; min-width:32px; }
+    #lbMyName { flex:1; font-size:14px; font-weight:700; color:#fff; }
+    #lbMyVal  { font-size:16px; font-weight:900; color:#fff; font-family:'Nunito',sans-serif; }
+
+    .lb-row {
+      display:flex; align-items:center; gap:10px;
+      padding:12px 14px;
+      border-radius:12px; margin-bottom:6px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+      transition:background 0.1s;
+    }
+    .lb-row.top1 { background:rgba(251,191,36,0.08); border-color:rgba(251,191,36,0.25); }
+    .lb-row.top2 { background:rgba(148,163,184,0.08); border-color:rgba(148,163,184,0.2); }
+    .lb-row.top3 { background:rgba(180,120,60,0.08); border-color:rgba(180,120,60,0.2); }
+    .lb-rank { font-size:16px; min-width:32px; text-align:center; }
+    .lb-name { flex:1; font-size:14px; font-weight:700; color:#fff; font-family:'Nunito',sans-serif; }
+    .lb-score { font-size:16px; font-weight:900; color:#fff; font-family:'Nunito',sans-serif; }
+    .lb-date { font-size:10px; color:rgba(255,255,255,0.3); font-weight:600; }
+
+    .name-box {
+      background:rgba(15,15,25,0.98);
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:24px; padding:28px 20px;
+      width:300px;
+    }
+    #nameModal {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,0.75); backdrop-filter:blur(12px);
+      display:flex; align-items:center; justify-content:center;
+      z-index:1200;
+    }
+    #nameModal.hidden { display:none; }
+
+    .btn-stats {
+      background: rgba(96,165,250,0.1);
+      color: #60a5fa;
+      border: 1px solid rgba(96,165,250,0.2) !important;
+    }
+    #statsScreen {
+      position:fixed; inset:0; background:#0d0d14;
+      z-index:1001; display:flex; flex-direction:column;
+      padding:48px 20px 24px; overflow-y:auto;
+    }
+    #statsScreen.hidden { display:none; }
+    .stats-section-title {
+      font-size:11px; font-weight:700; color:rgba(255,255,255,0.35);
+      letter-spacing:1.5px; text-transform:uppercase;
+      margin:20px 0 10px;
+    }
+    .stats-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:8px;
+    }
+    .stats-card {
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:14px; padding:14px 12px;
+      text-align:center;
+    }
+    .stats-val {
+      font-size:26px; font-weight:900;
+      color:#fff; font-family:'Nunito',sans-serif;
+      letter-spacing:-1px; line-height:1;
+      margin-bottom:4px;
+    }
+    .stats-lbl {
+      font-size:11px; font-weight:600;
+      color:rgba(255,255,255,0.4);
+    }
+    .stats-card.accent-purple { border-color:rgba(124,111,247,0.3); background:rgba(124,111,247,0.06); }
+    .stats-card.accent-gold   { border-color:rgba(251,191,36,0.3);  background:rgba(251,191,36,0.06); }
+    .stats-card.accent-green  { border-color:rgba(52,211,153,0.3);  background:rgba(52,211,153,0.06); }
+    .stats-card.accent-red    { border-color:rgba(239,68,68,0.3);   background:rgba(239,68,68,0.06); }
+    .stats-card.accent-blue   { border-color:rgba(96,165,250,0.3);  background:rgba(96,165,250,0.06); }
+    .stats-mode-row {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:10px 14px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+      border-radius:10px; margin-bottom:6px;
+      font-size:13px;
+    }
+    .stats-mode-name { color:rgba(255,255,255,0.7); font-weight:600; }
+    .stats-mode-val  { color:#fff; font-weight:800; font-family:'Nunito',sans-serif; }
+
+    .btn-achieve {
+      background: rgba(251,191,36,0.1);
+      color: #fbbf24;
+      border: 1px solid rgba(251,191,36,0.25) !important;
+    }
+    #achieveScreen {
+      position:fixed; inset:0; background:#0d0d14;
+      z-index:1001; display:flex; flex-direction:column;
+      padding:48px 20px 20px; overflow-y:auto;
+    }
+    #achieveScreen.hidden { display:none; }
+    #achieveGrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .achieve-card {
+      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+      border-radius:14px; padding:14px 12px;
+      display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;
+    }
+    .achieve-card.unlocked { background:rgba(124,111,247,0.1); border-color:rgba(124,111,247,0.3); }
+    .achieve-icon { font-size:28px; }
+    .achieve-name { font-size:13px; font-weight:800; color:#fff; font-family:'Nunito',sans-serif; line-height:1.2; }
+    .achieve-desc { font-size:10px; color:rgba(255,255,255,0.4); font-weight:600; }
+    .achieve-card:not(.unlocked) .achieve-icon { filter:grayscale(1); opacity:0.35; }
+    .achieve-card:not(.unlocked) .achieve-name { opacity:0.4; }
+    .achieve-locked-badge { font-size:9px; font-weight:700; background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.3); border-radius:50px; padding:2px 8px; }
+    .achieve-unlocked-badge { font-size:9px; font-weight:700; background:rgba(124,111,247,0.2); color:#a78bfa; border-radius:50px; padding:2px 8px; }
 
     .btn-themes {
       background: rgba(251,191,36,0.08);
@@ -525,6 +955,42 @@
 
 <body>
 
+  <!-- ===== İLK AÇILIŞ - İSİM EKRANI ===== -->
+  <div id="welcomeScreen" class="hidden">
+    <!-- Arka plan blokları -->
+    <div class="menu-block" style="width:52px;height:52px;background:#7c6ff7;top:7%;left:5%;--r:-12deg;--dur:3.2s;--delay:0s;"></div>
+    <div class="menu-block" style="width:34px;height:34px;background:#fbbf24;top:14%;right:9%;--r:8deg;--dur:2.8s;--delay:0.4s;"></div>
+    <div class="menu-block" style="width:44px;height:44px;background:#34d399;top:68%;left:6%;--r:15deg;--dur:3.5s;--delay:0.7s;"></div>
+    <div class="menu-block" style="width:30px;height:30px;background:#60a5fa;top:74%;right:6%;--r:-6deg;--dur:2.6s;--delay:0.2s;"></div>
+    <div class="menu-block" style="width:50px;height:50px;background:#f472b6;top:38%;left:2%;--r:20deg;--dur:4s;--delay:1s;"></div>
+    <div class="welcome-bg"></div>
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;text-align:center;">
+      <div style="font-size:64px;margin-bottom:8px;">🎮</div>
+      <div style="font-family:'Nunito',sans-serif;font-size:48px;font-weight:900;letter-spacing:-2px;margin-bottom:4px;">
+        <span style="color:#7c6ff7;">B</span><span style="color:#a78bfa;">l</span><span style="color:#60a5fa;">o</span><span style="color:#34d399;">c</span><span style="color:#fbbf24;">k</span><span style="color:#f472b6;">P</span><span style="color:#fff;">op</span>
+      </div>
+      <div style="font-size:12px;letter-spacing:4px;color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:48px;font-weight:600;">block puzzle game</div>
+
+      <div style="width:100%;max-width:300px;">
+        <div style="font-size:20px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin-bottom:8px;">Hoş geldin! 👋</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:24px;font-weight:600;">Sıralamada görünecek isminizi girin</div>
+
+        <input id="welcomeNameInput" type="text" maxlength="16" placeholder="İsminizi girin..."
+          style="width:100%;padding:16px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;font-size:18px;font-family:'Nunito',sans-serif;font-weight:800;margin-bottom:12px;outline:none;text-align:center;letter-spacing:0.5px;">
+
+        <button id="btnWelcomeStart"
+          style="width:100%;padding:17px;border-radius:14px;border:none;background:linear-gradient(135deg,#7c6ff7,#a78bfa);color:#fff;font-size:17px;font-weight:900;font-family:'Nunito',sans-serif;cursor:pointer;box-shadow:0 4px 20px rgba(124,111,247,0.4);transition:transform 0.1s;">
+          Hadi Oynayalım! ▶
+        </button>
+
+        <button id="btnWelcomeSkip"
+          style="width:100%;padding:10px;border:none;background:none;color:rgba(255,255,255,0.25);font-size:13px;font-family:'Nunito',sans-serif;cursor:pointer;margin-top:4px;">
+          İsim girmeden devam et
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== ANA MENÜ ===== -->
   <div id="menuScreen">
     <div class="menu-block" style="width:52px;height:52px;background:#ff6b6b;top:7%;left:5%;--r:-12deg;--dur:3.2s;--delay:0s;"></div>
@@ -537,30 +1003,209 @@
     <div class="menu-block" style="width:42px;height:42px;background:#4d7cff;top:25%;left:40%;--r:-5deg;--dur:4.2s;--delay:0.3s;"></div>
 
     <div class="menu-inner">
+      <!-- LOGO -->
       <div class="menu-logo">
-        <span style="color:#ff6b6b;">B</span><span style="color:#ffd24d;">l</span><span style="color:#42d67a;">o</span><span style="color:#4d7cff;">c</span><span style="color:#b04dff;">k</span><span style="color:#ff8a4d;">P</span><span style="color:#fff;">op</span>
+        <span style="color:#7c6ff7;">B</span><span style="color:#a78bfa;">l</span><span style="color:#60a5fa;">o</span><span style="color:#34d399;">c</span><span style="color:#fbbf24;">k</span><span style="color:#f472b6;">P</span><span style="color:#fff;">op</span>
       </div>
       <div class="menu-tagline">block puzzle game</div>
 
-      <div class="menu-highscore">
-        <span>★</span>
-        <span id="menuHighScore">En Yüksek: 0</span>
-      </div>
-      <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:50px;padding:5px 14px;color:#f87171;font-size:12px;font-weight:700;">
-          <span>⏱</span><span id="menuTimeHS">En İyi: 0</span>
+      <!-- STATS BANDI -->
+      <div class="menu-stats-band">
+        <div class="menu-stat-item">
+          <span class="menu-stat-val" id="menuHighScore">0</span>
+          <span class="menu-stat-lbl">🏆 Best</span>
+        </div>
+        <div class="menu-stat-divider"></div>
+        <div class="menu-stat-item">
+          <span class="menu-stat-val" id="menuTimeHS">0</span>
+          <span class="menu-stat-lbl">⏱ Time</span>
+        </div>
+        <div class="menu-stat-divider"></div>
+        <div class="menu-stat-item">
+          <span class="menu-stat-val" id="xpDisplay">0</span>
+          <span class="menu-stat-lbl">⭐ XP</span>
         </div>
       </div>
-      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,210,77,0.08);border:1px solid rgba(255,210,77,0.2);border-radius:50px;padding:5px 14px;color:#ffd24d;font-size:12px;font-weight:600;margin-bottom:28px;">
-        <span>⭐</span><span id="xpDisplay">XP: 0</span>
+
+      <!-- DAILY CHALLENGE -->
+      <div id="dailyCard" class="menu-daily-card">
+        <div class="menu-daily-top">
+          <span id="dailyLabel" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;">📅 Günlük Görev</span>
+          <span id="dailyStreak" style="font-size:12px;font-weight:800;color:#f97316;">🔥 0 gün</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span id="dailyChallengeIcon" style="font-size:22px;">🎯</span>
+          <div style="flex:1;min-width:0;">
+            <div id="dailyChallengeDesc" style="font-size:13px;font-weight:800;color:#fff;font-family:'Nunito',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Yükleniyor...</div>
+            <div id="dailyChallengeXP" style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;">+80 XP</div>
+          </div>
+          <div id="dailyDone" style="display:none;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:50px;padding:4px 10px;font-size:11px;font-weight:700;color:#34d399;white-space:nowrap;">✓ Tamam</div>
+        </div>
       </div>
 
-      <button class="menu-btn btn-play" id="btnPlay">▶ &nbsp; Klasik Mod</button>
-      <button class="menu-btn btn-timeattack" id="btnPlayTime">⏱ &nbsp; Zaman Modu</button>
-      <button class="menu-btn btn-themes" id="btnOpenThemes">🎨 &nbsp; Temalar</button>
-      <button class="menu-btn btn-settings-menu" id="btnOpenSettings">⚙ &nbsp; Ayarlar</button>
+      <!-- OYNA BUTONLARI (büyük) -->
+      <div class="menu-play-btns">
+        <button class="menu-btn btn-play" id="btnPlay">🎮  Klasik Mod</button>
+        <button class="menu-btn btn-timeattack" id="btnPlayTime">⏱  Zaman Modu</button>
+        <button class="menu-btn btn-leaderboard-full" id="btnOpenLeaderboard">🌍  Sıralama</button>
+      </div>
+
+      <!-- ALT İKON GRID - 4 buton simetrik -->
+      <div class="menu-icon-grid">
+        <button class="menu-icon-btn" id="btnOpenAchieve">
+          <span class="mib-icon">🏆</span>
+          <span class="mib-label">Rozetler</span>
+        </button>
+        <button class="menu-icon-btn" id="btnOpenStats">
+          <span class="mib-icon">📊</span>
+          <span class="mib-label">İstatistik</span>
+        </button>
+        <button class="menu-icon-btn" id="btnOpenThemes">
+          <span class="mib-icon">🎨</span>
+          <span class="mib-label">Temalar</span>
+        </button>
+        <button class="menu-icon-btn" id="btnOpenSettings">
+          <span class="mib-icon">🛠️</span>
+        </button>
+      </div>
 
       <div class="menu-version">v1.0.0</div>
+    </div>
+  </div>
+
+  <!-- ===== LEADERBOARD EKRANI ===== -->
+  <div id="leaderboardScreen" class="hidden">
+    <button class="settings-back" id="btnBackLeaderboard">← Geri</button>
+    <div class="settings-title">🌍 Sıralama</div>
+
+    <!-- Tab seçimi -->
+    <div class="lb-tabs">
+      <button class="lb-tab active" data-tab="weekly">Bu Hafta</button>
+      <button class="lb-tab" data-tab="alltime">Tüm Zamanlar</button>
+      <button class="lb-tab" data-tab="timeattack">Zaman Modu</button>
+    </div>
+
+    <!-- Oyuncunun skoru -->
+    <div id="lbMyScore" class="lb-my-score hidden">
+      <span id="lbMyRank">#—</span>
+      <span id="lbMyName">Sen</span>
+      <span id="lbMyVal">0</span>
+    </div>
+
+    <!-- Liste -->
+    <div id="lbList"></div>
+    <div id="lbLoading" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);font-size:14px;">Yükleniyor...</div>
+    <div id="lbEmpty" class="hidden" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);font-size:14px;">Henüz skor yok. İlk sen gir!</div>
+  </div>
+
+  <!-- ===== İSİM GİRİŞ MODALİ ===== -->
+  <div id="nameModal" class="hidden">
+    <div class="name-box">
+      <div class="diff-title" style="margin-bottom:8px;">👤 İsmin ne?</div>
+      <div class="diff-sub">Skorun sıralamada görünecek</div>
+      <input id="nameInput" type="text" maxlength="16" placeholder="İsminizi girin..."
+        style="width:100%;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:16px;font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:12px;outline:none;text-align:center;">
+      <button id="btnNameSave" style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#7c6ff7,#a78bfa);color:#fff;font-size:16px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;">Kaydet ve Gönder</button>
+      <button id="btnNameCancel" style="width:100%;padding:10px;border:none;background:none;color:rgba(255,255,255,0.3);font-size:13px;font-family:'Nunito',sans-serif;cursor:pointer;margin-top:6px;">İptal</button>
+    </div>
+  </div>
+
+  <!-- ===== İSTATİSTİK EKRANI ===== -->
+  <div id="statsScreen" class="hidden">
+    <button class="settings-back" id="btnBackStats">← Geri</button>
+    <div class="settings-title">📊 İstatistikler</div>
+    <div id="statsContent"></div>
+  </div>
+
+  <!-- ===== ACHİEVEMENT EKRANI ===== -->
+  <div id="achieveScreen" class="hidden">
+    <button class="settings-back" id="btnBackAchieve">← Geri</button>
+    <div class="settings-title">🏆 Rozetler</div>
+    <div id="achieveProgress" style="color:rgba(255,255,255,0.4);font-size:13px;font-weight:600;margin-bottom:16px;text-align:center;"></div>
+    <div id="achieveGrid"></div>
+  </div>
+
+  <!-- ===== ZORLUK SEÇİM MODALİ ===== -->
+  <div id="difficultyModal" class="hidden">
+    <div class="diff-box">
+      <div class="diff-title">🎮 Klasik Mod</div>
+      <div class="diff-sub">Bir zorluk seviyesi seç</div>
+
+      <button class="diff-btn diff-easy" id="btnEasy">
+        <div class="diff-icon">🟢</div>
+        <div class="diff-info">
+          <div class="diff-name">Kolay</div>
+          <div class="diff-desc">Yardımcı bloklar, powerup var</div>
+        </div>
+      </button>
+
+      <button class="diff-btn diff-normal" id="btnNormal">
+        <div class="diff-icon">🟡</div>
+        <div class="diff-info">
+          <div class="diff-name">Normal</div>
+          <div class="diff-desc">%70 yardımcı, powerup var</div>
+        </div>
+      </button>
+
+      <button class="diff-btn diff-hard" id="btnHard">
+        <div class="diff-icon">🔴</div>
+        <div class="diff-info">
+          <div class="diff-name">Zor</div>
+          <div class="diff-desc">Tamamen rastgele, powerup yok</div>
+        </div>
+      </button>
+
+      <button class="diff-cancel" id="btnDiffCancel">İptal</button>
+    </div>
+  </div>
+
+  <!-- ===== ZAMAN MODU SEVİYE MODALİ ===== -->
+  <div id="timeLevelModal" class="hidden">
+    <div class="diff-box">
+      <div class="diff-title">⏱ Zaman Modu</div>
+      <div class="diff-sub">Seviye seç</div>
+
+      <button class="diff-btn diff-easy" id="btnTimeL1">
+        <div class="diff-icon">1️⃣</div>
+        <div class="diff-info">
+          <div class="diff-name">Seviye 1</div>
+          <div class="diff-desc">60 saniye</div>
+        </div>
+      </button>
+
+      <button class="diff-btn diff-normal" id="btnTimeL2">
+        <div class="diff-icon">2️⃣</div>
+        <div class="diff-info">
+          <div class="diff-name">Seviye 2</div>
+          <div class="diff-desc">50 saniye</div>
+        </div>
+      </button>
+
+      <button class="diff-btn diff-normal" id="btnTimeL3">
+        <div class="diff-icon">3️⃣</div>
+        <div class="diff-info">
+          <div class="diff-name">Seviye 3</div>
+          <div class="diff-desc">40 saniye</div>
+        </div>
+      </button>
+
+      <button class="diff-btn diff-hard" id="btnTimeL4">
+        <div class="diff-icon">4️⃣</div>
+        <div class="diff-info">
+          <div class="diff-name">Seviye 4</div>
+          <div class="diff-desc">30 saniye</div>
+        </div>
+      </button>
+
+      <button class="diff-btn diff-hard" id="btnTimeL5">
+        <div class="diff-icon">5️⃣</div>
+        <div class="diff-info">
+          <div class="diff-name">Seviye 5</div>
+          <div class="diff-desc">20 saniye — Kaos!</div>
+        </div>
+      </button>
+
+      <button class="diff-cancel" id="btnTimeLevelCancel">İptal</button>
     </div>
   </div>
 
@@ -592,6 +1237,19 @@
     <button class="settings-back" id="btnBack">← Geri</button>
     <div class="settings-title">Ayarlar</div>
 
+    <!-- İsim değiştirme -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">👤 Oyuncu Adı</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="settingsNameInput" type="text" maxlength="16"
+          style="flex:1;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;font-size:15px;font-family:'Nunito',sans-serif;font-weight:700;outline:none;">
+        <button id="btnSaveName"
+          style="padding:10px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c6ff7,#a78bfa);color:#fff;font-size:13px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;white-space:nowrap;">
+          Kaydet
+        </button>
+      </div>
+    </div>
+
     <div class="settings-row">
       <span>Ses Efektleri</span>
       <div class="toggle" id="tgl-sfx"></div>
@@ -607,6 +1265,13 @@
     <div class="settings-row">
       <span>Animasyonlar</span>
       <div class="toggle" id="tgl-anim"></div>
+    </div>
+    <div class="settings-row" style="border-bottom:none;">
+      <span>Dil / Language</span>
+      <div style="display:flex;gap:6px;">
+        <button id="langTR" onclick="setLang('tr')" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;" class="lang-active">🇹🇷 TR</button>
+        <button id="langEN" onclick="setLang('en')" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;">🇬🇧 EN</button>
+      </div>
     </div>
 
     <div class="settings-footer">
@@ -674,7 +1339,7 @@
     <!-- Timer (zaman modu) -->
     <div id="timerBar" style="display:none; width:100%; padding:0 2px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-        <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;">⏱ Zaman Modu</span>
+        <span id="timerLevelLabel" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;">⏱ Zaman Modu</span>
         <span id="timerText" style="font-size:22px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;letter-spacing:-1px;">60</span>
       </div>
       <div style="background:rgba(255,255,255,0.08);border-radius:50px;height:6px;overflow:hidden;">
@@ -704,11 +1369,24 @@
   <script>
     // ===== YARDIMCI =====
     function refreshMenuHS() {
-      const hs     = localStorage.getItem('bb_high_score') || 0;
-      const timeHS = localStorage.getItem('bp_time_high_score') || 0;
-      document.getElementById('menuHighScore').textContent = 'En Yüksek: ' + hs;
+      const hs     = parseInt(localStorage.getItem('bb_high_score') || '0');
+      const timeHS = parseInt(localStorage.getItem('bp_time_high_score') || '0');
+      const xp     = parseInt(localStorage.getItem('bp_xp') || '0');
+
+      function fmt(n) {
+        if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+        if (n >= 1000) return (n/1000).toFixed(1)+'K';
+        return String(n);
+      }
+
+      const hsEl = document.getElementById('menuHighScore');
+      if (hsEl) hsEl.textContent = fmt(hs);
       const timeEl = document.getElementById('menuTimeHS');
-      if (timeEl) timeEl.textContent = 'En İyi: ' + timeHS;
+      if (timeEl) timeEl.textContent = fmt(timeHS);
+      const xpEl = document.getElementById('xpDisplay');
+      if (xpEl) xpEl.textContent = fmt(xp);
+
+      updateDailyCardUI();
     }
 
     function goToMenu() {
@@ -720,6 +1398,12 @@
       document.getElementById('timerBar').style.display = 'none';
       document.getElementById('gameOverScreen').style.visibility = 'hidden';
       document.getElementById('inGameSettingsPanel').classList.add('hidden');
+      document.getElementById('difficultyModal').classList.add('hidden');
+      document.getElementById('timeLevelModal').classList.add('hidden');
+      document.getElementById('achieveScreen').classList.add('hidden');
+      document.getElementById('statsScreen').classList.add('hidden');
+      document.getElementById('leaderboardScreen').classList.add('hidden');
+      document.getElementById('nameModal').classList.add('hidden');
       document.getElementById('menuScreen').classList.remove('hidden');
       refreshMenuHS();
     }
@@ -782,30 +1466,25 @@
     onlyMainToggles.forEach(t => bindToggle(t.id, t.key, null));
 
     // ===== MOD SİSTEMİ =====
-    let currentGameMode = 'classic';
+    let currentGameMode = 'normal';
     window.currentGameMode = currentGameMode;
 
-    const TIME_ATTACK_DURATION = 60;
-    let timeLeft = TIME_ATTACK_DURATION;
+    const TIME_LEVELS = { 1:60, 2:50, 3:40, 4:30, 5:20 };
+    let currentTimeLevel = 1;
+    const TIME_ATTACK_DURATION_FN = () => TIME_LEVELS[currentTimeLevel] || 60;
+
+    let timeLeft = 60;
     let timerInterval = null;
     window.timeLeft = timeLeft;
 
     function addTime(seconds) {
       if (window.currentGameMode !== 'timeattack') return;
-      timeLeft = Math.min(timeLeft + seconds, TIME_ATTACK_DURATION);
+      const MAX = TIME_ATTACK_DURATION_FN();
+      timeLeft = Math.min(timeLeft + seconds, MAX);
       window.timeLeft = timeLeft;
-
-      // +süre göster
       const popup = document.createElement('div');
-      popup.textContent = '+' + seconds + 's';
-      popup.style.cssText = `
-        position:fixed; right:16px; top:120px;
-        color:#34d399; font-size:20px; font-weight:900;
-        font-family:'Nunito',sans-serif;
-        pointer-events:none; z-index:9999;
-        animation: xpToastAnim 1.2s ease forwards;
-        text-shadow: 0 0 12px rgba(52,211,153,0.6);
-      `;
+      popup.textContent = '+' + (Number.isInteger(seconds) ? seconds : seconds.toFixed(1)) + 's';
+      popup.style.cssText = `position:fixed;right:16px;top:120px;color:#34d399;font-size:20px;font-weight:900;font-family:'Nunito',sans-serif;pointer-events:none;z-index:9999;animation:xpToastAnim 1.2s ease forwards;text-shadow:0 0 12px rgba(52,211,153,0.6);`;
       document.body.appendChild(popup);
       setTimeout(() => popup.remove(), 1200);
       updateTimerUI();
@@ -813,7 +1492,8 @@
     window.addTime = addTime;
 
     function startTimer() {
-      timeLeft = TIME_ATTACK_DURATION;
+      const DURATION = TIME_ATTACK_DURATION_FN();
+      timeLeft = DURATION;
       window.timeLeft = timeLeft;
       updateTimerUI();
       clearInterval(timerInterval);
@@ -829,14 +1509,16 @@
     }
 
     function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+    window.stopTimer = stopTimer;
 
     function updateTimerUI() {
       const text = document.getElementById('timerText');
       const fill = document.getElementById('timerFill');
+      const DURATION = TIME_ATTACK_DURATION_FN();
       const secs = Math.ceil(timeLeft);
       if (text) text.textContent = secs;
       if (fill) {
-        const pct = (timeLeft / TIME_ATTACK_DURATION) * 100;
+        const pct = (timeLeft / DURATION) * 100;
         fill.style.width = pct + '%';
         if (pct > 50) {
           fill.style.background = 'linear-gradient(90deg,#7c6ff7,#a78bfa)';
@@ -859,7 +1541,7 @@
       setTimeout(() => { if (typeof showGameOver === 'function') showGameOver(); }, 300);
     }
 
-    function startGame(mode) {
+    function startGame(mode, extra) {
       currentGameMode = mode;
       window.currentGameMode = mode;
       document.getElementById('menuScreen').classList.add('hidden');
@@ -869,6 +1551,10 @@
       gc.style.pointerEvents = '';
       const timerBar = document.getElementById('timerBar');
       if (mode === 'timeattack') {
+        currentTimeLevel = extra || 1;
+        // Seviye etiketi
+        const lvlLabel = document.getElementById('timerLevelLabel');
+        if (lvlLabel) lvlLabel.textContent = `Sev. ${currentTimeLevel} · ${TIME_LEVELS[currentTimeLevel]}s`;
         timerBar.style.display = 'block';
         startTimer();
       } else {
@@ -880,15 +1566,604 @@
       if (typeof setupPowerups === 'function') setupPowerups();
     }
 
-    // ===== MENÜ BUTONLARI =====
-    document.getElementById('btnPlay').addEventListener('click', () => startGame('classic'));
-    document.getElementById('btnPlayTime').addEventListener('click', () => {
-      if (typeof resetGame === 'function') resetGame();
-      startGame('timeattack');
+    // ===== LEADERBOARD =====
+    let currentLbTab = 'weekly';
+    let pendingScore = null; // Gönderiyi bekleyen skor
+
+    function getPlayerName() { return localStorage.getItem('bp_player_name') || ''; }
+    function savePlayerName(n) { localStorage.setItem('bp_player_name', n); }
+
+    function getRankEmoji(i) {
+      if (i === 0) return '🥇';
+      if (i === 1) return '🥈';
+      if (i === 2) return '🥉';
+      return `#${i+1}`;
+    }
+
+    async function loadLeaderboard(tab) {
+      const list    = document.getElementById('lbList');
+      const loading = document.getElementById('lbLoading');
+      const empty   = document.getElementById('lbEmpty');
+      const myScore = document.getElementById('lbMyScore');
+      if (!list) return;
+
+      list.innerHTML = '';
+      loading.classList.remove('hidden');
+      empty.classList.add('hidden');
+      myScore.classList.add('hidden');
+
+      if (!window.fbGetScores) {
+        loading.textContent = 'Bağlantı kuruluyor...';
+        return;
+      }
+
+      const rows = await window.fbGetScores(tab);
+      loading.classList.add('hidden');
+
+      if (rows.length === 0) { empty.classList.remove('hidden'); return; }
+
+      const myName = getPlayerName();
+      let myRank = -1;
+
+      rows.forEach((row, i) => {
+        const div = document.createElement('div');
+        div.className = 'lb-row' + (i===0?' top1':i===1?' top2':i===2?' top3':'');
+
+        const date = row.ts?.toDate ? row.ts.toDate() : new Date();
+        const dateStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`;
+
+        div.innerHTML = `
+          <div class="lb-rank">${getRankEmoji(i)}</div>
+          <div>
+            <div class="lb-name">${row.name || 'Anonim'}</div>
+            <div class="lb-date">${dateStr}</div>
+          </div>
+          <div class="lb-score">${row.score.toLocaleString()}</div>
+        `;
+        list.appendChild(div);
+
+        if (myName && row.name === myName) myRank = i;
+      });
+
+      // Oyuncunun kendi skoru
+      if (myRank >= 0) {
+        document.getElementById('lbMyRank').textContent = getRankEmoji(myRank);
+        document.getElementById('lbMyName').textContent = myName + ' (Sen)';
+        document.getElementById('lbMyVal').textContent = rows[myRank].score.toLocaleString();
+        myScore.classList.remove('hidden');
+      }
+    }
+
+    function openLeaderboard() {
+      document.getElementById('leaderboardScreen').classList.remove('hidden');
+      loadLeaderboard(currentLbTab);
+    }
+
+    document.getElementById('btnOpenLeaderboard').addEventListener('click', openLeaderboard);
+    document.getElementById('btnBackLeaderboard').addEventListener('click', () => {
+      document.getElementById('leaderboardScreen').classList.add('hidden');
     });
 
+    // Tab seçimi
+    document.querySelectorAll('.lb-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.lb-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentLbTab = btn.dataset.tab;
+        loadLeaderboard(currentLbTab);
+      });
+    });
+
+    // ===== İSİM MODALİ =====
+    function showNameModal(score, mode) {
+      pendingScore = { score, mode };
+      const saved = getPlayerName();
+      document.getElementById('nameInput').value = saved;
+      document.getElementById('nameModal').classList.remove('hidden');
+    }
+
+    document.getElementById('btnNameSave').addEventListener('click', async () => {
+      const name = document.getElementById('nameInput').value.trim();
+      if (!name) return;
+      savePlayerName(name);
+      document.getElementById('nameModal').classList.add('hidden');
+
+      if (pendingScore && window.fbSubmitScore) {
+        const ok = await window.fbSubmitScore(name, pendingScore.score, pendingScore.mode);
+        if (ok) {
+          const t = document.createElement('div');
+          t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
+          t.textContent = '✓ Skor sıralamasına gönderildi!';
+          document.body.appendChild(t);
+          setTimeout(() => t.remove(), 2000);
+        }
+      }
+      pendingScore = null;
+    });
+
+    document.getElementById('btnNameCancel').addEventListener('click', () => {
+      document.getElementById('nameModal').classList.add('hidden');
+      pendingScore = null;
+    });
+
+    // Game over'dan sonra skoru gönder
+    window.submitScoreToLeaderboard = function(score, mode) {
+      if (!score || score <= 0) return;
+      setTimeout(() => showNameModal(score, mode), 800);
+    };
+
+    // goToMenu'da leaderboard kapat
+    const _origGoToMenu = goToMenu;
+
+    // ===== İSTATİSTİK EKRANI =====
+    function buildStatsScreen() {
+      const container = document.getElementById('statsContent');
+      if (!container) return;
+
+      const s = typeof getAchievementStats === 'function' ? getAchievementStats() : {};
+      const daily = typeof getDailyStatus === 'function' ? getDailyStatus() : {};
+      const unlocked = JSON.parse(localStorage.getItem('bp_achievements') || '[]');
+      const hs = parseInt(localStorage.getItem('bb_high_score') || '0');
+      const timeHS = parseInt(localStorage.getItem('bp_time_high_score') || '0');
+
+      function fmt(n) {
+        if (!n) return '0';
+        if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+        if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+        return String(n);
+      }
+
+      container.innerHTML = `
+        <div class="stats-section-title">🏅 Genel</div>
+        <div class="stats-grid">
+          <div class="stats-card accent-gold">
+            <div class="stats-val">${fmt(hs)}</div>
+            <div class="stats-lbl">En Yüksek Skor</div>
+          </div>
+          <div class="stats-card accent-purple">
+            <div class="stats-val">${fmt(s.totalScore || 0)}</div>
+            <div class="stats-lbl">Toplam Puan</div>
+          </div>
+          <div class="stats-card accent-blue">
+            <div class="stats-val">${fmt(s.totalGames || 0)}</div>
+            <div class="stats-lbl">Toplam Oyun</div>
+          </div>
+          <div class="stats-card accent-green">
+            <div class="stats-val">${unlocked.length}</div>
+            <div class="stats-lbl">Kazanılan Rozet</div>
+          </div>
+        </div>
+
+        <div class="stats-section-title">🧱 Oyun İçi</div>
+        <div class="stats-grid">
+          <div class="stats-card">
+            <div class="stats-val">${fmt(s.totalBlocks || 0)}</div>
+            <div class="stats-lbl">Toplam Blok</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-val">${fmt(s.totalLines || 0)}</div>
+            <div class="stats-lbl">Temizlenen Satır</div>
+          </div>
+          <div class="stats-card accent-red">
+            <div class="stats-val">${s.maxCombo || 0}x</div>
+            <div class="stats-lbl">En Yüksek Combo</div>
+          </div>
+          <div class="stats-card accent-blue">
+            <div class="stats-val">${fmt(timeHS)}</div>
+            <div class="stats-lbl">Zaman Modu Rekor</div>
+          </div>
+        </div>
+
+        <div class="stats-section-title">🔥 Streak</div>
+        <div class="stats-grid">
+          <div class="stats-card accent-red">
+            <div class="stats-val">${daily.streak || 0}</div>
+            <div class="stats-lbl">Güncel Streak</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-val">${daily.completed ? '✓' : '—'}</div>
+            <div class="stats-lbl">Bugünkü Görev</div>
+          </div>
+        </div>
+
+        <div class="stats-section-title">🎮 Mod Başına Oyun</div>
+        <div class="stats-mode-row"><span class="stats-mode-name">🟢 Kolay</span><span class="stats-mode-val">${s.easyGames || 0} oyun</span></div>
+        <div class="stats-mode-row"><span class="stats-mode-name">🟡 Normal</span><span class="stats-mode-val">${s.normalGames || 0} oyun</span></div>
+        <div class="stats-mode-row"><span class="stats-mode-name">🔴 Zor</span><span class="stats-mode-val">${s.hardGames || 0} oyun</span></div>
+        <div class="stats-mode-row"><span class="stats-mode-name">⏱ Zaman</span><span class="stats-mode-val">${s.timeGames || 0} oyun</span></div>
+      `;
+    }
+
+    document.getElementById('btnOpenStats').addEventListener('click', () => {
+      buildStatsScreen();
+      document.getElementById('statsScreen').classList.remove('hidden');
+    });
+    document.getElementById('btnBackStats').addEventListener('click', () => {
+      document.getElementById('statsScreen').classList.add('hidden');
+    });
+
+    // ===== ACHİEVEMENT EKRANI =====
+    function buildAchieveGrid() {
+      const grid = document.getElementById('achieveGrid');
+      const prog = document.getElementById('achieveProgress');
+      grid.innerHTML = '';
+
+      const unlocked = JSON.parse(localStorage.getItem('bp_achievements') || '[]');
+      const ACHS = typeof ACHIEVEMENTS !== 'undefined' ? ACHIEVEMENTS : [];
+
+      if (prog) prog.textContent = `${unlocked.length} / ${ACHS.length} rozet kazanıldı`;
+
+      ACHS.forEach(ach => {
+        const isUnlocked = unlocked.includes(ach.id);
+        const card = document.createElement('div');
+        card.className = 'achieve-card' + (isUnlocked ? ' unlocked' : '');
+        card.innerHTML = `
+          <div class="achieve-icon">${ach.icon}</div>
+          <div class="achieve-name">${ach.name}</div>
+          <div class="achieve-desc">${ach.desc}</div>
+          <div class="${isUnlocked ? 'achieve-unlocked-badge' : 'achieve-locked-badge'}">${isUnlocked ? '✓ Kazanıldı' : '🔒 Kilitli'}</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    document.getElementById('btnOpenAchieve').addEventListener('click', () => {
+      buildAchieveGrid();
+      document.getElementById('achieveScreen').classList.remove('hidden');
+    });
+    document.getElementById('btnBackAchieve').addEventListener('click', () => {
+      document.getElementById('achieveScreen').classList.add('hidden');
+    });
+
+
+    // ===== DİL SİSTEMİ =====
+    const LANGS = {
+      tr: {
+        // Menü
+        classicMode: '🎮  Klasik Mod',
+        timeMode: '⏱  Zaman Modu',
+        achievements: '🏆  Rozetler',
+        statistics: '📊  İstatistikler',
+        leaderboard: '🌍  Sıralama',
+        themes: '🎨  Temalar',
+        settings: '⚙  Ayarlar',
+        highScore: 'En Yüksek',
+        bestTime: 'En İyi',
+        // Zorluk
+        classicModeTitle: '🎮 Klasik Mod',
+        chooseDifficulty: 'Bir zorluk seviyesi seç',
+        easy: 'Kolay', easyDesc: 'Yardımcı bloklar, powerup var',
+        normal: 'Normal', normalDesc: '%70 yardımcı, powerup var',
+        hard: 'Zor', hardDesc: 'Tamamen rastgele, powerup yok',
+        cancel: 'İptal',
+        // Zaman modu
+        timeModeTitle: '⏱ Zaman Modu',
+        chooseLevel: 'Seviye seç',
+        level: 'Seviye',
+        // Ayarlar
+        settingsTitle: 'Ayarlar',
+        playerName: '👤 Oyuncu Adı',
+        namePlaceholder: 'İsminizi girin...',
+        save: 'Kaydet',
+        soundFx: 'Ses Efektleri',
+        music: 'Müzik',
+        vibration: 'Titreşim',
+        animations: 'Animasyonlar',
+        language: 'Dil',
+        back: '← Geri',
+        // Oyun içi
+        menuBtn: '🏠 Menü',
+        resetBtn: '↺ Sıfırla',
+        timeMode2: '⏱ Zaman Modu',
+        rowDelete: 'Satır Sil',
+        refresh: 'Yenile',
+        undo: 'Geri Al',
+        // Game over
+        gameOver: 'Game Over',
+        playAgain: 'Tekrar Oyna',
+        // Reset
+        resetTitle: 'Oyunu Sıfırla',
+        resetDesc: 'Mevcut oyun silinecek. Emin misin?',
+        giveUp: 'Vazgeç',
+        reset: 'Sıfırla',
+        // Welcome
+        welcomeTitle: 'Hoş geldin! 👋',
+        welcomeDesc: 'Sıralamada görünecek isminizi girin',
+        letsPlay: 'Hadi Oynayalım! ▶',
+        skipName: 'İsim girmeden devam et',
+        // Daily
+        dailyLabel: '📅 Günlük Görev',
+        dailyDone: '✓ Tamam',
+        // Rozetler
+        achieveTitle: '🏆 Rozetler',
+        unlocked: '✓ Kazanıldı',
+        locked: '🔒 Kilitli',
+        // İstatistik
+        statsTitle: '📊 İstatistikler',
+        // Leaderboard
+        lbTitle: '🌍 Sıralama',
+        thisWeek: 'Bu Hafta',
+        allTime: 'Tüm Zamanlar',
+        timeModeTab: 'Zaman Modu',
+        loading: 'Yükleniyor...',
+        noScore: 'Henüz skor yok. İlk sen gir!',
+        // İsim modal
+        nameModalTitle: '👤 İsmin ne?',
+        nameModalDesc: 'Skorun sıralamada görünecek',
+        saveAndSend: 'Kaydet ve Gönder',
+      },
+      en: {
+        classicMode: '🎮  Classic Mode',
+        timeMode: '⏱  Time Mode',
+        achievements: '🏆  Achievements',
+        statistics: '📊  Statistics',
+        leaderboard: '🌍  Leaderboard',
+        themes: '🎨  Themes',
+        settings: '⚙  Settings',
+        highScore: 'Best Score',
+        bestTime: 'Best Time',
+        classicModeTitle: '🎮 Classic Mode',
+        chooseDifficulty: 'Choose a difficulty',
+        easy: 'Easy', easyDesc: 'Helper blocks, powerups on',
+        normal: 'Normal', normalDesc: '70% helper, powerups on',
+        hard: 'Hard', hardDesc: 'Fully random, no powerups',
+        cancel: 'Cancel',
+        timeModeTitle: '⏱ Time Mode',
+        chooseLevel: 'Choose level',
+        level: 'Level',
+        settingsTitle: 'Settings',
+        playerName: '👤 Player Name',
+        namePlaceholder: 'Enter your name...',
+        save: 'Save',
+        soundFx: 'Sound Effects',
+        music: 'Music',
+        vibration: 'Vibration',
+        animations: 'Animations',
+        language: 'Language',
+        back: '← Back',
+        menuBtn: '🏠 Menu',
+        resetBtn: '↺ Reset',
+        timeMode2: '⏱ Time Mode',
+        rowDelete: 'Clear Row',
+        refresh: 'Refresh',
+        undo: 'Undo',
+        gameOver: 'Game Over',
+        playAgain: 'Play Again',
+        resetTitle: 'Reset Game',
+        resetDesc: 'Current game will be deleted. Sure?',
+        giveUp: 'Cancel',
+        reset: 'Reset',
+        welcomeTitle: 'Welcome! 👋',
+        welcomeDesc: 'Enter your name for the leaderboard',
+        letsPlay: "Let's Play! ▶",
+        skipName: 'Continue without name',
+        dailyLabel: '📅 Daily Challenge',
+        dailyDone: '✓ Done',
+        achieveTitle: '🏆 Achievements',
+        unlocked: '✓ Unlocked',
+        locked: '🔒 Locked',
+        statsTitle: '📊 Statistics',
+        lbTitle: '🌍 Leaderboard',
+        thisWeek: 'This Week',
+        allTime: 'All Time',
+        timeModeTab: 'Time Mode',
+        loading: 'Loading...',
+        noScore: 'No scores yet. Be the first!',
+        nameModalTitle: '👤 What is your name?',
+        nameModalDesc: 'Your score will appear on the leaderboard',
+        saveAndSend: 'Save & Submit',
+      }
+    };
+
+    let currentLang = localStorage.getItem('bp_lang') || 'tr';
+    function t(key) { return (LANGS[currentLang] || LANGS.tr)[key] || key; }
+
+    function applyLang() {
+      // Menü butonları
+      const btnPlay = document.getElementById('btnPlay');
+      if (btnPlay) btnPlay.innerHTML = t('classicMode');
+      const btnTime = document.getElementById('btnPlayTime');
+      if (btnTime) btnTime.innerHTML = t('timeMode');
+      const btnAch = document.getElementById('btnOpenAchieve');
+      if (btnAch) btnAch.innerHTML = t('achievements');
+      const btnStats = document.getElementById('btnOpenStats');
+      if (btnStats) btnStats.innerHTML = t('statistics');
+      const btnLb = document.getElementById('btnOpenLeaderboard');
+      if (btnLb) btnLb.innerHTML = '🌍  ' + (currentLang === 'en' ? 'Leaderboard' : 'Sıralama');
+      const btnThemes = document.getElementById('btnOpenThemes');
+      if (btnThemes) btnThemes.innerHTML = t('themes');
+      const btnSettings = document.getElementById('btnOpenSettings');
+      if (btnSettings) btnSettings.innerHTML = t('settings');
+
+      // Ayarlar
+      const stTitle = document.querySelector('#settingsScreen .settings-title');
+      if (stTitle) stTitle.textContent = t('settingsTitle');
+      const nameInput = document.getElementById('settingsNameInput');
+      if (nameInput) nameInput.placeholder = t('namePlaceholder');
+      const btnSaveName = document.getElementById('btnSaveName');
+      if (btnSaveName) btnSaveName.textContent = t('save');
+
+      // Powerup butonları
+      const puClear = document.getElementById('pu-clear-row');
+      if (puClear && !puClear.disabled) puClear.innerHTML = puClear.innerHTML.replace(/Satır Sil|Clear Row/, t('rowDelete'));
+      const puReroll = document.getElementById('pu-reroll');
+      if (puReroll && !puReroll.disabled) puReroll.innerHTML = puReroll.innerHTML.replace(/Yenile|Refresh/, t('refresh'));
+      const puUndo = document.getElementById('pu-undo');
+      if (puUndo && !puUndo.disabled) puUndo.innerHTML = puUndo.innerHTML.replace(/Geri Al|Undo/, t('undo'));
+
+      // Game over
+      const goTitle = document.querySelector('.gameover-box h1');
+      if (goTitle) goTitle.textContent = t('gameOver');
+      const restartBtn = document.getElementById('restartBtn');
+      if (restartBtn) restartBtn.textContent = t('playAgain');
+
+      // Reset modal
+      const resetTitle = document.querySelector('#confirmReset .confirm-box h3');
+      if (resetTitle) resetTitle.textContent = t('resetTitle');
+      const resetDesc = document.querySelector('#confirmReset .confirm-box p');
+      if (resetDesc) resetDesc.textContent = t('resetDesc');
+      const btnCancel = document.getElementById('btnCancelReset');
+      if (btnCancel) btnCancel.textContent = t('giveUp');
+      const btnYes = document.getElementById('btnYesReset');
+      if (btnYes) btnYes.textContent = t('reset');
+
+      // Welcome
+      const welTitle = document.querySelector('#welcomeScreen [data-i18n="welcomeTitle"]');
+      if (welTitle) welTitle.textContent = t('welcomeTitle');
+      const welDesc = document.querySelector('#welcomeScreen [data-i18n="welcomeDesc"]');
+      if (welDesc) welDesc.textContent = t('welcomeDesc');
+      const welInput = document.getElementById('welcomeNameInput');
+      if (welInput) welInput.placeholder = t('namePlaceholder');
+      const welBtn = document.getElementById('btnWelcomeStart');
+      if (welBtn) welBtn.textContent = t('letsPlay');
+      const welSkip = document.getElementById('btnWelcomeSkip');
+      if (welSkip) welSkip.textContent = t('skipName');
+
+      // Leaderboard tabları
+      const tabs = document.querySelectorAll('.lb-tab');
+      if (tabs[0]) tabs[0].textContent = t('thisWeek');
+      if (tabs[1]) tabs[1].textContent = t('allTime');
+      if (tabs[2]) tabs[2].textContent = t('timeModeTab');
+
+      // İkon grid etiketleri (4 buton)
+      const mibLabels = document.querySelectorAll('.mib-label');
+      const mibTR = ['Rozetler','İstatistik','Temalar','Ayarlar'];
+      const mibEN = ['Badges','Stats','Themes','Settings'];
+      mibLabels.forEach((el, i) => {
+        el.textContent = currentLang === 'en' ? (mibEN[i]||'') : (mibTR[i]||'');
+      });
+
+      // Stats band etiketleri
+      const statLbls = document.querySelectorAll('.menu-stat-lbl');
+      const statTR = ['🏆 Rekor','⏱ Zaman','⭐ XP'];
+      const statEN = ['🏆 Best','⏱ Time','⭐ XP'];
+      statLbls.forEach((el, i) => {
+        el.textContent = currentLang === 'en' ? (statEN[i]||'') : (statTR[i]||'');
+      });
+
+      // Daily label
+      const dlabel = document.getElementById('dailyLabel');
+      if (dlabel) dlabel.textContent = t('dailyLabel');
+      const ddone = document.getElementById('dailyDone');
+      if (ddone) ddone.textContent = t('dailyDone');
+
+      // Dil toggle güncelle
+      const langTR = document.getElementById('langTR');
+      const langEN = document.getElementById('langEN');
+      if (langTR) langTR.classList.toggle('lang-active', currentLang === 'tr');
+      if (langEN) langEN.classList.toggle('lang-active', currentLang === 'en');
+    }
+
+    function setLang(lang) {
+      currentLang = lang;
+      localStorage.setItem('bp_lang', lang);
+      window.currentLang = lang;
+      applyLang();
+    }
+    window.currentLang = currentLang;
+    window.t = t;
+
+    // İlk dil uygula
+    applyLang();
+
+    // ===== WELCOME EKRANI =====
+    function checkFirstLaunch() {
+      const name = localStorage.getItem('bp_player_name');
+      const welcomed = localStorage.getItem('bp_welcomed');
+      if (!welcomed) {
+        // İlk açılış — welcome ekranını göster, menüyü gizle
+        document.getElementById('menuScreen').classList.add('hidden');
+        document.getElementById('welcomeScreen').classList.remove('hidden');
+      }
+    }
+
+    function finishWelcome(name) {
+      if (name) savePlayerName(name);
+      localStorage.setItem('bp_welcomed', '1');
+      document.getElementById('welcomeScreen').classList.add('hidden');
+      document.getElementById('menuScreen').classList.remove('hidden');
+      refreshMenuHS();
+    }
+
+    document.getElementById('btnWelcomeStart').addEventListener('click', () => {
+      const name = document.getElementById('welcomeNameInput').value.trim();
+      finishWelcome(name || 'Oyuncu');
+    });
+
+    document.getElementById('btnWelcomeSkip').addEventListener('click', () => {
+      finishWelcome('');
+    });
+
+    // Enter tuşu ile de geçiş
+    document.getElementById('welcomeNameInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btnWelcomeStart').click();
+    });
+
+    // Ayarlardan isim değiştirme
     document.getElementById('btnOpenSettings').addEventListener('click', () => {
       document.getElementById('settingsScreen').classList.remove('hidden');
+      // Mevcut ismi göster
+      const nameInput = document.getElementById('settingsNameInput');
+      if (nameInput) nameInput.value = getPlayerName();
+    });
+
+    document.getElementById('btnSaveName').addEventListener('click', () => {
+      const input = document.getElementById('settingsNameInput');
+      const name = input.value.trim();
+      if (!name) return;
+      savePlayerName(name);
+      // Başarı bildirimi
+      const btn = document.getElementById('btnSaveName');
+      btn.textContent = '✓';
+      btn.style.background = 'linear-gradient(135deg,#34d399,#059669)';
+      setTimeout(() => {
+        btn.textContent = 'Kaydet';
+        btn.style.background = 'linear-gradient(135deg,#7c6ff7,#a78bfa)';
+      }, 1500);
+    });
+
+    // İlk açılış kontrolü
+    checkFirstLaunch();
+
+    // ===== MENÜ BUTONLARI =====
+    // Klasik mod → zorluk seçim
+    document.getElementById('btnPlay').addEventListener('click', () => {
+      document.getElementById('difficultyModal').classList.remove('hidden');
+    });
+
+    // Zorluk seçimleri
+    document.getElementById('btnEasy').addEventListener('click', () => {
+      document.getElementById('difficultyModal').classList.add('hidden');
+      if (typeof resetGame === 'function') resetGame();
+      startGame('easy');
+    });
+    document.getElementById('btnNormal').addEventListener('click', () => {
+      document.getElementById('difficultyModal').classList.add('hidden');
+      if (typeof resetGame === 'function') resetGame();
+      startGame('normal');
+    });
+    document.getElementById('btnHard').addEventListener('click', () => {
+      document.getElementById('difficultyModal').classList.add('hidden');
+      if (typeof resetGame === 'function') resetGame();
+      startGame('hard');
+    });
+    document.getElementById('btnDiffCancel').addEventListener('click', () => {
+      document.getElementById('difficultyModal').classList.add('hidden');
+    });
+
+    // Zaman modu → seviye seçim
+    document.getElementById('btnPlayTime').addEventListener('click', () => {
+      document.getElementById('timeLevelModal').classList.remove('hidden');
+    });
+    [1,2,3,4,5].forEach(lvl => {
+      document.getElementById(`btnTimeL${lvl}`).addEventListener('click', () => {
+        document.getElementById('timeLevelModal').classList.add('hidden');
+        if (typeof resetGame === 'function') resetGame();
+        startGame('timeattack', lvl);
+      });
+    });
+    document.getElementById('btnTimeLevelCancel').addEventListener('click', () => {
+      document.getElementById('timeLevelModal').classList.add('hidden');
     });
 
     document.getElementById('btnBack').addEventListener('click', () => {
@@ -1249,9 +2524,64 @@
       });
     }
 
+    // ===== DAILY CHALLENGE UI =====
+    function updateDailyCardUI() {
+      // getDailyChallenge ve getDailyStatus main.js'de tanımlı
+      if (typeof getDailyChallenge !== 'function') return;
+
+      const challenge = getDailyChallenge();
+      const status    = getDailyStatus();
+      const today     = getTodayStr();
+
+      const iconEl  = document.getElementById('dailyChallengeIcon');
+      const descEl  = document.getElementById('dailyChallengeDesc');
+      const xpEl    = document.getElementById('dailyChallengeXP');
+      const doneEl  = document.getElementById('dailyDone');
+      const streak  = document.getElementById('dailyStreak');
+
+      if (iconEl)  iconEl.textContent  = challenge.icon;
+      if (descEl)  descEl.textContent  = challenge.desc;
+      if (xpEl)    xpEl.textContent    = `+${challenge.xp} XP`;
+      if (streak)  streak.textContent  = `🔥 ${status.streak || 0} gün`;
+
+      const done = status.lastDate === today && status.completed;
+      if (doneEl) doneEl.style.display = done ? 'block' : 'none';
+
+      // Tamamlandıysa kart rengi değişsin
+      const card = document.getElementById('dailyCard');
+      if (card) {
+        card.style.borderColor = done ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)';
+        card.style.background  = done ? 'rgba(52,211,153,0.05)' : 'rgba(255,255,255,0.04)';
+      }
+    }
+
+    // addXPDirect — main.js'deki addXP'yi çağırır
+    window.addXPDirect = function(amount) {
+      const current = parseInt(localStorage.getItem('bp_xp') || '0');
+      localStorage.setItem('bp_xp', current + amount);
+      if (typeof updateXPDisplay === 'function') updateXPDisplay();
+      // Toast
+      const t = document.createElement('div');
+      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(255,210,77,0.9);color:#1a1a2e;padding:8px 20px;border-radius:50px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;animation:xpToastAnim 1.8s ease forwards;';
+      t.textContent = '+' + amount + ' XP!';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 1800);
+    };
+
+    // getTodayStr ve getDailyStatus'u window'a aç
+    window.getTodayStr = function() {
+      const d = new Date();
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    };
+    window.getDailyStatus = function() {
+      const raw = localStorage.getItem('bp_daily');
+      return raw ? JSON.parse(raw) : { lastDate:'', completed:false, streak:0, lastStreakDate:'' };
+    };
+
     // İlk yüklemede XP göster
     updateXPDisplay();
     autoUnlockXPThemes();
+    updateDailyCardUI();
     refreshMenuHS();
   </script>
 
