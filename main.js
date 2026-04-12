@@ -723,7 +723,7 @@ window.addEventListener('DOMContentLoaded', () => {
   sndPlace    = document.getElementById('snd-place');
   sndClear    = document.getElementById('snd-clear');
   sndCombo    = document.getElementById('snd-combo');
-  sndGameOver = document.getElementById('snd-gameover1');
+  sndGameOver = document.getElementById('snd-gameover');
 
   createFlashOverlay();
   spawnBgBlocks();
@@ -861,17 +861,74 @@ function playSndPlace() {
   _tone(1200, 400, 'sine', 0.28, 0.08);
 }
 
-// Satır/sütun temizleme: tok modern patlama
+// Satır/sütun temizleme: gerçek tok darbe
 function playSndClear(count) {
   if (!_isOn()) return;
+  const ctx = _getCtx(); if (!ctx) return;
   try {
-    const el = document.getElementById('snd-clear');
-    if (el) { el.pause(); el.currentTime = 0; el.volume = 0.8; el.play().catch(()=>{}); return; }
-  } catch(e) {}
-  // Fallback
-  _tone(1200, 400, 'sine', 0.28, 0.08);
-}
+    const t = ctx.currentTime;
+    const n = Math.min(count, 3);
+    const vol = 0.8 + n * 0.1;
 
+    // === DARBE GÖVDESI ===
+    // Davul gibi derin bas — anında düşen frekans
+    const kick = ctx.createOscillator();
+    const kickGain = ctx.createGain();
+    kick.connect(kickGain); kickGain.connect(ctx.destination);
+    kick.type = 'sine';
+    kick.frequency.setValueAtTime(200, t);
+    kick.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+    kickGain.gain.setValueAtTime(vol, t);
+    kickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    kick.start(t); kick.stop(t + 0.18);
+
+    // İkinci harmonik — dolgunluk
+    const kick2 = ctx.createOscillator();
+    const kick2Gain = ctx.createGain();
+    kick2.connect(kick2Gain); kick2Gain.connect(ctx.destination);
+    kick2.type = 'sine';
+    kick2.frequency.setValueAtTime(400, t);
+    kick2.frequency.exponentialRampToValueAtTime(80, t + 0.06);
+    kick2Gain.gain.setValueAtTime(vol * 0.5, t);
+    kick2Gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    kick2.start(t); kick2.stop(t + 0.1);
+
+    // === PARLAK VURGU (üst) ===
+    const snap = ctx.createOscillator();
+    const snapGain = ctx.createGain();
+    snap.connect(snapGain); snapGain.connect(ctx.destination);
+    snap.type = 'triangle';
+    snap.frequency.setValueAtTime(1200, t + 0.01);
+    snap.frequency.exponentialRampToValueAtTime(600, t + 0.08);
+    snapGain.gain.setValueAtTime(0.35, t + 0.01);
+    snapGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    snap.start(t + 0.01); snap.stop(t + 0.12);
+
+    // === ÇOK SATIRLI BONUS ===
+    if (n >= 2) {
+      // Ekstra bas katmanı
+      const kick3 = ctx.createOscillator();
+      const k3g = ctx.createGain();
+      kick3.connect(k3g); k3g.connect(ctx.destination);
+      kick3.type = 'sine';
+      kick3.frequency.setValueAtTime(300, t + 0.02);
+      kick3.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+      k3g.gain.setValueAtTime(0.5, t + 0.02);
+      k3g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      kick3.start(t + 0.02); kick3.stop(t + 0.15);
+
+      // Yüksek çınlama
+      const ring = ctx.createOscillator();
+      const rg = ctx.createGain();
+      ring.connect(rg); rg.connect(ctx.destination);
+      ring.type = 'sine';
+      ring.frequency.value = 2400;
+      rg.gain.setValueAtTime(0.2, t + 0.05);
+      rg.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      ring.start(t + 0.05); ring.stop(t + 0.3);
+    }
+  } catch(e) {}
+}
 
 // Combo: her seviyede farklı, giderek coşkulu
 function playSndCombo(level) {
@@ -909,13 +966,11 @@ function playSndCombo(level) {
 
 // Game over: dramatik çöküş
 function playSndGameOver() {
-    if (!_isOn()) return;
-  try {
-    const el = document.getElementById('snd-gameover1');
-    if (el) { el.pause(); el.currentTime = 0; el.volume = 0.8; el.play().catch(()=>{}); return; }
-  } catch(e) {}
-  // Fallback
-  _tone(1200, 400, 'sine', 0.28, 0.08);
+  [659, 523, 415, 330, 220].forEach((f, i) => {
+    _tone(f, f*0.9, 'sawtooth', 0.18, 0.35, i*0.15);
+  });
+  // Son derin darbe
+  _tone(150, 60, 'sine', 0.4, 0.5, 0.6);
 }
 
 // Yeni rekor: parlak fanfare
@@ -2328,7 +2383,7 @@ function updateGhostFromEvent(e) {
   updateGhostPreview(e.clientX, e.clientY);
 }
 
-// Ghost: parmağın altındaki hücreyi bul, tüm geçerli pozisyonları dene
+// Ghost: parmağın altındaki hücreye göre en yakın geçerli pozisyon
 function trySnapToValid(clientX, clientY) {
   if (!selectedShape) return null;
   const boardEl = document.getElementById("board");
@@ -2341,46 +2396,25 @@ function trySnapToValid(clientX, clientY) {
   if (clientX < rect.left || clientX > rect.right ||
       clientY < rect.top  || clientY > rect.bottom) return null;
 
-  // Parmağın grid hücresi
-  const fingerCol = Math.floor((clientX - rect.left) / cellSize);
-  const fingerRow = Math.floor((clientY - rect.top)  / cellSize);
+  // Parçanın ağırlık merkezi parmağa hizala
+  const { cx, cy } = getShapeCenter(selectedShape);
+  const fx = (clientX - rect.left) / cellSize;
+  const fy = (clientY - rect.top)  / cellSize;
 
-  // Tüm geçerli startX/startY kombinasyonlarını dene
-  // Parmağın altındaki hücreyi kapsayan pozisyonları bul
-  let bestSx = -1, bestSy = -1, bestDist = Infinity;
+  const startX = Math.round(fx - cx);
+  const startY = Math.round(fy - cy);
 
-  for (let sy = 0; sy <= BOARD_SIZE - h; sy++) {
-    for (let sx = 0; sx <= BOARD_SIZE - w; sx++) {
-      // Bu pozisyon parmağı kapsıyor mu?
-      const coversX = sx <= fingerCol && fingerCol < sx + w;
-      const coversY = sy <= fingerRow && fingerRow < sy + h;
+  // Sınıra klamp et
+  const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX));
+  const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY));
 
-      // Merkeze olan mesafe
-      const midX = sx + (w - 1) / 2;
-      const midY = sy + (h - 1) / 2;
-      const dist = Math.abs(fingerCol - midX) + Math.abs(fingerRow - midY);
+  // Çakışma kontrolü
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++)
+      if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null)
+        return null;
 
-      // Parmağı kapsayan pozisyonlara öncelik ver
-      const adjustedDist = (coversX && coversY) ? dist - 100 : dist;
-
-      // Çakışma kontrolü
-      let fits = true;
-      for (let y = 0; y < h && fits; y++)
-        for (let x = 0; x < w && fits; x++)
-          if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null)
-            fits = false;
-
-      if (fits && adjustedDist < bestDist) {
-        bestDist = adjustedDist;
-        bestSx = sx;
-        bestSy = sy;
-      }
-    }
-  }
-
-  // Çok uzaksa (2 hücreden fazla) gösterme
-  if (bestSx === -1 || bestDist > 2) return null;
-  return [bestSx, bestSy];
+  return [sx, sy];
 }
 
 function updateGhostPreview(clientX, clientY) {
