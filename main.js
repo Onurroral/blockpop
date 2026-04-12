@@ -2259,6 +2259,64 @@ function resetGame() {
   updateScore();
 }
 
+// Grid boyutunda drag preview oluştur — slot klonu değil, gerçek grid hücresi boyutunda
+function createGridSizedPreview(shape, colorName) {
+  const boardEl = document.getElementById('board');
+  const boardRect = boardEl.getBoundingClientRect();
+  // Board CSS sabit değerleri: padding=6px, gap=3px
+  const pad = 6;
+  const gap = 3;
+  const innerW = boardRect.width - pad * 2;
+  const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+
+  const h = shape.length;
+  const w = shape[0].length;
+  const color = colorToHex(colorName) || '#7c6ff7';
+
+  // %80 boyutunda preview
+  const scale = 0.80;
+  const previewCell = cellSize * scale;
+  const previewGap  = gap * scale;
+
+  // Container
+  const el = document.createElement('div');
+  el.style.cssText = `
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.85;
+    display: grid;
+    grid-template-columns: repeat(${w}, ${previewCell}px);
+    grid-template-rows: repeat(${h}, ${previewCell}px);
+    gap: ${previewGap}px;
+  `;
+
+  // Her hücreyi ekle
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const cell = document.createElement('div');
+      if (shape[y][x] === 1) {
+        cell.style.cssText = `
+          width: ${previewCell}px;
+          height: ${previewCell}px;
+          background: ${color};
+          border-radius: 6px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.2);
+        `;
+      } else {
+        cell.style.cssText = `
+          width: ${previewCell}px;
+          height: ${previewCell}px;
+          background: transparent;
+        `;
+      }
+      el.appendChild(cell);
+    }
+  }
+
+  return el;
+}
+
 // === DRAG & DROP (POINTER EVENTS) ===
 function startDragPiece(pieceEl, shape, event) {
   isDragging = true;
@@ -2267,12 +2325,17 @@ function startDragPiece(pieceEl, shape, event) {
   dragPieceEl = pieceEl;
   dragPointerId = event.pointerId || null;
 
-  // Lift hesabı: tam hücre sayısına göre (gap dahil)
+  // Lift: padding ve gap dahil gerçek hücre adımına göre
   const boardEl = document.getElementById('board');
   const bRect = boardEl.getBoundingClientRect();
-  const cellSize = bRect.width / BOARD_SIZE; // hücre + gap birlikte
+  const _style = window.getComputedStyle(boardEl);
+  const _pad = parseFloat(_style.paddingLeft) || 6;
+  const _gap = parseFloat(_style.gap) || 3;
+  const _innerW = bRect.width - _pad * 2;
+  const _cell = (_innerW - _gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+  const _step = _cell + _gap; // bir hücrenin gerçek adımı
   // Touch: tam 2 hücre yukarı
-  dragLiftY = (event.pointerType === 'touch') ? Math.round(cellSize * 2) : 0;
+  dragLiftY = 0; // lift yok — preview ve ghost aynı noktadan
 
   document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
   pieceEl.classList.add('selected');
@@ -2280,15 +2343,11 @@ function startDragPiece(pieceEl, shape, event) {
   selectedShape = shape;
   selectedPieceColor = pieceEl.dataset.pieceColor || null;
 
-
-  dragPreviewEl = pieceEl.cloneNode(true);
-  dragPreviewEl.classList.add('drag-preview');
-  dragPreviewEl.style.position = 'fixed';
-  dragPreviewEl.style.pointerEvents = 'none';
-  dragPreviewEl.style.opacity = '0.85';
-  dragPreviewEl.style.zIndex = '9999';
+  // Drag preview: slot klonu değil, GRID boyutunda gerçek şekil
+  dragPreviewEl = createGridSizedPreview(shape, selectedPieceColor);
   document.body.appendChild(dragPreviewEl);
-  // Orijinal parçayı gizle — sürükleme sırasında aşağıda görünmesin
+
+  // Orijinal parçayı gizle
   pieceEl.style.opacity = '0';
 
   updateDragPosition(event);
@@ -2303,10 +2362,13 @@ function onPointerMove(e) {
   if (!isDragging) return;
   if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
   updateDragPosition(e);
+  // Ghost: parmağın tam koordinatı — preview ile aynı merkez
+  updateGhostPreview(e.clientX, e.clientY);
+}
 
-  // Ghost: drag preview'ın merkezi neredeyse ghost orada
-  // Drag preview: (e.clientX, e.clientY - dragLiftY) merkezli
-  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
+function updateGhostFromEvent(e) {
+  updateDragPosition(e);
+  updateGhostPreview(e.clientX, e.clientY);
 }
 
 function onPointerUp(e) {
@@ -2350,9 +2412,33 @@ function onPointerUp(e) {
 
 function updateDragPosition(e) {
   if (!dragPreviewEl || !selectedShape) return;
-  const pr = dragPreviewEl.getBoundingClientRect();
-  dragPreviewEl.style.left = (e.clientX - pr.width / 2) + "px";
-  dragPreviewEl.style.top  = (e.clientY - dragLiftY - pr.height / 2) + "px";
+  const boardEl = document.getElementById('board');
+  const boardRect = boardEl.getBoundingClientRect();
+  // Board CSS sabit değerleri: padding=6px, gap=3px
+  const pad = 6;
+  const gap = 3;
+  const innerW = boardRect.width - pad * 2;
+  const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+  const step = cellSize + gap;
+
+  const h = selectedShape.length;
+  const w = selectedShape[0].length;
+
+  // Preview boyutu — grid hücresinin %80'i kadar
+  const scale = 0.80;
+  const previewW = (w * cellSize + (w - 1) * gap) * scale;
+  const previewH = (h * cellSize + (h - 1) * gap) * scale;
+
+  // Drag preview merkezi: parmağın dragLiftY kadar üstünde
+  const previewCX = e.clientX;
+  const previewCY = e.clientY - dragLiftY;
+
+  dragPreviewEl.style.left = (previewCX - previewW / 2) + 'px';
+  dragPreviewEl.style.top  = (previewCY - previewH / 2) + 'px';
+
+  // Ghost için merkez koordinatını kaydet
+  window._dragPreviewCX = previewCX;
+  window._dragPreviewCY = previewCY;
 }
 
 function getBoardCellFromClient(clientX, clientY) {
@@ -2381,43 +2467,48 @@ function clearGhostPreview() {
   });
 }
 
-function updateGhostFromEvent(e) {
-  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
-}
-
-// Ghost: drag preview'ın tam grid karşılığı
+// Preview'ın merkezi board'da hangi grid pozisyonuna denk geliyor?
 function trySnapToValid(clientX, clientY) {
   if (!selectedShape) return null;
   const boardEl = document.getElementById("board");
   const rect = boardEl.getBoundingClientRect();
-  const cellSize = rect.width / BOARD_SIZE;
   const h = selectedShape.length;
   const w = selectedShape[0].length;
 
-  // Board dışındaysa null — biraz tolerans ver
+  // Board CSS sabit değerleri: padding=6px, gap=3px
+  const pad  = 6;
+  const gap  = 3;
+  const innerW = rect.width - pad * 2;
+  const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+  const step = cellSize + gap;
+
+  const gridLeft = rect.left + pad;
+  const gridTop  = rect.top  + pad;
+
+  // Koordinat tamamen board dışındaysa null
   if (clientX < rect.left - cellSize || clientX > rect.right + cellSize ||
       clientY < rect.top  - cellSize || clientY > rect.bottom + cellSize) return null;
 
-  // Koordinatı board içine klamp et
-  const cx2 = Math.max(rect.left, Math.min(rect.right,  clientX));
-  const cy2 = Math.max(rect.top,  Math.min(rect.bottom, clientY));
+  // Grid içine klamp et
+  const cx = Math.max(gridLeft, Math.min(rect.right  - pad, clientX));
+  const cy = Math.max(gridTop,  Math.min(rect.bottom - pad, clientY));
 
-  // Grid koordinatı
-  const fx = (cx2 - rect.left) / cellSize;
-  const fy = (cy2 - rect.top)  / cellSize;
+  // Hangi grid hücresi?
+  const col = Math.floor((cx - gridLeft) / step);
+  const row = Math.floor((cy - gridTop)  / step);
 
-  // Parça merkezi bu noktaya gelsin
-  const { cx, cy } = getShapeCenter(selectedShape);
-  const sx = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(fx - cx)));
-  const sy = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(fy - cy)));
+  // Şeklin merkezi bu hücreye gelsin
+  const { cx: shapeCX, cy: shapeCY } = getShapeCenter(selectedShape);
+  const startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(col - shapeCX)));
+  const startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(row - shapeCY)));
 
   // Çakışma kontrolü
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++)
-      if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null)
+      if (selectedShape[y][x] === 1 && board[startY+y][startX+x] !== null)
         return null;
 
-  return [sx, sy];
+  return [startX, startY];
 }
 
 function updateGhostPreview(clientX, clientY) {
