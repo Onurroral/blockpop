@@ -23,7 +23,7 @@
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, Timestamp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, Timestamp, doc, getDoc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyConiUx9_ppUvV5h6J118CupsbyyEDmQSY",
@@ -41,10 +41,38 @@
     // Global fonksiyonlar
     window.fbSubmitScore = async function(name, score, mode) {
       try {
-        await addDoc(collection(db, 'scores'), {
-          name: name.trim().substring(0,16),
+        const cleanName = name.trim().substring(0,16);
+        const col = collection(db, 'scores');
+        const modeVal = mode || 'classic';
+
+        // Aynı isim ve mod için mevcut kayıtları bul
+        const q = query(col, where('name','==',cleanName), where('mode','==',modeVal));
+        const snap = await getDocs(q);
+
+        if (!snap.empty) {
+          // Kayıt var — en yüksek score'u bul
+          let bestDoc = null;
+          let bestScore = 0;
+          snap.forEach(d => {
+            if (d.data().score > bestScore) {
+              bestScore = d.data().score;
+              bestDoc = d;
+            }
+          });
+
+          if (score <= bestScore) return 'same'; // Daha düşük — kaydetme
+
+          // Eski kayıtları sil, yeni yüksek score'u ekle
+          for (const d of snap.docs) {
+            await deleteDoc(d.ref);
+          }
+        }
+
+        // Yeni kayıt ekle
+        await addDoc(col, {
+          name: cleanName,
           score: Math.floor(score),
-          mode: mode || 'classic',
+          mode: modeVal,
           ts: Timestamp.now(),
           week: getWeekStr(),
         });
@@ -80,6 +108,7 @@
       start.setDate(d.getDate() - d.getDay());
       return `${start.getFullYear()}-${start.getMonth()}-${start.getDate()}`;
     }
+
 
     window.firebaseReady = true;
     window.dispatchEvent(new Event('firebaseReady'));
@@ -1257,6 +1286,12 @@
     }
     .nav-btn { transition: all 0.18s; }
   </style>
+  <!-- Restart flash engelleyici - CSS ile anında -->
+  <script>
+    if (localStorage.getItem('bp_restart_mode')) {
+      document.write('<style id="restart-hide">#menuScreen{display:none!important}</style>');
+    }
+  </script>
 </head>
 
 <body>
@@ -1773,7 +1808,10 @@
     }
 
     function goToMenu() {
-    if (typeof switchTab === 'function') switchTab('tab-home');
+      if (typeof switchTab === 'function') switchTab('tab-home');
+      // Restart hide CSS varsa kaldır
+      const restartStyle = document.getElementById('restart-hide');
+      if (restartStyle) restartStyle.remove();
       stopTimer();
       const gc = document.getElementById('game-container');
       gc.style.visibility = 'hidden';
@@ -1935,6 +1973,7 @@
       const timerBar = document.getElementById('timerBar');
       if (mode === 'timeattack') {
         currentTimeLevel = extra || 1;
+        window.currentTimeLevel = currentTimeLevel; // window'a da yaz
         // Seviye etiketi
         const lvlLabel = document.getElementById('timerLevelLabel');
         if (lvlLabel) lvlLabel.textContent = `Sev. ${currentTimeLevel} · ${TIME_LEVELS[currentTimeLevel]}s`;
@@ -2162,10 +2201,11 @@
         // İsim kayıtlı — direkt gönder, modal açma
         if (window.fbSubmitScore) {
           const ok = await window.fbSubmitScore(name, score, mode);
-          if (ok) {
+          if (ok === true) {
+            // Yeni rekor — toast göster
             const t = document.createElement('div');
             t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
-            t.textContent = '✓ Skor gönderildi!';
+            t.textContent = '🏆 Yeni Rekor!';
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 2000);
           }
@@ -2722,10 +2762,18 @@
 
     // ===== WELCOME EKRANI =====
     function checkFirstLaunch() {
-      const name = localStorage.getItem('bp_player_name');
+      // Restart kontrolü — tekrar oyna butonu
+      const restartMode = localStorage.getItem('bp_restart_mode');
+      if (restartMode) {
+        const restartLevel = parseInt(localStorage.getItem('bp_restart_level') || '1');
+        localStorage.removeItem('bp_restart_mode');
+        localStorage.removeItem('bp_restart_level');
+        setTimeout(() => startGame(restartMode, restartMode === 'timeattack' ? restartLevel : undefined), 100);
+        return;
+      }
+
       const welcomed = localStorage.getItem('bp_welcomed');
       if (!welcomed) {
-        // İlk açılış — welcome ekranını göster, menüyü gizle
         document.getElementById('menuScreen').classList.add('hidden');
         document.getElementById('welcomeScreen').classList.remove('hidden');
       }
@@ -2955,9 +3003,13 @@
 
     // ===== GAME OVER =====
     document.getElementById('restartBtn').addEventListener('click', () => {
-      localStorage.removeItem('bp_last_unlock');
-      refreshMenuHS();
-      goToMenu();
+      window._gameOverCancelled = true; // animasyonu iptal et
+      const mode = window.currentGameMode || 'normal';
+      const level = window.currentTimeLevel || 1;
+      localStorage.setItem('bp_restart_mode', mode);
+      localStorage.setItem('bp_restart_level', level);
+      localStorage.removeItem('bp_game_save');
+      location.reload();
     });
 
     // ===== 8 SKIN TANIMI =====
@@ -3185,11 +3237,6 @@
       });
     }
 
-    // Tema ekranı aç/kapat
-    document.getElementById('btnBackThemes').addEventListener('click', () => {
-      document.getElementById('themesScreen').classList.add('hidden');
-    });
-
     // ===== XP MODALİ (yetersiz XP) =====
     function showXPModal(key, def, currentDiamonds) {
       const needed = def.xpCost - currentDiamonds;
@@ -3323,6 +3370,52 @@
     autoUnlockXPThemes();
     updateDailyCardUI();
     refreshMenuHS();
+
+    // ===== ANDROID GERİ TUŞU =====
+    // History stack'e state ekle — geri tuşu bu state'i pop eder
+    history.pushState({ page: 'game' }, '');
+
+    let _lastBackTime = 0;
+
+    window.addEventListener('popstate', () => {
+      const now = Date.now();
+      const gc = document.getElementById('game-container');
+      const isInGame = gc && gc.style.visibility === 'visible';
+      const menuVisible = !document.getElementById('menuScreen').classList.contains('hidden');
+
+      // Oyun içindeyse → ana menüye git
+      if (isInGame) {
+        goToMenu();
+        history.pushState({ page: 'game' }, '');
+        return;
+      }
+
+      // Ana menüde değil (tab açık) → ana menüye git
+      const activeTab = document.querySelector('.menu-tab-panel.tab-active');
+      if (activeTab && activeTab.id !== 'tab-home') {
+        switchTab('tab-home');
+        history.pushState({ page: 'game' }, '');
+        return;
+      }
+
+      // Ana menüdeyse → çift geri ile çık
+      if (now - _lastBackTime < 2000) {
+        // 2 saniye içinde tekrar basıldı → çık
+        history.back();
+        return;
+      }
+      _lastBackTime = now;
+
+      // Toast göster
+      const t = document.createElement('div');
+      t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 22px;border-radius:50px;font-size:13px;font-weight:700;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
+      t.textContent = '← Çıkmak için tekrar basın';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2000);
+
+      // State'i geri ekle (çıkmasın)
+      history.pushState({ page: 'game' }, '');
+    });
   </script>
 
 </body>
