@@ -723,7 +723,7 @@ window.addEventListener('DOMContentLoaded', () => {
   sndPlace    = document.getElementById('snd-place');
   sndClear    = document.getElementById('snd-clear');
   sndCombo    = document.getElementById('snd-combo');
-  sndGameOver = document.getElementById('snd-gameover1');
+  sndGameOver = document.getElementById('snd-gameover');
 
   createFlashOverlay();
   spawnBgBlocks();
@@ -1150,11 +1150,15 @@ function showGameOver(){
   scoreText.innerHTML = `<span style="font-size:12px;opacity:0.5;display:block;margin-bottom:4px;">${modeLabel}</span>Score: ${score}`;
 
   // Dramatik game over animasyonu
+  window._gameOverCancelled = false;
+
+  // Önce board animasyonu, sonra ekran
   playGameOverSequence(() => {
-    // Animasyon bitti, ekranı göster
+    if (window._gameOverCancelled) return;
+    if (!isGameOver) return;
+
     screen.style.visibility = "visible";
 
-    // XP, achievement, daily
     if (typeof window.onGameEnd === 'function')
       window.onGameEnd(isTimeMode ? Math.floor(score * 1.5) : score);
     if (typeof updateAchievementStats === 'function')
@@ -1162,7 +1166,6 @@ function showGameOver(){
     if (typeof checkDailyChallenge === 'function')
       setTimeout(() => checkDailyChallenge(score, gameBlocksPlaced, gameLinesCleared, gameMaxCombo), 300);
 
-    // Leaderboard
     setTimeout(() => {
       if (typeof window.submitScoreToLeaderboard === 'function')
         window.submitScoreToLeaderboard(score, window.currentGameMode || 'normal');
