@@ -364,6 +364,7 @@
       background: rgba(124,111,247,0.2);
       border-radius: 16px;
       margin: 6px 2px;
+      transition: background 0.2s, border-radius 0.2s !important;
     }
 
     /* Menü butonları */
@@ -1212,6 +1213,49 @@
       background: linear-gradient(135deg, #ff6b6b, #ff4444);
       color: #fff;
     }
+
+    /* ===== TAB SİSTEMİ ===== */
+    .menu-tabs-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      z-index: 2;
+    }
+    .menu-tab-panel {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      overflow-y: auto;
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      pointer-events: none;
+      padding: 20px 20px 100px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .menu-tab-panel.tab-active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    #tab-home {
+      padding: 0 0 100px;
+    }
+    .tab-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      margin-bottom: 20px;
+      padding-top: 4px;
+    }
+    .nav-btn.active .nav-icon {
+      transform: scale(1.25);
+      filter: drop-shadow(0 0 8px rgba(167,139,250,0.9));
+    }
+    .nav-btn { transition: all 0.18s; }
   </style>
 </head>
 
@@ -1262,57 +1306,110 @@
     <div class="menu-block" style="width:28px;height:28px;background:#60a5fa;top:60%;right:5%;--r:-6deg;--dur:2.6s;--delay:0.2s;"></div>
     <div class="menu-block" style="width:36px;height:36px;background:#f472b6;top:30%;left:2%;--r:20deg;--dur:4s;--delay:1s;"></div>
 
-    <!-- ANA İÇERİK -->
-    <div class="menu-main-content">
+    <!-- TAB WRAPPER -->
+    <div class="menu-tabs-wrapper">
 
-      <!-- LOGO -->
-      <div class="menu-logo">
-        <span style="color:#7c6ff7;">B</span><span style="color:#a78bfa;">l</span><span style="color:#60a5fa;">o</span><span style="color:#34d399;">c</span><span style="color:#fbbf24;">k</span><span style="color:#f472b6;">P</span><span style="color:#fff;">op</span>
-      </div>
-      <div class="menu-tagline">block puzzle game</div>
-
-      <!-- ÜST BAR: Elmas + Günlük Görev -->
-      <div class="menu-top-bar">
-        <!-- Elmas sayacı -->
-        <div class="menu-diamond-badge">
-          <span>💎</span>
-          <span id="xpDisplay">0</span>
+      <!-- TAB: ANA MENÜ -->
+      <div class="menu-tab-panel tab-active" id="tab-home">
+        <div class="menu-main-content">
+          <div class="menu-logo">
+            <span style="color:#7c6ff7;">B</span><span style="color:#a78bfa;">l</span><span style="color:#60a5fa;">o</span><span style="color:#34d399;">c</span><span style="color:#fbbf24;">k</span><span style="color:#f472b6;">P</span><span style="color:#fff;">op</span>
+          </div>
+          <div class="menu-tagline">block puzzle game</div>
+          <div class="menu-top-bar">
+            <div class="menu-diamond-badge">
+              <span>💎</span>
+              <span id="xpDisplay">0</span>
+            </div>
+            <button class="menu-daily-btn" id="btnDailyModal">
+              <span id="dailyBtnIcon">📅</span>
+              <span id="dailyBtnStreak">🔥 0</span>
+              <div id="dailyBtnDot" class="daily-dot hidden"></div>
+            </button>
+          </div>
+          <div class="menu-best-score-box">
+            <div class="menu-best-score-label">👑 EN YÜKSEK SKOR</div>
+            <div class="menu-best-score-val" id="menuHighScore">0</div>
+            <div class="menu-best-score-sub">
+              <span>⏱ <b id="menuTimeHS">0</b></span>
+            </div>
+          </div>
+          <div class="menu-lb-preview" id="menuLbPreview">
+            <div class="menu-lb-header">
+              <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;">🌍 Bu Hafta</span>
+              <button onclick="openLeaderboard()" style="font-size:11px;font-weight:700;color:#a78bfa;background:none;border:none;cursor:pointer;font-family:'Nunito',sans-serif;">Tümünü Gör →</button>
+            </div>
+            <div id="menuLbList"><div style="text-align:center;padding:10px;color:rgba(255,255,255,0.3);font-size:12px;">Yükleniyor...</div></div>
+          </div>
+          <button class="menu-btn btn-play" id="btnPlay">🎮  Klasik Mod</button>
+          <button class="menu-btn btn-timeattack" id="btnPlayTime">⏱  Zaman Modu</button>
+          <button onclick="watchAdForDiamonds()" class="menu-ad-btn">📺 &nbsp; Reklam İzle → +15 💎</button>
         </div>
-
-        <!-- Günlük görev butonu -->
-        <button class="menu-daily-btn" id="btnDailyModal">
-          <span id="dailyBtnIcon">📅</span>
-          <span id="dailyBtnStreak">🔥 0</span>
-          <div id="dailyBtnDot" class="daily-dot hidden"></div>
-        </button>
       </div>
 
-      <!-- HIGH SCORE - sadece bu, temiz -->
-      <div class="menu-best-score-box">
-        <div class="menu-best-score-label">👑 EN YÜKSEK SKOR</div>
-        <div class="menu-best-score-val" id="menuHighScore">0</div>
-        <div class="menu-best-score-sub">
-          <span>⏱ <b id="menuTimeHS">0</b></span>
+      <!-- TAB: İSTATİSTİK -->
+      <div class="menu-tab-panel" id="tab-stats">
+        <div class="tab-title">📊 İstatistikler</div>
+        <div id="statsContent"></div>
+      </div>
+
+      <!-- TAB: ROZETLER -->
+      <div class="menu-tab-panel" id="tab-achieve">
+        <div class="tab-title">🏆 Rozetler</div>
+        <div id="achieveProgress" style="color:rgba(255,255,255,0.4);font-size:13px;font-weight:600;margin-bottom:16px;text-align:center;"></div>
+        <div id="achieveGrid"></div>
+      </div>
+
+      <!-- TAB: TEMALAR -->
+      <div class="menu-tab-panel" id="tab-themes">
+        <div class="tab-title">🎨 Temalar</div>
+        <div id="themeXPInfo" style="color:rgba(255,255,255,0.5);font-size:13px;font-weight:700;margin-bottom:16px;text-align:center;">💎 0</div>
+        <div id="themeGrid"></div>
+      </div>
+
+      <!-- TAB: AYARLAR -->
+      <div class="menu-tab-panel" id="tab-settings">
+        <div class="tab-title">🔧 Ayarlar</div>
+        <!-- İsim değiştirme -->
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">👤 Oyuncu Adı</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="settingsNameInput" type="text" maxlength="16"
+              style="flex:1;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;font-size:15px;font-family:'Nunito',sans-serif;font-weight:700;outline:none;">
+            <button id="btnSaveName"
+              style="padding:10px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c6ff7,#a78bfa);color:#fff;font-size:13px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;white-space:nowrap;">
+              Kaydet
+            </button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <span>Ses Efektleri</span>
+          <div class="toggle" id="tgl-sfx"></div>
+        </div>
+        <div class="settings-row">
+          <span>Müzik</span>
+          <div class="toggle off" id="tgl-music"></div>
+        </div>
+        <div class="settings-row">
+          <span>Titreşim</span>
+          <div class="toggle" id="tgl-haptic"></div>
+        </div>
+        <div class="settings-row">
+          <span>Animasyonlar</span>
+          <div class="toggle" id="tgl-anim"></div>
+        </div>
+        <div class="settings-row" style="border-bottom:none;">
+          <span>Dil / Language</span>
+          <div style="display:flex;gap:6px;">
+            <button id="langTR" onclick="setLang('tr')" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;" class="lang-active">🇹🇷 TR</button>
+            <button id="langEN" onclick="setLang('en')" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;">🇬🇧 EN</button>
+          </div>
+        </div>
+        <div class="settings-footer">
+          <p>BlockPop v1.0.0</p>
+          <p>Made by Onur</p>
         </div>
       </div>
-
-      <!-- LEADERBOARD ÖNİZLEME - ilk 5 kişi -->
-      <div class="menu-lb-preview" id="menuLbPreview">
-        <div class="menu-lb-header">
-          <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;">🌍 Bu Hafta</span>
-          <button onclick="openLeaderboard()" style="font-size:11px;font-weight:700;color:#a78bfa;background:none;border:none;cursor:pointer;font-family:'Nunito',sans-serif;">Tümünü Gör →</button>
-        </div>
-        <div id="menuLbList"><div style="text-align:center;padding:10px;color:rgba(255,255,255,0.3);font-size:12px;">Yükleniyor...</div></div>
-      </div>
-
-      <!-- OYNA BUTONLARI -->
-      <button class="menu-btn btn-play" id="btnPlay">🎮  Klasik Mod</button>
-      <button class="menu-btn btn-timeattack" id="btnPlayTime">⏱  Zaman Modu</button>
-
-      <!-- REKLAM -->
-      <button onclick="watchAdForDiamonds()" class="menu-ad-btn">
-        📺 &nbsp; Reklam İzle → +15 💎
-      </button>
 
     </div>
 
@@ -1374,19 +1471,12 @@
   </div>
 
   <!-- ===== İSTATİSTİK EKRANI ===== -->
-  <div id="statsScreen" class="hidden">
-    <button class="settings-back" id="btnBackStats">← Geri</button>
-    <div class="settings-title">📊 İstatistikler</div>
-    <div id="statsContent"></div>
-  </div>
+  <!-- statsScreen tab sistemiyle değiştirildi -->
+  <div id="statsScreen" class="hidden"></div>
 
   <!-- ===== ACHİEVEMENT EKRANI ===== -->
-  <div id="achieveScreen" class="hidden">
-    <button class="settings-back" id="btnBackAchieve">← Geri</button>
-    <div class="settings-title">🏆 Rozetler</div>
-    <div id="achieveProgress" style="color:rgba(255,255,255,0.4);font-size:13px;font-weight:600;margin-bottom:16px;text-align:center;"></div>
-    <div id="achieveGrid"></div>
-  </div>
+  <!-- achieveScreen tab sistemiyle değiştirildi -->
+  <div id="achieveScreen" class="hidden"></div>
 
   <!-- ===== GÜNLÜK GÖREV MODALİ ===== -->
   <div id="dailyModal" class="hidden">
@@ -1519,11 +1609,9 @@
   </div>
 
   <!-- ===== TEMA EKRANI ===== -->
+  <!-- themesScreen tab sistemiyle değiştirildi -->
   <div id="themesScreen" class="hidden">
-    <button class="settings-back" id="btnBackThemes">← Geri</button>
-    <div class="settings-title">Temalar</div>
-    <div id="themeXPInfo">💎 0</div>
-    <div id="themeGrid"></div>
+    <div id="themeXPInfo" style="display:none;">💎 0</div>
   </div>
 
   <!-- ===== REKLAM MODALİ ===== -->
@@ -1542,52 +1630,8 @@
   </div>
 
   <!-- ===== AYARLAR EKRANI (Menüden açılan) ===== -->
-  <div id="settingsScreen" class="hidden">
-    <button class="settings-back" id="btnBack">← Geri</button>
-    <div class="settings-title">Ayarlar</div>
-
-    <!-- İsim değiştirme -->
-    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
-      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">👤 Oyuncu Adı</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input id="settingsNameInput" type="text" maxlength="16"
-          style="flex:1;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;font-size:15px;font-family:'Nunito',sans-serif;font-weight:700;outline:none;">
-        <button id="btnSaveName"
-          style="padding:10px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c6ff7,#a78bfa);color:#fff;font-size:13px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;white-space:nowrap;">
-          Kaydet
-        </button>
-      </div>
-    </div>
-
-    <div class="settings-row">
-      <span>Ses Efektleri</span>
-      <div class="toggle" id="tgl-sfx"></div>
-    </div>
-    <div class="settings-row">
-      <span>Müzik</span>
-      <div class="toggle off" id="tgl-music"></div>
-    </div>
-    <div class="settings-row">
-      <span>Titreşim</span>
-      <div class="toggle" id="tgl-haptic"></div>
-    </div>
-    <div class="settings-row">
-      <span>Animasyonlar</span>
-      <div class="toggle" id="tgl-anim"></div>
-    </div>
-    <div class="settings-row" style="border-bottom:none;">
-      <span>Dil / Language</span>
-      <div style="display:flex;gap:6px;">
-        <button id="langTR" onclick="setLang('tr')" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;" class="lang-active">🇹🇷 TR</button>
-        <button id="langEN" onclick="setLang('en')" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;">🇬🇧 EN</button>
-      </div>
-    </div>
-
-    <div class="settings-footer">
-      <p>BlockPop v1.0.0</p>
-      <p>Made by Onur</p>
-    </div>
-  </div>
+  <!-- settingsScreen tab sistemiyle değiştirildi -->
+  <div id="settingsScreen" class="hidden"></div>
 
   <!-- ===== GAME OVER ===== -->
   <div id="gameOverScreen">
@@ -1700,7 +1744,7 @@
   <audio id="snd-place" src="assets/sounds/place.mp3" preload="auto"></audio>
   <audio id="snd-clear" src="assets/sounds/clear.mp3" preload="auto"></audio>
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
-  <audio id="snd-gameover1" src="assets/sounds/gameover1.mp3" preload="auto"></audio>
+  <audio id="snd-gameover" src="assets/sounds/gameover.mp3" preload="auto"></audio>
 
   <script src="main.js?v=3000000"></script>
 
@@ -1729,6 +1773,7 @@
     }
 
     function goToMenu() {
+    if (typeof switchTab === 'function') switchTab('tab-home');
       stopTimer();
       const gc = document.getElementById('game-container');
       gc.style.visibility = 'hidden';
@@ -1978,12 +2023,6 @@
     // LB preview tıklanınca tam ekran aç
     document.getElementById('menuLbPreview').addEventListener('click', openLeaderboard);
 
-    // Stats nav butonu listener
-    document.getElementById('btnOpenStats').addEventListener('click', () => {
-      buildStatsScreen();
-      document.getElementById('statsScreen').classList.remove('hidden');
-    });
-
     // Daily buton dot güncelle
     function updateDailyBtnDot() {
       const status = typeof getDailyStatus === 'function' ? getDailyStatus() : {};
@@ -2219,10 +2258,6 @@
       `;
     }
 
-    document.getElementById('btnOpenStats').addEventListener('click', () => {
-      buildStatsScreen();
-      document.getElementById('statsScreen').classList.remove('hidden');
-    });
     // ===== ACHİEVEMENT EKRANI =====
     function buildAchieveGrid() {
       const grid = document.getElementById('achieveGrid');
@@ -2402,7 +2437,7 @@
       if (btnTime) btnTime.innerHTML = tr('timeMode');
 
       // Ayarlar ekranı
-      const stTitle = document.querySelector('#settingsScreen .settings-title');
+      const stTitle = document.querySelector('#tab-settings .tab-title');
       if (stTitle) stTitle.textContent = tr('settingsTitle');
       const nameInput = document.getElementById('settingsNameInput');
       if (nameInput) nameInput.placeholder = tr('namePlaceholder');
@@ -2467,15 +2502,15 @@
       if (tabs[2]) tabs[2].textContent = tr('timeModeTab');
 
       // Rozet ekranı
-      const achTitle = document.querySelector('#achieveScreen .settings-title');
+      const achTitle = document.querySelector('#tab-achieve .tab-title');
       if (achTitle) achTitle.textContent = L === 'en' ? '🏆 Achievements' : '🏆 Rozetler';
 
       // İstatistik ekranı
-      const statsTitle = document.querySelector('#statsScreen .settings-title');
+      const statsTitle = document.querySelector('#tab-stats .tab-title');
       if (statsTitle) statsTitle.textContent = L === 'en' ? '📊 Statistics' : '📊 İstatistikler';
 
       // Temalar ekranı
-      const themesTitle = document.querySelector('#themesScreen .settings-title');
+      const themesTitle = document.querySelector('#tab-themes .tab-title');
       if (themesTitle) themesTitle.textContent = L === 'en' ? 'Themes' : 'Temalar';
 
       // Geri butonları
@@ -2737,32 +2772,61 @@
     // İlk açılış kontrolü
     checkFirstLaunch();
 
-    // ===== MENÜ BUTONLARI =====
-    document.getElementById('navHome').addEventListener('click', () => {});
-    document.getElementById('btnOpenSettings').addEventListener('click', () => {
-      document.getElementById('settingsScreen').classList.remove('hidden');
-      const nameInput = document.getElementById('settingsNameInput');
-      if (nameInput) nameInput.value = getPlayerName();
-    });
-    document.getElementById('btnOpenThemes').addEventListener('click', () => {
-      document.getElementById('themesScreen').classList.remove('hidden');
-      if (typeof buildThemeGrid === 'function') buildThemeGrid();
-    });
-    document.getElementById('btnOpenAchieve').addEventListener('click', () => {
-      buildAchieveGrid();
-      document.getElementById('achieveScreen').classList.remove('hidden');
-    });
+    // ===== TAB SİSTEMİ =====
+    function switchTab(tabId) {
+      const tabs = ['tab-home','tab-stats','tab-achieve','tab-themes','tab-settings'];
+      const navBtns = {
+        'tab-home': 'navHome',
+        'tab-stats': 'btnOpenStats',
+        'tab-achieve': 'btnOpenAchieve',
+        'tab-themes': 'btnOpenThemes',
+        'tab-settings': 'btnOpenSettings',
+      };
 
-    // Geri tuşları
-    document.getElementById('btnBackAchieve').addEventListener('click', () => {
-      document.getElementById('achieveScreen').classList.add('hidden');
-    });
-    document.getElementById('btnBackStats').addEventListener('click', () => {
-      document.getElementById('statsScreen').classList.add('hidden');
-    });
-    document.getElementById('btnBack').addEventListener('click', () => {
-      document.getElementById('settingsScreen').classList.add('hidden');
-    });
+      tabs.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === tabId) {
+          el.classList.add('tab-active');
+          el.classList.remove('tab-exit-left');
+        } else {
+          el.classList.remove('tab-active');
+        }
+      });
+
+      // Nav buton aktif durumu + indikatör
+      Object.entries(navBtns).forEach(([tab, btnId]) => {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        const isActive = tab === tabId;
+        btn.classList.toggle('active', isActive);
+        btn.classList.toggle('nav-btn-home', isActive); // indikatör aktif butona
+      });
+
+      // Tab'a özgü aksiyonlar
+      if (tabId === 'tab-stats') buildStatsScreen();
+      if (tabId === 'tab-achieve') buildAchieveGrid();
+      if (tabId === 'tab-themes' && typeof buildThemeGrid === 'function') buildThemeGrid();
+      if (tabId === 'tab-settings') {
+        const nameInput = document.getElementById('settingsNameInput');
+        if (nameInput) nameInput.value = getPlayerName();
+      }
+    }
+
+    // Nav buton listener'ları
+    document.getElementById('navHome').addEventListener('click', () => switchTab('tab-home'));
+    document.getElementById('btnOpenStats').addEventListener('click', () => switchTab('tab-stats'));
+    document.getElementById('btnOpenAchieve').addEventListener('click', () => switchTab('tab-achieve'));
+    document.getElementById('btnOpenThemes').addEventListener('click', () => switchTab('tab-themes'));
+    document.getElementById('btnOpenSettings').addEventListener('click', () => switchTab('tab-settings'));
+
+    // Geri tuşları (eski ekranlar için - artık kullanılmıyor ama hata vermesin)
+    const _bAchieve = document.getElementById('btnBackAchieve');
+    if (_bAchieve) _bAchieve.addEventListener('click', () => switchTab('tab-home'));
+    const _bStats = document.getElementById('btnBackStats');
+    if (_bStats) _bStats.addEventListener('click', () => switchTab('tab-home'));
+    const _bBack = document.getElementById('btnBack');
+    if (_bBack) _bBack.addEventListener('click', () => switchTab('tab-home'));
 
     document.getElementById('btnPlay').addEventListener('click', () => {
       document.getElementById('difficultyModal').classList.remove('hidden');
