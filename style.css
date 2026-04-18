@@ -803,3 +803,43 @@ body[data-theme="candy"] .combo-popup { animation: comboBigPop 0.7s ease forward
   0%,100% { filter: brightness(1); }
   50%     { filter: brightness(2); box-shadow: 0 0 12px rgba(255,255,255,0.8); }
 }
+
+/* === PERFORMANS OPTİMİZASYONLARI === */
+#board {
+  will-change: transform;
+  transform: translateZ(0);
+}
+.board-cell {
+  will-change: background-color;
+  transform: translateZ(0);
+}
+.drag-preview {
+  will-change: transform, left, top;
+  transform: translateZ(0);
+}
+.piece {
+  will-change: opacity;
+}
+
+/* ===== MAĞAZA ===== */
+.shop-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.shop-item:active { transform: scale(0.97); }
+.shop-popular {
+  border-color: rgba(245,158,11,0.4);
+  background: rgba(245,158,11,0.08);
+}
+.shop-premium {
+  border-color: rgba(251,191,36,0.4);
+  background: rgba(251,191,36,0.08);
+}
