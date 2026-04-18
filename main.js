@@ -736,9 +736,15 @@ window.addEventListener('DOMContentLoaded', () => {
   loadTheme();
 
   // Kayıtlı oyun varsa yükle, yoksa yeni başlat
-  const hasSave = loadGameState();
-  if (!hasSave) {
+  const saveResult = loadGameState();
+  if (!saveResult) {
     generatePieces();
+  } else {
+    // Kayıtlı modu geri yükle
+    if (typeof window.startGame === 'function' && saveResult.gameMode) {
+      window._savedGameMode  = saveResult.gameMode;
+      window._savedTimeLevel = saveResult.timeLevel;
+    }
   }
 
   setupPowerups();
@@ -983,6 +989,40 @@ function playSndRecord() {
 
 // AudioContext'i ilk dokunuşta başlat
 document.addEventListener('pointerdown', _getCtx, { once: true });
+
+// === ARKA PLAN MÜZİĞİ ===
+let _bgMusic = null;
+
+function _isMusicOn() { return localStorage.getItem('tgl-music') !== 'off'; }
+
+function startBgMusic() {
+  if (!_bgMusic) _bgMusic = document.getElementById('snd-bg');
+  if (!_bgMusic) return;
+  if (!_isMusicOn()) return;
+  _bgMusic.volume = 0.35;
+  _bgMusic.play().catch(() => {});
+}
+
+function stopBgMusic() {
+  if (!_bgMusic) _bgMusic = document.getElementById('snd-bg');
+  if (!_bgMusic) return;
+  _bgMusic.pause();
+  _bgMusic.currentTime = 0;
+}
+
+function updateBgMusic() {
+  if (_isMusicOn()) startBgMusic();
+  else stopBgMusic();
+}
+
+window.startBgMusic = startBgMusic;
+window.stopBgMusic = stopBgMusic;
+window.updateBgMusic = updateBgMusic;
+
+// İlk dokunuşta müziği başlat
+document.addEventListener('pointerdown', () => {
+  setTimeout(startBgMusic, 100);
+}, { once: true });
 
 // === TAHTA OLUŞTUR ===
 function initBoard() {
@@ -2176,6 +2216,8 @@ function saveGameState() {
     undoCharges,
     clearStreak,
     piecesData,
+    gameMode: window.currentGameMode || 'normal',
+    timeLevel: window.currentTimeLevel || 1,
     savedAt: Date.now(),
   };
 
@@ -2222,7 +2264,12 @@ function loadGameState() {
 
     updateScore();
     updatePowerupUI();
-    return true;
+
+    // Mod bilgisini döndür
+    return {
+      gameMode: s.gameMode || 'normal',
+      timeLevel: s.timeLevel || 1,
+    };
   } catch(e) {
     console.warn('Kayıt yüklenemedi:', e);
     localStorage.removeItem('bp_game_save');
