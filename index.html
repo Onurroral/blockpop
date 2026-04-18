@@ -1776,6 +1776,7 @@
   <!-- SESLER -->
   <audio id="snd-pick" src="assets/sounds/pick.mp3" preload="auto"></audio>
   <audio id="snd-tick" src="assets/sounds/tick.mp3" preload="auto"></audio>
+  <audio id="snd-bg" src="assets/sounds/background.mp3" loop preload="auto"></audio>
   <audio id="snd-place" src="assets/sounds/place.mp3" preload="auto"></audio>
   <audio id="snd-clear" src="assets/sounds/clear.mp3" preload="auto"></audio>
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
@@ -1843,6 +1844,9 @@
 
     function applyToggle(key, isOn) {
       if (key === 'tgl-sfx') window.sfxEnabled = isOn;
+      if (key === 'tgl-music') {
+        if (typeof updateBgMusic === 'function') updateBgMusic();
+      }
     }
 
     function syncTogglePair(pair) {
@@ -2772,6 +2776,16 @@
         return;
       }
 
+      // Kayıtlı oyun varsa — aynı modla devam et
+      if (window._savedGameMode) {
+        const mode  = window._savedGameMode;
+        const level = window._savedTimeLevel || 1;
+        window._savedGameMode  = null;
+        window._savedTimeLevel = null;
+        setTimeout(() => startGame(mode, mode === 'timeattack' ? level : undefined), 100);
+        return;
+      }
+
       const welcomed = localStorage.getItem('bp_welcomed');
       if (!welcomed) {
         document.getElementById('menuScreen').classList.add('hidden');
@@ -2964,6 +2978,7 @@
       const mainTgl = document.getElementById('tgl-music');
       if (mainTgl) mainTgl.classList.toggle('off', cur);
       updateIGSIcons();
+      if (typeof updateBgMusic === 'function') updateBgMusic();
     });
     document.getElementById('igs-haptic-btn').addEventListener('click', () => {
       const cur = localStorage.getItem('tgl-haptic') !== 'off';
@@ -3381,16 +3396,36 @@
       const now = Date.now();
       const gc = document.getElementById('game-container');
       const isInGame = gc && gc.style.visibility === 'visible';
-      const menuVisible = !document.getElementById('menuScreen').classList.contains('hidden');
+
+      // Açık modal/ekran varsa önce onu kapat
+      const modals = [
+        'leaderboardScreen', 'dailyModal', 'nameModal',
+        'difficultyModal', 'timeLevelModal', 'confirmReset', 'adModal'
+      ];
+      for (const id of modals) {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('hidden') && el.style.display !== 'none') {
+          el.classList.add('hidden');
+          history.pushState({ page: 'game' }, '');
+          return;
+        }
+      }
 
       // Oyun içindeyse → ana menüye git
       if (isInGame) {
+        // Oyun içi settings açıksa kapat
+        const igs = document.getElementById('inGameSettingsPanel');
+        if (igs && !igs.classList.contains('hidden')) {
+          igs.classList.add('hidden');
+          history.pushState({ page: 'game' }, '');
+          return;
+        }
         goToMenu();
         history.pushState({ page: 'game' }, '');
         return;
       }
 
-      // Ana menüde değil (tab açık) → ana menüye git
+      // Tab açıksa → ana menüye git
       const activeTab = document.querySelector('.menu-tab-panel.tab-active');
       if (activeTab && activeTab.id !== 'tab-home') {
         switchTab('tab-home');
@@ -3400,20 +3435,17 @@
 
       // Ana menüdeyse → çift geri ile çık
       if (now - _lastBackTime < 2000) {
-        // 2 saniye içinde tekrar basıldı → çık
         history.back();
         return;
       }
       _lastBackTime = now;
 
-      // Toast göster
       const t = document.createElement('div');
       t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 22px;border-radius:50px;font-size:13px;font-weight:700;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
       t.textContent = '← Çıkmak için tekrar basın';
       document.body.appendChild(t);
       setTimeout(() => t.remove(), 2000);
 
-      // State'i geri ekle (çıkmasın)
       history.pushState({ page: 'game' }, '');
     });
   </script>
