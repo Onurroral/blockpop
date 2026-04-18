@@ -1352,9 +1352,10 @@
           </div>
           <div class="menu-tagline">block puzzle game</div>
           <div class="menu-top-bar">
-            <div class="menu-diamond-badge">
+            <div class="menu-diamond-badge" onclick="openShop()" style="cursor:pointer;">
               <span>💎</span>
               <span id="xpDisplay">0</span>
+              <span style="font-size:11px;opacity:0.6;">+</span>
             </div>
             <button class="menu-daily-btn" id="btnDailyModal">
               <span id="dailyBtnIcon">📅</span>
@@ -1378,7 +1379,7 @@
           </div>
           <button class="menu-btn btn-play" id="btnPlay">🎮  Klasik Mod</button>
           <button class="menu-btn btn-timeattack" id="btnPlayTime">⏱  Zaman Modu</button>
-          <button onclick="watchAdForDiamonds()" class="menu-ad-btn">📺 &nbsp; Reklam İzle → +15 💎</button>
+          <button onclick="watchAdForDiamonds()" class="menu-ad-btn">📺  Reklam İzle → +15 💎</button>
         </div>
       </div>
 
@@ -1407,7 +1408,7 @@
         <div class="tab-title">🔧 Ayarlar</div>
         <!-- İsim değiştirme -->
         <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
-          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">👤 Oyuncu Adı</div>
+          <div id="settingsPlayerNameLabel" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">👤 Oyuncu Adı</div>
           <div style="display:flex;gap:8px;align-items:center;">
             <input id="settingsNameInput" type="text" maxlength="16"
               style="flex:1;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;font-size:15px;font-family:'Nunito',sans-serif;font-weight:700;outline:none;">
@@ -1517,7 +1518,7 @@
   <div id="dailyModal" class="hidden">
     <div class="daily-modal-box">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <div style="font-size:20px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">📅 Günlük</div>
+        <div id="dailyModalTitle" style="font-size:20px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">📅 Günlük</div>
         <button onclick="document.getElementById('dailyModal').classList.add('hidden')" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:32px;height:32px;color:rgba(255,255,255,0.5);font-size:18px;cursor:pointer;">×</button>
       </div>
 
@@ -1526,33 +1527,33 @@
         <span style="font-size:28px;">🔥</span>
         <div>
           <div style="font-size:22px;font-weight:900;color:#f97316;font-family:'Nunito',sans-serif;" id="modalStreakNum">0</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;">GÜN STREAK</div>
+          <div id="dailyStreakLabel" style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;">GÜN STREAK</div>
         </div>
         <div style="margin-left:auto;text-align:right;">
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;">BUGÜN</div>
+          <div id="dailyTodayLabel" style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;">BUGÜN</div>
           <div id="modalLoginBonus" style="font-size:14px;font-weight:800;color:#60a5fa;">+? 💎</div>
         </div>
       </div>
 
       <!-- Streak günleri -->
       <div class="daily-streak-days">
-        <div class="streak-day" id="sd1"><div class="sd-icon">💎</div><div class="sd-lbl">1.gün</div><div class="sd-val">5</div></div>
-        <div class="streak-day" id="sd2"><div class="sd-icon">💎</div><div class="sd-lbl">3.gün</div><div class="sd-val">10</div></div>
-        <div class="streak-day" id="sd3"><div class="sd-icon">💎</div><div class="sd-lbl">7.gün</div><div class="sd-val">20</div></div>
-        <div class="streak-day" id="sd4"><div class="sd-icon">💎</div><div class="sd-lbl">14.gün</div><div class="sd-val">30</div></div>
-        <div class="streak-day" id="sd5"><div class="sd-icon">💎</div><div class="sd-lbl">30.gün</div><div class="sd-val">50</div></div>
+        <div class="streak-day" id="sd1"><div class="sd-icon">💎</div><div class="sd-lbl" id="sdlbl1">1.gün</div><div class="sd-val">5</div></div>
+        <div class="streak-day" id="sd2"><div class="sd-icon">💎</div><div class="sd-lbl" id="sdlbl2">3.gün</div><div class="sd-val">10</div></div>
+        <div class="streak-day" id="sd3"><div class="sd-icon">💎</div><div class="sd-lbl" id="sdlbl3">7.gün</div><div class="sd-val">20</div></div>
+        <div class="streak-day" id="sd4"><div class="sd-icon">💎</div><div class="sd-lbl" id="sdlbl4">14.gün</div><div class="sd-val">30</div></div>
+        <div class="streak-day" id="sd5"><div class="sd-icon">💎</div><div class="sd-lbl" id="sdlbl5">30.gün</div><div class="sd-val">50</div></div>
       </div>
 
       <!-- Günlük görev -->
       <div class="daily-task-box">
-        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">🎯 Günlük Görev</div>
+        <div id="dailyTaskLabel" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">🎯 Günlük Görev</div>
         <div style="display:flex;align-items:center;gap:12px;">
           <span id="modalTaskIcon" style="font-size:28px;">🎯</span>
           <div style="flex:1;">
             <div id="modalTaskDesc" style="font-size:15px;font-weight:800;color:#fff;font-family:'Nunito',sans-serif;">Yükleniyor...</div>
             <div id="modalTaskXP" style="font-size:12px;color:#60a5fa;font-weight:700;margin-top:2px;">+80 💎 ödül</div>
           </div>
-          <div id="modalTaskDone" style="display:none;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:50px;padding:6px 14px;font-size:12px;font-weight:800;color:#34d399;">✓ Tamam</div>
+          <div id="modalTaskDone" style="display:none;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:50px;padding:6px 14px;font-size:12px;font-weight:800;color:#34d399;">✓ <span id="modalTaskDoneText">Tamam</span></div>
         </div>
       </div>
 
@@ -1668,6 +1669,129 @@
   <!-- settingsScreen tab sistemiyle değiştirildi -->
   <div id="settingsScreen" class="hidden"></div>
 
+  <!-- ===== MAĞAZA MODALİ ===== -->
+  <div id="shopModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);z-index:9000;align-items:flex-end;justify-content:center;">
+    <div style="background:linear-gradient(180deg,#1a1a35,#0d0d20);border-radius:28px 28px 0 0;width:100%;max-width:420px;padding:24px 20px 40px;max-height:85vh;overflow-y:auto;">
+      <!-- Başlık -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div style="font-size:22px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">🛒 <span id="shopTitle">Mağaza</span></div>
+        <button onclick="document.getElementById('shopModal').style.display='none'" style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-size:18px;cursor:pointer;">×</button>
+      </div>
+
+      <!-- Elmas paketi başlığı -->
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;" id="shopDiamondTitle">💎 Elmas Paketleri</div>
+
+      <!-- Paketler -->
+      <div id="shopPackages" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+
+        <!-- 50 Elmas -->
+        <div class="shop-item" onclick="buyPackage('diamond_50')">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="font-size:28px;">💎</div>
+            <div>
+              <div style="font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">50 💎</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.4);" class="shop-starter">Başlangıç paketi</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:900;color:#60a5fa;font-family:'Nunito',sans-serif;">₺9,90</div>
+          </div>
+        </div>
+
+        <!-- 100 Elmas -->
+        <div class="shop-item" onclick="buyPackage('diamond_100')">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="font-size:28px;">💎</div>
+            <div>
+              <div style="font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">100 💎</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.4);" class="shop-desc1"></div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:900;color:#60a5fa;font-family:'Nunito',sans-serif;">₺19,90</div>
+          </div>
+        </div>
+
+        <!-- 250 Elmas -->
+        <div class="shop-item" onclick="buyPackage('diamond_250')">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="font-size:28px;">💎</div>
+            <div>
+              <div style="font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">250 💎</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.4);" class="shop-save">%5 tasarruf</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:900;color:#60a5fa;font-family:'Nunito',sans-serif;">₺49,90</div>
+          </div>
+        </div>
+
+        <!-- 500 Elmas -->
+        <div class="shop-item shop-popular" onclick="buyPackage('diamond_500')">
+          <div style="position:absolute;top:-10px;right:12px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;font-size:9px;font-weight:800;padding:3px 10px;border-radius:50px;font-family:'Nunito',sans-serif;" id="shopPopular">🔥 POPÜLER</div>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="font-size:28px;">💎</div>
+            <div>
+              <div style="font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">500 💎</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.4);" class="shop-save2">%10 tasarruf</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:900;color:#60a5fa;font-family:'Nunito',sans-serif;">₺89,90</div>
+          </div>
+        </div>
+
+        <!-- 750 Elmas -->
+        <div class="shop-item" onclick="buyPackage('diamond_750')">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="font-size:28px;">💎</div>
+            <div>
+              <div style="font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">750 💎</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.4);" class="shop-save3">%15 tasarruf</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:900;color:#60a5fa;font-family:'Nunito',sans-serif;">₺149,90</div>
+          </div>
+        </div>
+
+        <!-- 1000 Elmas -->
+        <div class="shop-item" onclick="buyPackage('diamond_1000')">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="font-size:28px;">💎</div>
+            <div>
+              <div style="font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">1000 💎</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.4);" class="shop-save4">%20 tasarruf</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:900;color:#60a5fa;font-family:'Nunito',sans-serif;">₺249,90</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Premium -->
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;" id="shopPremiumTitle">👑 Premium</div>
+
+      <div class="shop-item shop-premium" onclick="buyPackage('premium')">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="font-size:32px;">👑</div>
+          <div>
+            <div style="font-size:16px;font-weight:900;color:#fbbf24;font-family:'Nunito',sans-serif;" id="shopPremiumName">Reklamsız + 500 💎</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="shopPremiumDesc">Reklamları kaldır, 500 💎 kazan</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:16px;font-weight:900;color:#fbbf24;font-family:'Nunito',sans-serif;">₺349,90</div>
+        </div>
+      </div>
+
+      <!-- Not -->
+      <div style="text-align:center;margin-top:20px;font-size:11px;color:rgba(255,255,255,0.2);font-family:'Nunito',sans-serif;" id="shopNote">Ödeme yakında aktif olacak</div>
+    </div>
+  </div>
+
   <!-- ===== GAME OVER ===== -->
   <div id="gameOverScreen">
     <div class="gameover-box">
@@ -1680,8 +1804,8 @@
   <!-- ===== RESET ONAY ===== -->
   <div id="confirmReset" class="hidden">
     <div class="confirm-box">
-      <h3>Oyunu Sıfırla</h3>
-      <p>Mevcut oyun silinecek. Emin misin?</p>
+      <h3 id='resetModalTitle'>Oyunu Sıfırla</h3>
+      <p id='resetModalDesc'>Mevcut oyun silinecek. Emin misin?</p>
       <div class="confirm-btns">
         <button class="btn-cancel-confirm" id="btnCancelReset">Vazgeç</button>
         <button class="btn-yes-reset" id="btnYesReset">Sıfırla</button>
@@ -1980,7 +2104,7 @@
         window.currentTimeLevel = currentTimeLevel; // window'a da yaz
         // Seviye etiketi
         const lvlLabel = document.getElementById('timerLevelLabel');
-        if (lvlLabel) lvlLabel.textContent = `Sev. ${currentTimeLevel} · ${TIME_LEVELS[currentTimeLevel]}s`;
+        if (lvlLabel) lvlLabel.textContent = `${t('levelLabel')} ${currentTimeLevel} · ${TIME_LEVELS[currentTimeLevel]}s`;
         timerBar.style.display = 'block';
         startTimer();
       } else {
@@ -2021,8 +2145,8 @@
       const ch = typeof getDailyChallenge === 'function' ? getDailyChallenge() : null;
       if (ch) {
         document.getElementById('modalTaskIcon').textContent = ch.icon;
-        document.getElementById('modalTaskDesc').textContent = ch.desc;
-        document.getElementById('modalTaskXP').textContent  = '+' + ch.xp + ' 💎 ödül';
+        document.getElementById('modalTaskDesc').textContent = (currentLang === 'en' && ch.descEn) ? ch.descEn : ch.desc;
+        document.getElementById('modalTaskXP').textContent  = '+' + ch.xp + ' ' + t('rewardLabel');
         const doneEl = document.getElementById('modalTaskDone');
         if (doneEl) doneEl.style.display = done ? 'block' : 'none';
       }
@@ -2030,7 +2154,7 @@
       document.getElementById('dailyModal').classList.remove('hidden');
     }
 
-    document.getElementById('btnDailyModal').addEventListener('click', openDailyModal);
+    document.getElementById('btnDailyModal').addEventListener('click', () => { if(typeof playSndPop==='function') playSndPop(); openDailyModal(); });
 
     // LB önizleme yükle (ilk 5)
     async function loadLbPreview() {
@@ -2039,7 +2163,7 @@
       try {
         const rows = await window.fbGetScores('weekly');
         if (!rows || rows.length === 0) {
-          list.innerHTML = '<div style="text-align:center;padding:8px;color:rgba(255,255,255,0.3);font-size:12px;">Henüz skor yok</div>';
+          list.innerHTML = '<div style="text-align:center;padding:8px;color:rgba(255,255,255,0.3);font-size:12px;">' + t('noScoreShort') + '</div>';
           return;
         }
         const top5 = rows.slice(0, 5);
@@ -2052,7 +2176,7 @@
           </div>
         `).join('');
       } catch(e) {
-        list.innerHTML = '<div style="text-align:center;padding:8px;color:rgba(255,255,255,0.3);font-size:12px;">Bağlanılamadı</div>';
+        list.innerHTML = '<div style="text-align:center;padding:8px;color:rgba(255,255,255,0.3);font-size:12px;">' + t('connectionError') + '</div>';
       }
     }
 
@@ -2105,7 +2229,7 @@
       myScore.classList.add('hidden');
 
       if (!window.fbGetScores) {
-        loading.textContent = 'Bağlantı kuruluyor...';
+        loading.textContent = t('connecting');
         return;
       }
 
@@ -2140,7 +2264,7 @@
       // Oyuncunun kendi skoru
       if (myRank >= 0) {
         document.getElementById('lbMyRank').textContent = getRankEmoji(myRank);
-        document.getElementById('lbMyName').textContent = myName + ' (Sen)';
+        document.getElementById('lbMyName').textContent = myName + t('myRankSuffix');
         document.getElementById('lbMyVal').textContent = rows[myRank].score.toLocaleString();
         myScore.classList.remove('hidden');
       }
@@ -2184,7 +2308,7 @@
         if (ok) {
           const t = document.createElement('div');
           t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
-          t.textContent = '✓ Skor sıralamasına gönderildi!';
+          t.textContent = t('scoreSent');
           document.body.appendChild(t);
           setTimeout(() => t.remove(), 2000);
         }
@@ -2209,7 +2333,7 @@
             // Yeni rekor — toast göster
             const t = document.createElement('div');
             t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
-            t.textContent = '🏆 Yeni Rekor!';
+            t.textContent = t('newRecord');
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 2000);
           }
@@ -2241,44 +2365,46 @@
         return String(n);
       }
 
+      const L = currentLang;
+      const g = (tr, en) => L === 'en' ? en : tr;
       container.innerHTML = `
-        <div class="stats-section-title">🏅 Genel</div>
+        <div class="stats-section-title">🏅 ${g('Genel','General')}</div>
         <div class="stats-grid">
           <div class="stats-card accent-gold">
             <div class="stats-val">${fmt(hs)}</div>
-            <div class="stats-lbl">En Yüksek Skor</div>
+            <div class="stats-lbl">${g('En Yüksek Skor','Best Score')}</div>
           </div>
           <div class="stats-card accent-purple">
             <div class="stats-val">${fmt(s.totalScore || 0)}</div>
-            <div class="stats-lbl">Toplam Puan</div>
+            <div class="stats-lbl">${g('Toplam Puan','Total Score')}</div>
           </div>
           <div class="stats-card accent-blue">
             <div class="stats-val">${fmt(s.totalGames || 0)}</div>
-            <div class="stats-lbl">Toplam Oyun</div>
+            <div class="stats-lbl">${g('Toplam Oyun','Total Games')}</div>
           </div>
           <div class="stats-card accent-green">
             <div class="stats-val">${unlocked.length}</div>
-            <div class="stats-lbl">Kazanılan Rozet</div>
+            <div class="stats-lbl">${g('Kazanılan Rozet','Badges Earned')}</div>
           </div>
         </div>
 
-        <div class="stats-section-title">🧱 Oyun İçi</div>
+        <div class="stats-section-title">🧱 ${g('Oyun İçi','In-Game')}</div>
         <div class="stats-grid">
           <div class="stats-card">
             <div class="stats-val">${fmt(s.totalBlocks || 0)}</div>
-            <div class="stats-lbl">Toplam Blok</div>
+            <div class="stats-lbl">${g('Toplam Blok','Total Blocks')}</div>
           </div>
           <div class="stats-card">
             <div class="stats-val">${fmt(s.totalLines || 0)}</div>
-            <div class="stats-lbl">Temizlenen Satır</div>
+            <div class="stats-lbl">${g('Temizlenen Satır','Lines Cleared')}</div>
           </div>
           <div class="stats-card accent-red">
             <div class="stats-val">${s.maxCombo || 0}x</div>
-            <div class="stats-lbl">En Yüksek Combo</div>
+            <div class="stats-lbl">${g('En Yüksek Combo','Best Combo')}</div>
           </div>
           <div class="stats-card accent-blue">
             <div class="stats-val">${fmt(timeHS)}</div>
-            <div class="stats-lbl">Zaman Modu Rekor</div>
+            <div class="stats-lbl">${g('Zaman Modu Rekor','Time Mode Best')}</div>
           </div>
         </div>
 
@@ -2286,19 +2412,19 @@
         <div class="stats-grid">
           <div class="stats-card accent-red">
             <div class="stats-val">${daily.streak || 0}</div>
-            <div class="stats-lbl">Güncel Streak</div>
+            <div class="stats-lbl">${g('Güncel Streak','Current Streak')}</div>
           </div>
           <div class="stats-card">
             <div class="stats-val">${daily.completed ? '✓' : '—'}</div>
-            <div class="stats-lbl">Bugünkü Görev</div>
+            <div class="stats-lbl">${g('Bugünkü Görev',"Today's Task")}</div>
           </div>
         </div>
 
-        <div class="stats-section-title">🎮 Mod Başına Oyun</div>
-        <div class="stats-mode-row"><span class="stats-mode-name">🟢 Kolay</span><span class="stats-mode-val">${s.easyGames || 0} oyun</span></div>
-        <div class="stats-mode-row"><span class="stats-mode-name">🟡 Normal</span><span class="stats-mode-val">${s.normalGames || 0} oyun</span></div>
-        <div class="stats-mode-row"><span class="stats-mode-name">🔴 Zor</span><span class="stats-mode-val">${s.hardGames || 0} oyun</span></div>
-        <div class="stats-mode-row"><span class="stats-mode-name">⏱ Zaman</span><span class="stats-mode-val">${s.timeGames || 0} oyun</span></div>
+        <div class="stats-section-title">🎮 ${g('Mod Başına Oyun','Games by Mode')}</div>
+        <div class="stats-mode-row"><span class="stats-mode-name">🟢 ${g('Kolay','Easy')}</span><span class="stats-mode-val">${s.easyGames || 0} ${g('oyun','games')}</span></div>
+        <div class="stats-mode-row"><span class="stats-mode-name">🟡 Normal</span><span class="stats-mode-val">${s.normalGames || 0} ${g('oyun','games')}</span></div>
+        <div class="stats-mode-row"><span class="stats-mode-name">🔴 ${g('Zor','Hard')}</span><span class="stats-mode-val">${s.hardGames || 0} ${g('oyun','games')}</span></div>
+        <div class="stats-mode-row"><span class="stats-mode-name">⏱ ${g('Zaman','Time')}</span><span class="stats-mode-val">${s.timeGames || 0} ${g('oyun','games')}</span></div>
       `;
     }
 
@@ -2310,18 +2436,21 @@
 
       const unlocked = JSON.parse(localStorage.getItem('bp_achievements') || '[]');
       const ACHS = typeof ACHIEVEMENTS !== 'undefined' ? ACHIEVEMENTS : [];
+      const isEn = currentLang === 'en';
 
-      if (prog) prog.textContent = `${unlocked.length} / ${ACHS.length} rozet kazanıldı`;
+      if (prog) prog.textContent = `${unlocked.length} / ${ACHS.length} ` + t('achieveProgress');
 
       ACHS.forEach(ach => {
         const isUnlocked = unlocked.includes(ach.id);
         const card = document.createElement('div');
         card.className = 'achieve-card' + (isUnlocked ? ' unlocked' : '');
+        const achName = (isEn && ach.nameEn) ? ach.nameEn : ach.name;
+        const achDesc = (isEn && ach.descEn) ? ach.descEn : ach.desc;
         card.innerHTML = `
           <div class="achieve-icon">${ach.icon}</div>
-          <div class="achieve-name">${ach.name}</div>
-          <div class="achieve-desc">${ach.desc}</div>
-          <div class="${isUnlocked ? 'achieve-unlocked-badge' : 'achieve-locked-badge'}">${isUnlocked ? '✓ Kazanıldı' : '🔒 Kilitli'}</div>
+          <div class="achieve-name">${achName}</div>
+          <div class="achieve-desc">${achDesc}</div>
+          <div class="${isUnlocked ? 'achieve-unlocked-badge' : 'achieve-locked-badge'}">${isUnlocked ? ('✓ ' + t('unlocked')) : ('🔒 ' + t('locked'))}</div>
         `;
         grid.appendChild(card);
       });
@@ -2403,6 +2532,20 @@
         nameModalTitle: '👤 İsmin ne?',
         nameModalDesc: 'Skorun sıralamada görünecek',
         saveAndSend: 'Kaydet ve Gönder',
+        // Dinamik metinler
+        connecting: 'Bağlantı kuruluyor...',
+        noScoreShort: 'Henüz skor yok',
+        connectionError: 'Bağlanılamadı',
+        myRankSuffix: ' (Sen)',
+        achieveProgress: 'rozet kazanıldı',
+        newRecord: '🏆 Yeni Rekor!',
+        scoreSent: '✓ Skor sıralamasına gönderildi!',
+        levelLabel: 'Sev.',
+        exitPrompt: '← Çıkmak için tekrar basın',
+        rewardLabel: '💎 ödül',
+        watchAd: '📺  Reklam İzle → +15 💎',
+        resetGameTitle: 'Oyunu Sıfırla',
+        resetGameDesc: 'Mevcut oyun silinecek. Emin misin?',
       },
       en: {
         classicMode: '🎮  Classic Mode',
@@ -2464,6 +2607,20 @@
         nameModalTitle: '👤 What is your name?',
         nameModalDesc: 'Your score will appear on the leaderboard',
         saveAndSend: 'Save & Submit',
+        // Dynamic texts
+        connecting: 'Connecting...',
+        noScoreShort: 'No scores yet',
+        connectionError: 'Connection failed',
+        myRankSuffix: ' (You)',
+        achieveProgress: 'badges earned',
+        newRecord: '🏆 New Record!',
+        scoreSent: '✓ Score submitted!',
+        levelLabel: 'Lv.',
+        exitPrompt: '← Press again to exit',
+        rewardLabel: '💎 reward',
+        watchAd: '📺  Watch Ad → +15 💎',
+        resetGameTitle: 'Reset Game',
+        resetGameDesc: 'Current game will be deleted. Sure?',
       }
     };
 
@@ -2568,7 +2725,7 @@
 
       // Reklam butonu
       const adBtn = document.querySelector('.menu-ad-btn');
-      if (adBtn) adBtn.textContent = L === 'en' ? '📺  Watch Ad → +15 💎' : '📺  Reklam İzle → +15 💎';
+      if (adBtn) adBtn.textContent = tr('watchAd');
 
       // Zorluk seçim modalı
       const diffTitle = document.querySelector('#difficultyModal .diff-title');
@@ -2651,6 +2808,36 @@
       const igsReset = document.getElementById('btnResetGame');
       if (igsReset) igsReset.textContent = L === 'en' ? '↺  Restart' : '↺  Yeniden Başla';
 
+      // Reset modal
+      const _rTitle = document.getElementById('resetModalTitle');
+      if (_rTitle) _rTitle.textContent = tr('resetGameTitle');
+      const _rDesc = document.getElementById('resetModalDesc');
+      if (_rDesc) _rDesc.textContent = tr('resetGameDesc');
+
+      // Oyuncu Adı etiketi
+      const pnLbl = document.getElementById('settingsPlayerNameLabel');
+      if (pnLbl) pnLbl.textContent = L === 'en' ? '👤 Player Name' : '👤 Oyuncu Adı';
+
+      // Daily modal
+      const dailyTitle = document.getElementById('dailyModalTitle');
+      if (dailyTitle) dailyTitle.textContent = L === 'en' ? '📅 Daily' : '📅 Günlük';
+      const streakLbl = document.getElementById('dailyStreakLabel');
+      if (streakLbl) streakLbl.textContent = L === 'en' ? 'DAY STREAK' : 'GÜN STREAK';
+      const todayLbl = document.getElementById('dailyTodayLabel');
+      if (todayLbl) todayLbl.textContent = L === 'en' ? 'TODAY' : 'BUGÜN';
+      const taskLbl = document.getElementById('dailyTaskLabel');
+      if (taskLbl) taskLbl.textContent = L === 'en' ? '🎯 Daily Task' : '🎯 Günlük Görev';
+      const taskDone = document.getElementById('modalTaskDoneText');
+      if (taskDone) taskDone.textContent = L === 'en' ? 'Done' : 'Tamam';
+      // Streak gün etiketleri
+      const sdDays = L === 'en'
+        ? ['Day 1','Day 3','Day 7','Day 14','Day 30']
+        : ['1.gün','3.gün','7.gün','14.gün','30.gün'];
+      sdDays.forEach((d, i) => {
+        const el = document.getElementById('sdlbl' + (i+1));
+        if (el) el.textContent = d;
+      });
+
       // Dil toggle
       const langTR = document.getElementById('langTR');
       const langEN = document.getElementById('langEN');
@@ -2659,6 +2846,7 @@
     }
 
     function setLang(lang) {
+      if (currentLang === lang) return; // Zaten bu dil seçili
       currentLang = lang;
       localStorage.setItem('bp_lang', lang);
       window.currentLang = lang;
@@ -2714,7 +2902,7 @@
           <div>
             <div style="font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:1px;text-transform:uppercase;">Günlük Giriş Bonusu!</div>
             <div style="font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">+${bonus} Elmas 💎</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.5);">🔥 ${streak}. gün streaki!</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.5);">${currentLang==='en' ? '🔥 Day '+streak+' streak!' : '🔥 '+streak+'. gün streaki!'}</div>
           </div>`;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
@@ -2836,6 +3024,7 @@
 
     // ===== TAB SİSTEMİ =====
     function switchTab(tabId) {
+      if (typeof playSndPop === 'function') playSndPop();
       const tabs = ['tab-home','tab-stats','tab-achieve','tab-themes','tab-settings'];
       const navBtns = {
         'tab-home': 'navHome',
@@ -2891,6 +3080,7 @@
     if (_bBack) _bBack.addEventListener('click', () => switchTab('tab-home'));
 
     document.getElementById('btnPlay').addEventListener('click', () => {
+      if (typeof playSndPop === 'function') playSndPop();
       document.getElementById('difficultyModal').classList.remove('hidden');
     });
 
@@ -3228,13 +3418,13 @@
         const badge = document.createElement('div');
         badge.className = 'theme-badge';
         if (isActive) {
-          badge.className += ' badge-active'; badge.textContent = '✓ Aktif';
+          badge.className += ' badge-active'; badge.textContent = currentLang === 'en' ? '✓ Active' : '✓ Aktif';
         } else if (isUnlocked) {
-          badge.className += ' badge-unlocked'; badge.textContent = 'Seç';
+          badge.className += ' badge-unlocked'; badge.textContent = currentLang === 'en' ? 'Select' : 'Seç';
         } else if (isXP) {
           badge.className += ' badge-xp'; badge.textContent = '💎 ' + def.xpCost;
         } else {
-          badge.className += ' badge-ad'; badge.textContent = '📺 ' + def.desc;
+          badge.className += ' badge-ad'; badge.textContent = '📺 ' + (currentLang === 'en' ? 'Watch Ad' : def.desc);
         }
         card.appendChild(badge);
 
@@ -3386,6 +3576,47 @@
     updateDailyCardUI();
     refreshMenuHS();
 
+    // ===== MAĞAZA =====
+    function openShop() {
+      if (typeof playSndPop === 'function') playSndPop();
+      document.getElementById('shopModal').style.display = 'flex';
+      applyShopLang();
+    }
+
+    function applyShopLang() {
+      const L = currentLang;
+      const g = (tr, en) => L === 'en' ? en : tr;
+      const el = id => document.getElementById(id);
+      if(el('shopTitle'))       el('shopTitle').textContent       = g('Mağaza', 'Shop');
+      if(el('shopDiamondTitle'))el('shopDiamondTitle').textContent= g('💎 Elmas Paketleri', '💎 Diamond Packs');
+      if(el('shopPopular'))     el('shopPopular').textContent     = g('🔥 POPÜLER', '🔥 POPULAR');
+      if(el('shopPremiumTitle'))el('shopPremiumTitle').textContent= g('👑 Premium', '👑 Premium');
+      if(el('shopPremiumName')) el('shopPremiumName').textContent = g('Reklamsız + 500 💎', 'Ad-Free + 500 💎');
+      if(el('shopPremiumDesc')) el('shopPremiumDesc').textContent = g('Reklamları kaldır, 500 💎 kazan', 'Remove ads, get 500 💎');
+      if(el('shopNote'))        el('shopNote').textContent        = g('Ödeme yakında aktif olacak', 'Payment coming soon');
+      document.querySelectorAll('.shop-starter').forEach(e => e.textContent = g('Başlangıç paketi','Starter pack'));
+      document.querySelectorAll('.shop-save').forEach(e => e.textContent    = g('%10 tasarruf','10% savings'));
+      document.querySelectorAll('.shop-save2').forEach(e => e.textContent   = g('%10 tasarruf','10% savings'));
+      document.querySelectorAll('.shop-save3').forEach(e => e.textContent   = g('%15 tasarruf','15% savings'));
+      document.querySelectorAll('.shop-save4').forEach(e => e.textContent   = g('%20 tasarruf','20% savings'));
+      document.querySelectorAll('.shop-desc1').forEach(e => e.textContent   = '');
+    }
+
+    function buyPackage(id) {
+      // Ödeme entegrasyonu hazır olunca buraya eklenecek
+      const L = currentLang;
+      const msg = L === 'en'
+        ? 'Payment system coming soon! 🚀'
+        : 'Ödeme sistemi yakında aktif olacak! 🚀';
+      const t = document.createElement('div');
+      t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(124,111,247,0.95);color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    }
+
+    window.openShop = openShop;
+
     // ===== ANDROID GERİ TUŞU =====
     // History stack'e state ekle — geri tuşu bu state'i pop eder
     history.pushState({ page: 'game' }, '');
@@ -3442,7 +3673,7 @@
 
       const t = document.createElement('div');
       t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 22px;border-radius:50px;font-size:13px;font-weight:700;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
-      t.textContent = '← Çıkmak için tekrar basın';
+      t.textContent = t('exitPrompt');
       document.body.appendChild(t);
       setTimeout(() => t.remove(), 2000);
 
