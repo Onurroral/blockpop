@@ -1,3 +1,13 @@
+// Board cell cache - querySelectorAll'u cachelemek için
+let _cellCache = null;
+function getCells() {
+  if (!_cellCache || _cellCache.length !== BOARD_SIZE * BOARD_SIZE) {
+    _cellCache = document.querySelectorAll('.board-cell');
+  }
+  return _cellCache;
+}
+function invalidateCellCache() { _cellCache = null; }
+
 // === AYARLAR ===
 const BOARD_SIZE = 8;
 
@@ -487,41 +497,41 @@ function createFlashOverlay() {
 // === ACHİEVEMENT SİSTEMİ ===
 const ACHIEVEMENTS = [
   // Skor
-  { id:'score_100',    icon:'🌱', name:'İlk Adım',       desc:'100 puan kazan',          cat:'skor',  check: s => s.totalScore >= 100 },
-  { id:'score_500',    icon:'⭐', name:'Yükselen Yıldız', desc:'500 puan kazan',          cat:'skor',  check: s => s.totalScore >= 500 },
-  { id:'score_1k',     icon:'🏅', name:'Bin Puan',        desc:'1,000 puan kazan',        cat:'skor',  check: s => s.totalScore >= 1000 },
-  { id:'score_5k',     icon:'🥈', name:'Usta',            desc:'5,000 puan kazan',        cat:'skor',  check: s => s.totalScore >= 5000 },
-  { id:'score_10k',    icon:'🥇', name:'Efsane',          desc:'10,000 puan kazan',       cat:'skor',  check: s => s.totalScore >= 10000 },
-  { id:'score_50k',    icon:'💎', name:'Elmas Seviye',    desc:'50,000 puan kazan',       cat:'skor',  check: s => s.totalScore >= 50000 },
-  { id:'score_100k',   icon:'👑', name:'Kral',            desc:'100,000 puan kazan',      cat:'skor',  check: s => s.totalScore >= 100000 },
+  { id:'score_100',    icon:'🌱', name:'İlk Adım',       nameEn:'First Step',      desc:'100 puan kazan',           descEn:'Earn 100 points',         cat:'skor',  check: s => s.totalScore >= 100 },
+  { id:'score_500',    icon:'⭐', name:'Yükselen Yıldız', nameEn:'Rising Star',     desc:'500 puan kazan',           descEn:'Earn 500 points',         cat:'skor',  check: s => s.totalScore >= 500 },
+  { id:'score_1k',     icon:'🏅', name:'Bin Puan',        nameEn:'Thousand',        desc:'1,000 puan kazan',         descEn:'Earn 1,000 points',       cat:'skor',  check: s => s.totalScore >= 1000 },
+  { id:'score_5k',     icon:'🥈', name:'Usta',            nameEn:'Expert',          desc:'5,000 puan kazan',         descEn:'Earn 5,000 points',       cat:'skor',  check: s => s.totalScore >= 5000 },
+  { id:'score_10k',    icon:'🥇', name:'Efsane',          nameEn:'Legend',          desc:'10,000 puan kazan',        descEn:'Earn 10,000 points',      cat:'skor',  check: s => s.totalScore >= 10000 },
+  { id:'score_50k',    icon:'💎', name:'Elmas Seviye',    nameEn:'Diamond Tier',    desc:'50,000 puan kazan',        descEn:'Earn 50,000 points',      cat:'skor',  check: s => s.totalScore >= 50000 },
+  { id:'score_100k',   icon:'👑', name:'Kral',            nameEn:'King',            desc:'100,000 puan kazan',       descEn:'Earn 100,000 points',     cat:'skor',  check: s => s.totalScore >= 100000 },
 
   // Combo
-  { id:'combo_2',      icon:'🔥', name:'Combo!',          desc:'2x combo yap',            cat:'combo', check: s => s.maxCombo >= 2 },
-  { id:'combo_3',      icon:'💥', name:'Üçlü Kombo',      desc:'3x combo yap',            cat:'combo', check: s => s.maxCombo >= 3 },
-  { id:'combo_5',      icon:'⚡', name:'Beşli Fırtına',   desc:'5x combo yap',            cat:'combo', check: s => s.maxCombo >= 5 },
-  { id:'combo_10',     icon:'🌪️', name:'Kasırga',         desc:'10x combo yap',           cat:'combo', check: s => s.maxCombo >= 10 },
+  { id:'combo_2',      icon:'🔥', name:'Combo!',          nameEn:'Combo!',          desc:'2x combo yap',             descEn:'Get a 2x combo',          cat:'combo', check: s => s.maxCombo >= 2 },
+  { id:'combo_3',      icon:'💥', name:'Üçlü Kombo',      nameEn:'Triple Combo',    desc:'3x combo yap',             descEn:'Get a 3x combo',          cat:'combo', check: s => s.maxCombo >= 3 },
+  { id:'combo_5',      icon:'⚡', name:'Beşli Fırtına',   nameEn:'Five Storm',      desc:'5x combo yap',             descEn:'Get a 5x combo',          cat:'combo', check: s => s.maxCombo >= 5 },
+  { id:'combo_10',     icon:'🌪️', name:'Kasırga',         nameEn:'Hurricane',       desc:'10x combo yap',            descEn:'Get a 10x combo',         cat:'combo', check: s => s.maxCombo >= 10 },
 
   // Blok
-  { id:'blocks_100',   icon:'🧱', name:'İnşaatçı',        desc:'100 blok yerleştir',      cat:'blok',  check: s => s.totalBlocks >= 100 },
-  { id:'blocks_500',   icon:'🏗️', name:'Mimar',           desc:'500 blok yerleştir',      cat:'blok',  check: s => s.totalBlocks >= 500 },
-  { id:'blocks_1000',  icon:'🏰', name:'Kale Ustası',     desc:'1000 blok yerleştir',     cat:'blok',  check: s => s.totalBlocks >= 1000 },
-  { id:'blocks_5000',  icon:'🌆', name:'Şehir Kurucusu',  desc:'5000 blok yerleştir',     cat:'blok',  check: s => s.totalBlocks >= 5000 },
+  { id:'blocks_100',   icon:'🧱', name:'İnşaatçı',        nameEn:'Builder',         desc:'100 blok yerleştir',       descEn:'Place 100 blocks',        cat:'blok',  check: s => s.totalBlocks >= 100 },
+  { id:'blocks_500',   icon:'🏗️', name:'Mimar',           nameEn:'Architect',       desc:'500 blok yerleştir',       descEn:'Place 500 blocks',        cat:'blok',  check: s => s.totalBlocks >= 500 },
+  { id:'blocks_1000',  icon:'🏰', name:'Kale Ustası',     nameEn:'Castle Master',   desc:'1000 blok yerleştir',      descEn:'Place 1,000 blocks',      cat:'blok',  check: s => s.totalBlocks >= 1000 },
+  { id:'blocks_5000',  icon:'🌆', name:'Şehir Kurucusu',  nameEn:'City Builder',    desc:'5000 blok yerleştir',      descEn:'Place 5,000 blocks',      cat:'blok',  check: s => s.totalBlocks >= 5000 },
 
   // Mod
-  { id:'mode_hard',    icon:'💀', name:'Cesur Yürek',     desc:'Zor modda oyna',          cat:'mod',   check: s => s.playedHard },
-  { id:'mode_time',    icon:'⏱️', name:'Zamana Karşı',    desc:'Zaman modunda oyna',      cat:'mod',   check: s => s.playedTime },
-  { id:'mode_time_l5', icon:'🚀', name:'Işık Hızı',       desc:'Zaman Modu Seviye 5 oyna',cat:'mod',   check: s => s.playedTimeL5 },
-  { id:'mode_hard_5k', icon:'🗡️', name:'Demir İrade',     desc:'Zor modda 5000 puan kazan',cat:'mod',  check: s => s.hardModeScore >= 5000 },
+  { id:'mode_hard',    icon:'💀', name:'Cesur Yürek',     nameEn:'Brave Heart',     desc:'Zor modda oyna',           descEn:'Play Hard mode',          cat:'mod',   check: s => s.playedHard },
+  { id:'mode_time',    icon:'⏱️', name:'Zamana Karşı',    nameEn:'Against Time',    desc:'Zaman modunda oyna',       descEn:'Play Time mode',          cat:'mod',   check: s => s.playedTime },
+  { id:'mode_time_l5', icon:'🚀', name:'Işık Hızı',       nameEn:'Light Speed',     desc:'Zaman Modu Seviye 5 oyna', descEn:'Play Time Mode Level 5',  cat:'mod',   check: s => s.playedTimeL5 },
+  { id:'mode_hard_5k', icon:'🗡️', name:'Demir İrade',     nameEn:'Iron Will',       desc:'Zor modda 5000 puan kazan',descEn:'Earn 5,000 in Hard mode', cat:'mod',   check: s => s.hardModeScore >= 5000 },
 
   // Satır
-  { id:'lines_10',     icon:'💫', name:'Satır Avcısı',    desc:'10 satır/sütun temizle',  cat:'satır', check: s => s.totalLines >= 10 },
-  { id:'lines_50',     icon:'🌟', name:'Temizlikçi',      desc:'50 satır/sütun temizle',  cat:'satır', check: s => s.totalLines >= 50 },
-  { id:'lines_200',    icon:'✨', name:'Süpürge',         desc:'200 satır/sütun temizle', cat:'satır', check: s => s.totalLines >= 200 },
+  { id:'lines_10',     icon:'💫', name:'Satır Avcısı',    nameEn:'Line Hunter',     desc:'10 satır/sütun temizle',   descEn:'Clear 10 lines/cols',     cat:'satır', check: s => s.totalLines >= 10 },
+  { id:'lines_50',     icon:'🌟', name:'Temizlikçi',      nameEn:'Cleaner',         desc:'50 satır/sütun temizle',   descEn:'Clear 50 lines/cols',     cat:'satır', check: s => s.totalLines >= 50 },
+  { id:'lines_200',    icon:'✨', name:'Süpürge',         nameEn:'Sweeper',         desc:'200 satır/sütun temizle',  descEn:'Clear 200 lines/cols',    cat:'satır', check: s => s.totalLines >= 200 },
 
   // Oyun sayısı
-  { id:'games_5',      icon:'🎮', name:'Oyun Sever',      desc:'5 oyun oyna',             cat:'oyun',  check: s => s.totalGames >= 5 },
-  { id:'games_20',     icon:'🎯', name:'Bağımlı',         desc:'20 oyun oyna',            cat:'oyun',  check: s => s.totalGames >= 20 },
-  { id:'games_100',    icon:'🏆', name:'Veteran',         desc:'100 oyun oyna',           cat:'oyun',  check: s => s.totalGames >= 100 },
+  { id:'games_5',      icon:'🎮', name:'Oyun Sever',      nameEn:'Game Lover',      desc:'5 oyun oyna',              descEn:'Play 5 games',            cat:'oyun',  check: s => s.totalGames >= 5 },
+  { id:'games_20',     icon:'🎯', name:'Bağımlı',         nameEn:'Addicted',        desc:'20 oyun oyna',             descEn:'Play 20 games',           cat:'oyun',  check: s => s.totalGames >= 20 },
+  { id:'games_100',    icon:'🏆', name:'Veteran',         nameEn:'Veteran',         desc:'100 oyun oyna',            descEn:'Play 100 games',          cat:'oyun',  check: s => s.totalGames >= 100 },
 ];
 
 function getAchievementStats() {
@@ -625,19 +635,19 @@ function updateAchievementStats(gameScore, blocksPlaced, linesCleared, comboMax)
 // === DAILY CHALLENGE + STREAK SİSTEMİ ===
 
 const DAILY_CHALLENGES = [
-  { id:'score_300',   icon:'🎯', desc:'300 puan kazan',        check: (s,b,l,c) => s >= 300,   xp: 80  },
-  { id:'score_500',   icon:'⭐', desc:'500 puan kazan',        check: (s,b,l,c) => s >= 500,   xp: 120 },
-  { id:'score_1000',  icon:'🏅', desc:'1000 puan kazan',       check: (s,b,l,c) => s >= 1000,  xp: 200 },
-  { id:'score_2000',  icon:'💎', desc:'2000 puan kazan',       check: (s,b,l,c) => s >= 2000,  xp: 350 },
-  { id:'combo_3',     icon:'🔥', desc:'3x combo yap',          check: (s,b,l,c) => c >= 3,     xp: 100 },
-  { id:'combo_5',     icon:'⚡', desc:'5x combo yap',          check: (s,b,l,c) => c >= 5,     xp: 200 },
-  { id:'lines_5',     icon:'💫', desc:'5 satır/sütun temizle', check: (s,b,l,c) => l >= 5,     xp: 150 },
-  { id:'lines_10',    icon:'🌟', desc:'10 satır/sütun temizle',check: (s,b,l,c) => l >= 10,    xp: 250 },
-  { id:'blocks_50',   icon:'🧱', desc:'50 blok yerleştir',     check: (s,b,l,c) => b >= 50,    xp: 100 },
-  { id:'blocks_100',  icon:'🏗️', desc:'100 blok yerleştir',   check: (s,b,l,c) => b >= 100,   xp: 180 },
-  { id:'hard_mode',   icon:'💀', desc:'Zor modda oyna',        check: (s,b,l,c) => window.currentGameMode === 'hard', xp: 200 },
-  { id:'time_mode',   icon:'⏱️', desc:'Zaman modunda oyna',   check: (s,b,l,c) => window.currentGameMode === 'timeattack', xp: 150 },
-  { id:'score_no_pu', icon:'🗡️', desc:'Powerupsuz 500 puan',  check: (s,b,l,c) => s >= 500 && (window.currentGameMode === 'hard' || window.currentGameMode === 'timeattack'), xp: 300 },
+  { id:'score_300',   icon:'🎯', desc:'300 puan kazan',         descEn:'Earn 300 points',          check: (s,b,l,c) => s >= 300,   xp: 80  },
+  { id:'score_500',   icon:'⭐', desc:'500 puan kazan',         descEn:'Earn 500 points',          check: (s,b,l,c) => s >= 500,   xp: 120 },
+  { id:'score_1000',  icon:'🏅', desc:'1000 puan kazan',        descEn:'Earn 1,000 points',        check: (s,b,l,c) => s >= 1000,  xp: 200 },
+  { id:'score_2000',  icon:'💎', desc:'2000 puan kazan',        descEn:'Earn 2,000 points',        check: (s,b,l,c) => s >= 2000,  xp: 350 },
+  { id:'combo_3',     icon:'🔥', desc:'3x combo yap',           descEn:'Get a 3x combo',           check: (s,b,l,c) => c >= 3,     xp: 100 },
+  { id:'combo_5',     icon:'⚡', desc:'5x combo yap',           descEn:'Get a 5x combo',           check: (s,b,l,c) => c >= 5,     xp: 200 },
+  { id:'lines_5',     icon:'💫', desc:'5 satır/sütun temizle',  descEn:'Clear 5 lines/cols',       check: (s,b,l,c) => l >= 5,     xp: 150 },
+  { id:'lines_10',    icon:'🌟', desc:'10 satır/sütun temizle', descEn:'Clear 10 lines/cols',      check: (s,b,l,c) => l >= 10,    xp: 250 },
+  { id:'blocks_50',   icon:'🧱', desc:'50 blok yerleştir',      descEn:'Place 50 blocks',          check: (s,b,l,c) => b >= 50,    xp: 100 },
+  { id:'blocks_100',  icon:'🏗️', desc:'100 blok yerleştir',    descEn:'Place 100 blocks',         check: (s,b,l,c) => b >= 100,   xp: 180 },
+  { id:'hard_mode',   icon:'💀', desc:'Zor modda oyna',         descEn:'Play Hard mode',           check: (s,b,l,c) => window.currentGameMode === 'hard', xp: 200 },
+  { id:'time_mode',   icon:'⏱️', desc:'Zaman modunda oyna',    descEn:'Play Time mode',           check: (s,b,l,c) => window.currentGameMode === 'timeattack', xp: 150 },
+  { id:'score_no_pu', icon:'🗡️', desc:'Powerupsuz 500 puan',   descEn:'500 points without powerups', check: (s,b,l,c) => s >= 500 && (window.currentGameMode === 'hard' || window.currentGameMode === 'timeattack'), xp: 300 },
 ];
 
 function getTodayStr() {
@@ -686,6 +696,7 @@ function checkDailyChallenge(score, blocks, lines, combo) {
 
   // Bildirim
   showDailyCompleteToast(challenge, newStreak, xpBonus);
+  if (typeof playSndZing === 'function') playSndZing();
 
   // Achievement güncelle
   if (typeof window.onGameEnd === 'function') {}
@@ -987,6 +998,63 @@ function playSndRecord() {
   _tone(2000, 2000, 'sine', 0.1, 0.3, 0.15);
 }
 
+// Menü butonu pop sesi
+function playSndPop() {
+  if (window.sfxEnabled === false) return;
+  _tone(600, 900, 'sine', 0.08, 0.07, 0);
+}
+
+// Powerup whoosh sesi
+function playSndWhoosh() {
+  if (window.sfxEnabled === false) return;
+  const ctx = _getCtx();
+  if (!ctx) return;
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 1.5);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(800, ctx.currentTime);
+  filter.frequency.linearRampToValueAtTime(3000, ctx.currentTime + 0.25);
+  filter.Q.value = 0.8;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.25, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+  src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  src.start();
+}
+
+// Günlük görev zing sesi
+function playSndZing() {
+  if (window.sfxEnabled === false) return;
+  [880, 1320, 1760, 2200].forEach((f, i) => {
+    _tone(f, f * 1.5, 'sine', 0.12, 0.18, i * 0.06);
+  });
+  _tone(3000, 3500, 'triangle', 0.08, 0.25, 0.1);
+}
+
+// High score sesi
+function playSndHighScore() {
+  if (window.sfxEnabled === false) return;
+  [392, 523, 659, 784, 1047, 1319, 1568].forEach((f, i) => {
+    _tone(f, f, 'triangle', 0.14, 0.2, i * 0.07);
+  });
+  setTimeout(() => {
+    [1047, 1319, 1568, 2093].forEach((f, i) => {
+      _tone(f, f * 1.2, 'sine', 0.1, 0.3, i * 0.05);
+    });
+  }, 500);
+}
+
+window.playSndPop      = playSndPop;
+window.playSndWhoosh   = playSndWhoosh;
+window.playSndZing     = playSndZing;
+window.playSndHighScore= playSndHighScore;
+
 // AudioContext'i ilk dokunuşta başlat
 document.addEventListener('pointerdown', _getCtx, { once: true });
 
@@ -1040,6 +1108,7 @@ function initBoard() {
 function renderBoard() {
   const boardEl = document.getElementById('board');
   boardEl.innerHTML = '';
+  invalidateCellCache();
 
   for (let y = 0; y < BOARD_SIZE; y++) {
     for (let x = 0; x < BOARD_SIZE; x++) {
@@ -1178,7 +1247,7 @@ function showGameOver(){
   if (score > savedHS) {
     localStorage.setItem(hsKey, score);
     if (!isTimeMode) highScore = score;
-    setTimeout(() => { triggerNewRecord(); playSndRecord(); }, 2200);
+    setTimeout(() => { triggerNewRecord(); playSndRecord(); playSndHighScore(); }, 2200);
   }
   if (!isTimeMode && score > highScore) {
     highScore = score;
@@ -1216,7 +1285,7 @@ function showGameOver(){
 function playGameOverSequence(onDone) {
   const boardEl = document.getElementById('board');
   if (!boardEl) { onDone(); return; }
-  const cells = document.querySelectorAll('.board-cell');
+  const cells = getCells();
 
   // 1. Orta şerit banner
   const banner = document.createElement('div');
@@ -1421,7 +1490,7 @@ function setupPowerups() {
         selectedPiece = null; selectedShape = null;
       }
       renderBoard();
-      playSndPlace();
+      playSndWhoosh();
       btnClearRow.classList.add('used-flash');
       setTimeout(() => btnClearRow.classList.remove('used-flash'), 250);
       updatePowerupUI();
@@ -1438,7 +1507,7 @@ function setupPowerups() {
       saveState();
       rerollPieces();
       rerollCharges--;
-      playSndPlace();
+      playSndWhoosh();
       btnReroll.classList.add('used-flash');
       setTimeout(() => btnReroll.classList.remove('used-flash'), 250);
       updatePowerupUI();
@@ -1455,7 +1524,7 @@ function setupPowerups() {
       restoreState();
       undoCharges--;
       lastState = null;
-      playSndPlace();
+      playSndWhoosh();
       btnUndo.classList.add('used-flash');
       setTimeout(() => btnUndo.classList.remove('used-flash'), 250);
       updatePowerupUI();
@@ -1850,7 +1919,7 @@ function tryPlacePiece(boardX, boardY) {
 
 // === SATIR SİLME ===
 function clearRowAt(rowY) {
-  const cells = document.querySelectorAll('.board-cell');
+  const cells = getCells();
   let cleared = 0;
 
   for (let x = 0; x < BOARD_SIZE; x++) {
@@ -1982,7 +2051,7 @@ function clearCompletedLines() {
     }
   }
 
-  const cells = document.querySelectorAll('.board-cell');
+  const cells = getCells();
   let clearedCells = 0;
   let extraFromElements = 0;
 
@@ -2153,7 +2222,7 @@ function clearCompletedLines() {
 
   // === SATIR HIGHLIGHT ===
   function highlightRow(rowY, active) {
-  const cells = document.querySelectorAll('.board-cell');
+  const cells = getCells();
   for (let x = 0; x < BOARD_SIZE; x++) {
     const cell = cells[rowY * BOARD_SIZE + x];
     if (!cell) continue;
@@ -2507,10 +2576,15 @@ function getBoardCellFromClient(clientX, clientY) {
 
 
 // === GHOST PREVIEW ===
+// Aktif ghost hücreleri takip et
+let _activeGhostCells = [];
+
 function clearGhostPreview() {
-  document.querySelectorAll('.board-cell').forEach(c => {
+  // Sadece ghost olan hücreleri temizle, tümünü tarama
+  _activeGhostCells.forEach(c => {
     c.classList.remove('ghost-valid', 'ghost-invalid');
   });
+  _activeGhostCells = [];
 }
 
 // Preview'ın merkezi board'da hangi grid pozisyonuna denk geliyor?
@@ -2587,14 +2661,17 @@ function updateGhostPreview(clientX, clientY) {
 
   lastGhostCell = [startX, startY];
 
-  // Ghost çiz
-  const cells = document.querySelectorAll('.board-cell');
+  // Ghost çiz - aktif hücreleri kaydet
+  const cells = getCells();
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       if (selectedShape[y][x] === 1) {
         const idx = (startY + y) * BOARD_SIZE + (startX + x);
         const cellEl = cells[idx];
-        if (cellEl) cellEl.classList.add('ghost-valid');
+        if (cellEl) {
+          cellEl.classList.add('ghost-valid');
+          _activeGhostCells.push(cellEl);
+        }
       }
     }
   }
@@ -2622,7 +2699,7 @@ function clearPrediction() {
 }
 
 function showClearPrediction(testBoard) {
-  const cells = document.querySelectorAll('.board-cell');
+  const cells = getCells();
 
   for (let y = 0; y < BOARD_SIZE; y++) {
     let full = true;
