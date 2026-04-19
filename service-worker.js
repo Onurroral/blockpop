@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blockpop-v18';
+const CACHE_NAME = 'blockpop-v19';
 
 const ASSETS = [
   './index.html',
