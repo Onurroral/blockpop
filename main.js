@@ -2090,24 +2090,18 @@ function clearCompletedLines() {
   }
 
 
-  const dustCells = [];
   for (let y = 0; y < BOARD_SIZE; y++) {
     for (let x = 0; x < BOARD_SIZE; x++) {
       if (toClear[y][x] && board[y][x] !== null) {
         const cell = cells[y * BOARD_SIZE + x];
         if (cell) cell.classList.add('clearing');
         clearedCells++;
-        dustCells.push({row: y, col: x});
-
-        if (!baseClear[y][x]) {
-          extraFromElements++;
-        }
+        if (!baseClear[y][x]) extraFromElements++;
       }
     }
   }
 
-  // Toz efekti
-  setTimeout(() => spawnDustEffect(dustCells), 80);
+  // Toz efekti kaldırıldı (performans)
 
   const lineCount = fullRows.length + fullCols.length;
   let bonusScore = 0;
@@ -2818,7 +2812,7 @@ function showComboLabel(clearStreak, lineCount) {
     position:fixed;
     top:35%;
     left:50%;
-    transform:translateX(-50%) scale(0);
+    transform:translateX(-50%) translateY(10px);
     font-size:${label.size};
     font-weight:900;
     font-family:'Nunito',sans-serif;
@@ -2842,7 +2836,7 @@ function showComboLabel(clearStreak, lineCount) {
       position:fixed;
       top:calc(35% + ${parseInt(label.size) + 6}px);
       left:50%;
-      transform:translateX(-50%) scale(0);
+      transform:translateX(-50%) translateY(10px);
       font-size:15px;
       font-weight:800;
       font-family:'Nunito',sans-serif;
@@ -2980,26 +2974,27 @@ let lastMoveTime = 0;
 const MOVE_COOLDOWN = 8; // ms – arcade hızı
 
 function spawnComboParticles() {
-  const board = document.getElementById('board');
-  const rect = board.getBoundingClientRect();
+  // Canvas ile hafif versiyon
+  const boardEl = document.getElementById('board');
+  const rect = boardEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const colors = getCurrentThemeColors();
 
-  for (let i = 0; i < 22; i++) {
-    const p = document.createElement('div');
-    p.className = 'combo-particle';
-    p.style.left = rect.width/2 + 'px';
-    p.style.top = rect.height/2 + 'px';
-
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 80 + Math.random() * 100;
-    const x = Math.cos(angle) * dist;
-    const y = Math.sin(angle) * dist;
-
-    p.style.setProperty('--x', x + 'px');
-    p.style.setProperty('--y', y + 'px');
-
-    board.appendChild(p);
-    setTimeout(() => p.remove(), 700);
+  _initDustCanvas();
+  for (let i = 0; i < 8; i++) {
+    const angle = (Math.PI * 2 * i / 8) + Math.random() * 0.4;
+    const speed = 4 + Math.random() * 4;
+    _dustParticles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 3,
+      r: 3 + Math.random() * 4,
+      color: colors[Math.floor(Math.random() * colors.length)] || '#fff',
+      life: 100,
+    });
   }
+  if (!_dustAnimId) _dustAnimId = requestAnimationFrame(_dustLoop);
 }
 
 const SNAP_PULL = 0.92;
