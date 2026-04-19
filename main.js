@@ -1116,6 +1116,8 @@ function renderBoard() {
       cellEl.classList.add('board-cell');
       cellEl.dataset.x = x;
       cellEl.dataset.y = y;
+      cellEl.dataset.row = y;
+      cellEl.dataset.col = x;
 
       if (board[y][x] !== null) {
        const type = board[y][x].type || 'normal';
@@ -1267,6 +1269,9 @@ function showGameOver(){
     if (!isGameOver) return;
 
     screen.style.visibility = "visible";
+    screen.style.pointerEvents = "auto";
+    screen.classList.add('active');
+    if (typeof updateContinueButtons === 'function') updateContinueButtons();
 
     if (typeof window.onGameEnd === 'function')
       window.onGameEnd(isTimeMode ? Math.floor(score * 1.5) : score);
@@ -2085,12 +2090,14 @@ function clearCompletedLines() {
   }
 
 
+  const dustCells = [];
   for (let y = 0; y < BOARD_SIZE; y++) {
     for (let x = 0; x < BOARD_SIZE; x++) {
       if (toClear[y][x] && board[y][x] !== null) {
         const cell = cells[y * BOARD_SIZE + x];
         if (cell) cell.classList.add('clearing');
         clearedCells++;
+        dustCells.push({row: y, col: x});
 
         if (!baseClear[y][x]) {
           extraFromElements++;
@@ -2098,6 +2105,9 @@ function clearCompletedLines() {
       }
     }
   }
+
+  // Toz efekti
+  setTimeout(() => spawnDustEffect(dustCells), 80);
 
   const lineCount = fullRows.length + fullCols.length;
   let bonusScore = 0;
@@ -2144,7 +2154,12 @@ function clearCompletedLines() {
 
   const _animOn = localStorage.getItem('tgl-anim') !== 'off';
   if (clearStreak >= 2) {
-    showComboPopup(clearStreak);
+    // Combo streak yazısı — clearStreak bazlı
+    showComboLabel(clearStreak, null);
+    if (_animOn) { flashCombo(); shakeBoardBig(); spawnComboParticles(); }
+  } else if (lineCount >= 3) {
+    // Aynı hamlede 3+ satır/sütun — streak yok ama çoklu patlatma
+    showComboLabel(null, lineCount);
     if (_animOn) { flashCombo(); shakeBoardBig(); spawnComboParticles(); }
   } else {
     if (_animOn) flashClear();
@@ -2352,10 +2367,26 @@ function clearGameSave() {
 
 
 // === OYUNU SIFIRLA ===
+// Devam et — game over'dan geri dön
+function resumeFromGameOver() {
+  isGameOver = false;
+  window._gameOverCancelled = true;
+  generatePieces();
+  renderBoard();
+  updateScore();
+  updatePowerupUI();
+  // Zaman modundaysa timer'ı yeniden başlat
+  if (window.currentGameMode === 'timeattack' && typeof startTimer === 'function') {
+    startTimer();
+  }
+}
+window.resumeFromGameOver = resumeFromGameOver;
+
 function resetGame() {
   clearGameSave();
   lastUnlockNotified = 0;
   localStorage.removeItem('bp_last_unlock');
+  window._adUsedThisGame = false; // Her yeni oyunda reklam hakkı sıfırla
   // Oyun istatistiklerini sıfırla
   gameBlocksPlaced = 0;
   gameLinesCleared = 0;
@@ -2645,7 +2676,16 @@ function trySnapToValid(clientX, clientY) {
   return null;
 }
 
+let _lastGhostX = -1, _lastGhostY = -1, _ghostThrottleId = null;
+
 function updateGhostPreview(clientX, clientY) {
+  // Throttle — aynı pozisyonda tekrar çalışma
+  const gridSize = 10; // piksel hassasiyeti
+  const gx = Math.round(clientX / gridSize);
+  const gy = Math.round(clientY / gridSize);
+  if (gx === _lastGhostX && gy === _lastGhostY) return;
+  _lastGhostX = gx; _lastGhostY = gy;
+
   clearPrediction();
   clearGhostPreview();
   lastGhostCell = null;
@@ -2728,15 +2768,181 @@ function showClearPrediction(testBoard) {
   }
 }
 
-function showComboPopup(count) {
+// Çoklu satır yazı seviyeleri (aynı hamlede 3+)
+const MULTILINE_LABELS = [
+  null, null, null,
+  { tr: 'HARİKA!',   en: 'GREAT!',      color: '#34d399', size: '36px', shake: false },
+  { tr: 'MUHTEŞEM!', en: 'AMAZING!',    color: '#f59e0b', size: '42px', shake: true  },
+  { tr: 'İNANILMAZ!',en: 'INCREDIBLE!', color: '#f97316', size: '46px', shake: true  },
+  { tr: 'EFSANEVİ!', en: 'LEGENDARY!',  color: '#a78bfa', size: '50px', shake: true  },
+];
+
+// Combo yazı seviyeleri (streak bazlı)
+const COMBO_LABELS = [
+  null,
+  null,
+  { tr: 'İYİ!',      en: 'GOOD!',       color: '#60a5fa', size: '28px', shake: false },
+  { tr: 'HARİKA!',   en: 'GREAT!',      color: '#34d399', size: '34px', shake: false },
+  { tr: 'MUHTEŞEM!', en: 'AMAZING!',    color: '#f59e0b', size: '40px', shake: true  },
+  { tr: 'İNANILMAZ!',en: 'INCREDIBLE!', color: '#f97316', size: '44px', shake: true  },
+  { tr: 'EFSANEVİ!', en: 'LEGENDARY!',  color: '#a78bfa', size: '48px', shake: true  },
+  { tr: 'TANRISAL!', en: 'GODLIKE!',    color: '#ff4ecd', size: '52px', shake: true  },
+];
+
+// clearStreak: streak sayısı (null ise streak yok)
+// lineCount: aynı hamlede kaç satır/sütun (null ise çoklu değil)
+function showComboLabel(clearStreak, lineCount) {
   const fx = getSkinFX();
-  const div = document.createElement("div");
-  div.className = "combo-popup";
-  div.textContent = fx.comboPrefix + " x" + count;
-  div.style.color = fx.comboColor;
-  if (fx.comboShadow !== 'none') div.style.textShadow = fx.comboShadow;
-  document.body.appendChild(div);
-  setTimeout(() => div.remove(), 750);
+  const lang = window.currentLang || 'tr';
+
+  let label = null;
+  let subText = null;
+
+  if (clearStreak !== null && clearStreak >= 2) {
+    // Streak bazlı
+    const idx = Math.min(clearStreak, COMBO_LABELS.length - 1);
+    label = COMBO_LABELS[idx];
+    subText = fx.comboPrefix + ' x' + clearStreak;
+  } else if (lineCount !== null && lineCount >= 3) {
+    // Çoklu satır bazlı
+    const idx = Math.min(lineCount, MULTILINE_LABELS.length - 1);
+    label = MULTILINE_LABELS[idx];
+    subText = lineCount + (lang === 'en' ? ' LINES!' : ' SATIR!');
+  }
+
+  if (!label) return;
+
+  // Büyük yazı (üstte)
+  const lbl = document.createElement('div');
+  lbl.style.cssText = `
+    position:fixed;
+    top:35%;
+    left:50%;
+    transform:translateX(-50%) scale(0);
+    font-size:${label.size};
+    font-weight:900;
+    font-family:'Nunito',sans-serif;
+    color:${label.color};
+    text-shadow:0 0 20px ${label.color}99, 0 2px 8px rgba(0,0,0,0.6);
+    z-index:9998;
+    pointer-events:none;
+    white-space:nowrap;
+    letter-spacing:-1px;
+    animation:comboLabelPop 0.9s cubic-bezier(0.2,1.3,0.4,1) forwards;
+  `;
+  lbl.textContent = lang === 'en' ? label.en : label.tr;
+  document.body.appendChild(lbl);
+  if (label.shake) setTimeout(() => { lbl.style.animation += ',comboShake 0.3s 0.15s ease'; }, 0);
+  setTimeout(() => lbl.remove(), 950);
+
+  // Küçük alt yazı (combo x sayısı veya satır sayısı)
+  if (subText) {
+    const sub = document.createElement('div');
+    sub.style.cssText = `
+      position:fixed;
+      top:calc(35% + ${parseInt(label.size) + 6}px);
+      left:50%;
+      transform:translateX(-50%) scale(0);
+      font-size:15px;
+      font-weight:800;
+      font-family:'Nunito',sans-serif;
+      color:rgba(255,255,255,0.5);
+      z-index:9996;
+      pointer-events:none;
+      white-space:nowrap;
+      letter-spacing:1px;
+      animation:comboLabelPop 0.9s cubic-bezier(0.2,1.3,0.4,1) 0.05s forwards;
+    `;
+    sub.textContent = subText;
+    document.body.appendChild(sub);
+    setTimeout(() => sub.remove(), 1000);
+  }
+}
+
+// Eski isim uyumluluğu için
+function showComboPopup(count) { showComboLabel(count, null); }
+
+// Toz/parçacık efekti — blok kırılınca hücrelerden duman çıkar
+// Canvas tabanlı toz efekti — çok daha performanslı
+let _dustCanvas = null;
+let _dustCtx = null;
+let _dustParticles = [];
+let _dustAnimId = null;
+
+function _initDustCanvas() {
+  if (_dustCanvas) return;
+  _dustCanvas = document.createElement('canvas');
+  _dustCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9997;';
+  _dustCanvas.width = window.innerWidth;
+  _dustCanvas.height = window.innerHeight;
+  document.body.appendChild(_dustCanvas);
+  _dustCtx = _dustCanvas.getContext('2d');
+}
+
+function _dustLoop() {
+  if (!_dustCtx || _dustParticles.length === 0) {
+    _dustAnimId = null;
+    if (_dustCtx) _dustCtx.clearRect(0, 0, _dustCanvas.width, _dustCanvas.height);
+    return;
+  }
+  _dustCtx.clearRect(0, 0, _dustCanvas.width, _dustCanvas.height);
+  _dustParticles = _dustParticles.filter(p => p.life > 0);
+  for (const p of _dustParticles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.3; // yerçekimi
+    p.life -= 3;
+    _dustCtx.globalAlpha = Math.max(0, p.life / 100);
+    _dustCtx.fillStyle = p.color;
+    _dustCtx.beginPath();
+    _dustCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    _dustCtx.fill();
+  }
+  _dustCtx.globalAlpha = 1;
+  _dustAnimId = requestAnimationFrame(_dustLoop);
+}
+
+function spawnDustEffect(cells) {
+  const _animOn = localStorage.getItem('tgl-anim') !== 'off';
+  if (!_animOn) return;
+  const colors = getCurrentThemeColors();
+
+  // Sadece köşe hücrelerinden parçacık çıkar (max 8 hücre)
+  const sample = cells.length > 8
+    ? cells.filter((_, i) => i % Math.ceil(cells.length / 8) === 0)
+    : cells;
+
+  _initDustCanvas();
+
+  for (const {row, col} of sample) {
+    const cellEl = document.querySelector(`.board-cell[data-row="${row}"][data-col="${col}"]`);
+    if (!cellEl) continue;
+    const rect = cellEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    // 3 parçacık yeterli
+    for (let i = 0; i < 3; i++) {
+      const angle = (Math.PI * 2 * i / 3) + Math.random() * 0.8;
+      const speed = 2 + Math.random() * 3;
+      _dustParticles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2,
+        r: 2 + Math.random() * 3,
+        color: colors[Math.floor(Math.random() * colors.length)] || '#fff',
+        life: 80 + Math.random() * 20,
+      });
+    }
+  }
+
+  if (!_dustAnimId) _dustAnimId = requestAnimationFrame(_dustLoop);
+}
+
+function getCurrentThemeColors() {
+  const theme = localStorage.getItem('bp_current_theme') || 'classic';
+  const def = window.THEME_DEFS && window.THEME_DEFS[theme];
+  return def ? def.colors : ['#ff4d4d','#4d7cff','#42d67a','#ffd24d'];
 }
 
 function spawnFloatingScore(value) {
