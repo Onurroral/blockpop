@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3000000">
+  <link rel="stylesheet" href="style.css?v=3000001">
 
   <!-- Firebase -->
   <script type="module">
@@ -1189,7 +1189,8 @@
     .igs-row:last-child { border-bottom: none; }
 
     /* ===== GAME OVER ===== */
-    #gameOverScreen { z-index: 200; }
+    #gameOverScreen { z-index: 200; pointer-events: none; }
+    #gameOverScreen.active { pointer-events: auto; }
 
     /* ===== RESET ONA EKRANI ===== */
     #confirmReset {
@@ -1797,7 +1798,25 @@
     <div class="gameover-box">
       <h1>Game Over</h1>
       <p id="finalScore"></p>
-      <button id="restartBtn">Play Again</button>
+
+      <!-- Devam Et Modalı (sayaç bitince kapanır) -->
+      <div id="continueOptions" style="width:100%;margin-bottom:12px;display:flex;flex-direction:column;gap:8px;">
+        <button id="continueAdBtn" onclick="continueWithAd()" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#7c6ff7,#5b4de8);color:#fff;font-size:15px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span id="continueAdText">📺 Reklam İzle</span>
+        </button>
+        <button id="continueDiamondBtn" onclick="continueWithDiamonds()" style="width:100%;padding:14px;border-radius:14px;border:1px solid rgba(96,165,250,0.4);background:rgba(96,165,250,0.08);color:#60a5fa;font-size:15px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span id="continueDiamondText">💎 500</span>
+        </button>
+        <!-- Sayaç -->
+        <div style="text-align:center;margin-top:4px;">
+          <span id="continueCountdown" style="font-size:13px;color:rgba(255,255,255,0.3);font-family:'Nunito',sans-serif;font-weight:700;"></span>
+        </div>
+      </div>
+
+      <!-- Tekrar Oyna (sayaç bitince görünür) -->
+      <button id="restartBtn" style="width:100%;display:none;">
+        <span id="restartBtnText">Play Again</span>
+      </button>
     </div>
   </div>
 
@@ -1906,7 +1925,7 @@
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
   <audio id="snd-gameover" src="assets/sounds/gameover.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=3000000"></script>
+  <script src="main.js?v=3000001"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -1943,7 +1962,7 @@
       gc.style.position = 'absolute';
       gc.style.pointerEvents = 'none';
       document.getElementById('timerBar').style.display = 'none';
-      document.getElementById('gameOverScreen').style.visibility = 'hidden';
+      const _gos = document.getElementById('gameOverScreen'); _gos.style.visibility = 'hidden'; _gos.style.pointerEvents = 'none'; _gos.classList.remove('active');
       document.getElementById('inGameSettingsPanel').classList.add('hidden');
       document.getElementById('difficultyModal').classList.add('hidden');
       document.getElementById('timeLevelModal').classList.add('hidden');
@@ -2306,11 +2325,11 @@
       if (pendingScore && window.fbSubmitScore) {
         const ok = await window.fbSubmitScore(name, pendingScore.score, pendingScore.mode);
         if (ok) {
-          const t = document.createElement('div');
-          t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
-          t.textContent = t('scoreSent');
+          const _toast1 = document.createElement('div');
+          _toast1.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
+          _toast1.textContent = t('scoreSent');
           document.body.appendChild(t);
-          setTimeout(() => t.remove(), 2000);
+          setTimeout(() => _toast1.remove(), 2000);
         }
       }
       pendingScore = null;
@@ -2331,11 +2350,11 @@
           const ok = await window.fbSubmitScore(name, score, mode);
           if (ok === true) {
             // Yeni rekor — toast göster
-            const t = document.createElement('div');
-            t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
-            t.textContent = t('newRecord');
-            document.body.appendChild(t);
-            setTimeout(() => t.remove(), 2000);
+            const _toast2 = document.createElement('div');
+            _toast2.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
+            _toast2.textContent = t('newRecord');
+            document.body.appendChild(_toast2);
+            setTimeout(() => _toast2.remove(), 2000);
           }
         }
       } else {
@@ -2627,6 +2646,9 @@
     let currentLang = localStorage.getItem('bp_lang') || 'tr';
     function t(key) { return (LANGS[currentLang] || LANGS.tr)[key] || key; }
 
+    const CONTINUE_DIAMOND_COST = 500;
+    let _restartCountdownTimer = null;
+
     function applyLang() {
       const L = currentLang;
       const tr = (k) => t(k);
@@ -2838,6 +2860,9 @@
         if (el) el.textContent = d;
       });
 
+      // Devam et butonları
+      if (typeof updateContinueButtons === 'function') updateContinueButtons();
+
       // Dil toggle
       const langTR = document.getElementById('langTR');
       const langEN = document.getElementById('langEN');
@@ -2927,15 +2952,15 @@
           </div>
         </div>`;
         document.body.appendChild(bar);
-        let t = 5;
+        let _adT = 5;
         const interval = setInterval(() => {
-          t -= 0.1;
-          const pct = ((5-t)/5)*100;
+          _adT -= 0.1;
+          const pct = ((5-_adT)/5)*100;
           const fill = document.getElementById('adBarFill');
           const timer = document.getElementById('adTimer');
           if (fill) fill.style.width = pct + '%';
-          if (timer) timer.textContent = Math.ceil(t);
-          if (t <= 0) {
+          if (timer) timer.textContent = Math.ceil(_adT);
+          if (_adT <= 0) {
             clearInterval(interval);
             bar.remove();
             addDiamondsAmount(15);
@@ -3553,11 +3578,11 @@
       localStorage.setItem('bp_diamonds', current + amount);
       if (typeof updateDiamondDisplay === 'function') updateDiamondDisplay();
       // Toast
-      const t = document.createElement('div');
-      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(255,210,77,0.9);color:#1a1a2e;padding:8px 20px;border-radius:50px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;animation:xpToastAnim 1.8s ease forwards;';
-      t.textContent = '+' + amount + ' XP!';
+      const _toast2 = document.createElement('div');
+      _toast2.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(255,210,77,0.9);color:#1a1a2e;padding:8px 20px;border-radius:50px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;animation:xpToastAnim 1.8s ease forwards;';
+      _toast2.textContent = '+' + amount + ' XP!';
       document.body.appendChild(t);
-      setTimeout(() => t.remove(), 1800);
+      setTimeout(() => _toast2.remove(), 1800);
     };
 
     // getTodayStr ve getDailyStatus'u window'a aç
@@ -3576,7 +3601,100 @@
     updateDailyCardUI();
     refreshMenuHS();
 
-    // ===== MAĞAZA =====
+    // ===== DEVAM ET SİSTEMİ =====
+
+    function startRestartCountdown() {
+      const opts = document.getElementById('continueOptions');
+      const restartBtn = document.getElementById('restartBtn');
+      const countdown = document.getElementById('continueCountdown');
+      if (!opts || !restartBtn) return;
+
+      restartBtn.style.display = 'none';
+      opts.style.display = 'flex';
+
+      let secs = 5;
+      if (countdown) countdown.textContent = secs + 's';
+
+      if (_restartCountdownTimer) clearInterval(_restartCountdownTimer);
+      _restartCountdownTimer = setInterval(() => {
+        secs--;
+        if (secs <= 0) {
+          clearInterval(_restartCountdownTimer);
+          opts.style.display = 'none';
+          restartBtn.style.display = 'block';
+        } else {
+          if (countdown) countdown.textContent = secs + 's';
+        }
+      }, 1000);
+    }
+
+    function updateContinueButtons() {
+      const L = currentLang;
+      const g = (tr, en) => L === 'en' ? en : tr;
+      const adUsed = !!window._adUsedThisGame;
+      const adBtn = document.getElementById('continueAdBtn');
+      const adText = document.getElementById('continueAdText');
+      const dText = document.getElementById('continueDiamondText');
+
+      if (adBtn) {
+        if (adUsed) {
+          adBtn.style.display = 'none';
+        } else {
+          adBtn.style.display = 'flex';
+          if (adText) adText.textContent = g('📺 Reklam İzle', '📺 Watch Ad');
+        }
+      }
+      if (dText) dText.textContent = `💎 ${CONTINUE_DIAMOND_COST}`;
+      startRestartCountdown();
+    }
+
+    window.continueWithAd = function() {
+      // Reklam simülasyonu — gerçek AdMob entegrasyonu yapılacak
+      const L = currentLang;
+      const g = (tr, en) => L === 'en' ? en : tr;
+
+      // Reklam izleniyor animasyonu
+      const adBtn = document.getElementById('continueAdBtn');
+      if (adBtn) {
+        adBtn.style.opacity = '0.5';
+        adBtn.style.pointerEvents = 'none';
+        adBtn.querySelector('#continueAdText').textContent = g('Yükleniyor...', 'Loading...');
+      }
+
+      setTimeout(() => {
+        window._adUsedThisGame = true;
+        resumeGame();
+      }, 1500); // Gerçek reklamda bu süre reklam süresi olacak
+    };
+
+    window.continueWithDiamonds = function() {
+      const L = currentLang;
+      const g = (tr, en) => L === 'en' ? en : tr;
+      const diamonds = getDiamonds();
+
+      if (diamonds < CONTINUE_DIAMOND_COST) {
+        const _toastDia = document.createElement('div');
+        _toastDia.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,40,0.98);border:1px solid rgba(239,68,68,0.4);color:#fff;padding:20px 24px;border-radius:18px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;text-align:center;';
+        _toastDia.innerHTML = `<div style="font-size:28px;margin-bottom:8px;">💎</div>
+          <div>${g('Yetersiz Elmas!', 'Not Enough Diamonds!')}</div>
+          <div style="opacity:0.6;font-size:12px;margin-top:4px;">${diamonds} / ${CONTINUE_DIAMOND_COST} 💎</div>
+          <div style="font-size:11px;color:#60a5fa;margin-top:8px;">${g('Mağazadan elmas satın alabilirsin', 'Buy diamonds from the shop')}</div>`;
+        document.body.appendChild(_toastDia);
+        setTimeout(() => _toastDia.remove(), 2500);
+        return;
+      }
+
+      // Elmas düş
+      setDiamonds(diamonds - CONTINUE_DIAMOND_COST);
+      resumeGame();
+    };
+
+    function resumeGame() {
+      const _gos = document.getElementById('gameOverScreen'); _gos.style.visibility = 'hidden'; _gos.style.pointerEvents = 'none'; _gos.classList.remove('active');
+      window._gameOverCancelled = true;
+      if (typeof resumeFromGameOver === 'function') resumeFromGameOver();
+    }
+
     function openShop() {
       if (typeof playSndPop === 'function') playSndPop();
       document.getElementById('shopModal').style.display = 'flex';
@@ -3608,11 +3726,11 @@
       const msg = L === 'en'
         ? 'Payment system coming soon! 🚀'
         : 'Ödeme sistemi yakında aktif olacak! 🚀';
-      const t = document.createElement('div');
-      t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(124,111,247,0.95);color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
-      t.textContent = msg;
+      const _toast4 = document.createElement('div');
+      _toast4.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(124,111,247,0.95);color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
+      _toast4.textContent = msg;
       document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2500);
+      setTimeout(() => _toast4.remove(), 2500);
     }
 
     window.openShop = openShop;
@@ -3671,11 +3789,11 @@
       }
       _lastBackTime = now;
 
-      const t = document.createElement('div');
-      t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 22px;border-radius:50px;font-size:13px;font-weight:700;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
-      t.textContent = t('exitPrompt');
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2000);
+      const _toastExit = document.createElement('div');
+      _toastExit.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 22px;border-radius:50px;font-size:13px;font-weight:700;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
+      _toastExit.textContent = t('exitPrompt');
+      document.body.appendChild(_toastExit);
+      setTimeout(() => _toastExit.remove(), 2000);
 
       history.pushState({ page: 'game' }, '');
     });
