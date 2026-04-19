@@ -445,6 +445,7 @@ button.used-flash {
   justify-content: center;
   align-items: center;
   visibility: hidden;
+  pointer-events: none;
   z-index: 999;
 }
 
@@ -478,7 +479,7 @@ button.used-flash {
   font-weight: 600;
   margin-bottom: 24px;
 }
-#gameOverScreen button {
+#gameOverScreen #restartBtn {
   display: block;
   width: 100%;
   padding: 15px;
@@ -493,7 +494,7 @@ button.used-flash {
   transition: transform 0.1s, filter 0.1s;
   box-shadow: 0 4px 20px rgba(124,111,247,0.4);
 }
-#gameOverScreen button:active { transform: scale(0.97); filter: brightness(0.9); }
+#gameOverScreen #restartBtn:active { transform: scale(0.97); filter: brightness(0.9); }
 
 /* ========================================
    OYUN İÇİ AYARLAR PANELİ
@@ -650,17 +651,17 @@ button.used-flash {
    ======================================== */
 .combo-popup {
   position: fixed;
-  left: 50%; top: 42%;
+  left: 50%; top: 50%;
   transform: translate(-50%,-50%) scale(0.3);
-  font-size: 44px;
-  font-weight: 900;
+  font-size: 18px;
+  font-weight: 800;
   font-family: var(--font);
-  color: var(--gold);
-  text-shadow: 0 0 20px rgba(251,191,36,0.6);
+  color: rgba(255,255,255,0.6);
   pointer-events: none;
   animation: comboBigPop 0.7s ease forwards;
-  z-index: 9999;
-  letter-spacing: -1px;
+  z-index: 9996;
+  letter-spacing: 1px;
+  white-space: nowrap;
 }
 @keyframes comboBigPop {
   0%   { transform: translate(-50%,-50%) scale(0.2) rotate(-5deg); opacity: 0; }
@@ -842,4 +843,20 @@ body[data-theme="candy"] .combo-popup { animation: comboBigPop 0.7s ease forward
 .shop-premium {
   border-color: rgba(251,191,36,0.4);
   background: rgba(251,191,36,0.08);
+}
+
+/* ===== COMBO YAZILARI ===== */
+@keyframes comboLabelPop {
+  0%   { transform: translateX(-50%) scale(0) rotate(-5deg); opacity: 0; }
+  50%  { transform: translateX(-50%) scale(1.15) rotate(2deg); opacity: 1; }
+  70%  { transform: translateX(-50%) scale(0.95) rotate(-1deg); opacity: 1; }
+  85%  { transform: translateX(-50%) scale(1.02); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1) translateY(-30px); opacity: 0; }
+}
+@keyframes comboShake {
+  0%,100% { transform: translateX(-50%) translateX(0); }
+  20%      { transform: translateX(-50%) translateX(-6px); }
+  40%      { transform: translateX(-50%) translateX(6px); }
+  60%      { transform: translateX(-50%) translateX(-4px); }
+  80%      { transform: translateX(-50%) translateX(4px); }
 }
