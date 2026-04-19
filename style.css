@@ -847,16 +847,13 @@ body[data-theme="candy"] .combo-popup { animation: comboBigPop 0.7s ease forward
 
 /* ===== COMBO YAZILARI ===== */
 @keyframes comboLabelPop {
-  0%   { transform: translateX(-50%) scale(0) rotate(-5deg); opacity: 0; }
-  50%  { transform: translateX(-50%) scale(1.15) rotate(2deg); opacity: 1; }
-  70%  { transform: translateX(-50%) scale(0.95) rotate(-1deg); opacity: 1; }
-  85%  { transform: translateX(-50%) scale(1.02); opacity: 1; }
-  100% { transform: translateX(-50%) scale(1) translateY(-30px); opacity: 0; }
+  0%   { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  20%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  70%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
 }
 @keyframes comboShake {
   0%,100% { transform: translateX(-50%) translateX(0); }
-  20%      { transform: translateX(-50%) translateX(-6px); }
-  40%      { transform: translateX(-50%) translateX(6px); }
-  60%      { transform: translateX(-50%) translateX(-4px); }
-  80%      { transform: translateX(-50%) translateX(4px); }
+  25%      { transform: translateX(-50%) translateX(-4px); }
+  75%      { transform: translateX(-50%) translateX(4px); }
 }
