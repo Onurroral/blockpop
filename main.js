@@ -248,26 +248,38 @@ const PIECES = [
   [[1,1,1],[1,1,1],[1,1,1]],
   // Büyük T (5'li)
   [[1,1,1,1,1],[0,0,1,0,0]],
+
+  // === YENİ: Büyük kare 3x3 (her zaman mevcut) ===
+  // (yukarıdaki 3x3 score-locked, bu kopya temel havuzda)
+
+  // === YENİ: Dikdörtgen 2x3 ===
+  [[1,1],[1,1],[1,1]],
+  // Dikdörtgen 3x2
+  [[1,1,1],[1,1,1]],
 ];
 
 // === SCORE BAZLI PARÇA UNLOCK SİSTEMİ ===
-// Her threshold'dan itibaren o bloklar havuza giriyor
+// Index sırası: 0-23 temel, 24-25 Büyük L, 26-27 Büyük I,
+//               28-29 Artı+U, 30-31 3x3+BüyükT, 32-33 Dikdörtgenler (temel havuzda)
 const PIECE_UNLOCKS = [
-  { minScore: 0,       maxIndex: 23 },  // temel parçalar (0-23)
-  { minScore: 10000,   maxIndex: 25 },  // +2: Büyük L halleri
-  { minScore: 30000,   maxIndex: 27 },  // +2: Büyük I (5'li)
-  { minScore: 50000,   maxIndex: 29 },  // +2: Artı + U
-  { minScore: 100000,  maxIndex: 31 },  // +2: 3x3 + Büyük T
+  { minScore: 0,       maxIndex: 23 },  // temel parçalar
+  { minScore: 0,       maxIndex: 33 },  // dikdörtgenler de temel havuzda (32-33) — hepsini aç
+  { minScore: 10000,   maxIndex: 25 },  // +2: Büyük L halleri (24-25)
+  { minScore: 30000,   maxIndex: 27 },  // +2: Büyük I (5'li) (26-27)
+  { minScore: 50000,   maxIndex: 29 },  // +2: Artı + U (28-29)
+  { minScore: 100000,  maxIndex: 31 },  // +2: 3x3 + Büyük T (30-31)
 ];
 
 function getAvailablePieceIndices() {
-  let maxIdx = 25;
+  let maxIdx = 23;
   for (const unlock of PIECE_UNLOCKS) {
-    if (score >= unlock.minScore) maxIdx = unlock.maxIndex;
+    if (score >= unlock.minScore) maxIdx = Math.max(maxIdx, unlock.maxIndex);
   }
+  // Dikdörtgenleri (32-33) her zaman dahil et, score-locked'ları filtrele
   const result = [];
-  for (let i = 0; i < Math.min(maxIdx + 1, PIECES.length); i++) {
-    result.push(i);
+  for (let i = 0; i < PIECES.length; i++) {
+    if (i <= maxIdx) result.push(i);
+    else if (i >= 32) result.push(i); // Dikdörtgenler her zaman mevcut
   }
   return result;
 }
@@ -672,37 +684,61 @@ function saveDailyStatus(status) {
   localStorage.setItem('bp_daily', JSON.stringify(status));
 }
 
+function getYesterdayStr() {
+  const d = new Date(); d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function getLoginBonusForStreak(streak) {
+  if (streak >= 30) return 50;
+  if (streak >= 14) return 30;
+  if (streak >= 7)  return 20;
+  if (streak >= 3)  return 10;
+  return 5;
+}
+
+function processDailyLogin() {
+  const today = getTodayStr();
+  const status = getDailyStatus();
+  if (status.lastStreakDate === today) return { streak: status.streak || 0, bonus: 0 };
+  const yesterday = getYesterdayStr();
+  const newStreak = status.lastStreakDate === yesterday ? (status.streak || 0) + 1 : 1;
+  const bonus = getLoginBonusForStreak(newStreak);
+  saveDailyStatus({ lastDate: status.lastDate || '', completed: (status.lastDate === today) ? !!status.completed : false, streak: newStreak, lastStreakDate: today });
+  if (typeof window.addDiamonds === 'function') window.addDiamonds(bonus);
+  try { const pName = localStorage.getItem('bp_player_name'); if (pName && typeof window.fbSubmitStreak === 'function') window.fbSubmitStreak(pName, newStreak); } catch(e) {}
+  showLoginStreakToast(newStreak, bonus);
+  return { streak: newStreak, bonus };
+}
+
+function showLoginStreakToast(streak, bonus) {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,rgba(15,15,25,0.98),rgba(20,20,40,0.98));border:1px solid rgba(96,165,250,0.4);border-radius:18px;padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:9999;pointer-events:none;box-shadow:0 8px 32px rgba(96,165,250,0.2);animation:achieveSlide 3.5s ease forwards;min-width:240px;';
+  const lang = (typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en' : 'tr';
+  toast.innerHTML = '<div style="font-size:32px">🔥</div><div><div style="font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:1px;">' + (lang==='en'?'DAILY LOGIN':'GÜNLÜK GİRİŞ') + '</div><div style="font-size:14px;font-weight:900;color:#fff;font-family:Nunito,sans-serif;margin:2px 0">+' + bonus + ' 💎</div><div style="font-size:11px;color:rgba(255,255,255,0.5);">🔥 ' + streak + ' ' + (lang==='en'?'day streak':'gün streak') + '</div></div>';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+  if (typeof vibrate === 'function') vibrate([30, 20, 30]);
+}
+window.processDailyLogin = processDailyLogin;
+window.getLoginBonusForStreak = getLoginBonusForStreak;
+
 function checkDailyChallenge(score, blocks, lines, combo) {
   const today = getTodayStr();
   const status = getDailyStatus();
-  if (status.lastDate === today && status.completed) return; // Zaten tamamlandı
-
+  if (status.lastDate === today && status.completed) return;
   const challenge = getDailyChallenge();
   if (!challenge.check(score, blocks, lines, combo)) return;
-
-  // Tamamlandı!
-  const yesterday = (() => {
-    const d = new Date(); d.setDate(d.getDate()-1);
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  })();
-
-  const newStreak = status.lastStreakDate === yesterday ? (status.streak || 0) + 1 : 1;
-
-  saveDailyStatus({ lastDate: today, completed: true, streak: newStreak, lastStreakDate: today });
-
-  // XP ver
-  const xpBonus = challenge.xp + (newStreak * 10); // Streak bonusu
+  saveDailyStatus({ lastDate: today, completed: true, streak: status.streak || 0, lastStreakDate: status.lastStreakDate || today });
+  const xpBonus = challenge.xp + ((status.streak || 0) * 10);
   if (typeof window.addXPDirect === 'function') window.addXPDirect(xpBonus);
-
-  // Bildirim
-  showDailyCompleteToast(challenge, newStreak, xpBonus);
+  if (typeof window.addDiamonds === 'function') window.addDiamonds(challenge.xp);
+  showDailyCompleteToast(challenge, status.streak || 0, challenge.xp);
   if (typeof playSndZing === 'function') playSndZing();
-
-  // Achievement güncelle
-  if (typeof window.onGameEnd === 'function') {}
+  if (typeof window.updateDailyBtnDot === 'function') window.updateDailyBtnDot();
 }
 
-function showDailyCompleteToast(challenge, streak, xp) {
+function showDailyCompleteToast(challenge, streak, diamonds) {
   const toast = document.createElement('div');
   toast.style.cssText = `
     position:fixed; top:20px; left:50%; transform:translateX(-50%);
@@ -715,12 +751,13 @@ function showDailyCompleteToast(challenge, streak, xp) {
     animation:achieveSlide 3.5s ease forwards;
     min-width:260px;
   `;
+  const lang = (typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en' : 'tr';
   toast.innerHTML = `
     <div style="font-size:32px">${challenge.icon}</div>
     <div>
-      <div style="font-size:10px;font-weight:700;color:#fbbf24;letter-spacing:1px;text-transform:uppercase;">📅 Günlük Görev Tamamlandı!</div>
-      <div style="font-size:14px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin:2px 0">${challenge.desc}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.5);">+${xp} XP kazandın · 🔥 ${streak} gün streak</div>
+      <div style="font-size:10px;font-weight:700;color:#fbbf24;letter-spacing:1px;text-transform:uppercase;">${lang==='en'?'📅 Daily Challenge Complete!':'📅 Günlük Görev Tamamlandı!'}</div>
+      <div style="font-size:14px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin:2px 0">${(lang==='en'&&challenge.descEn)?challenge.descEn:challenge.desc}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);">+${diamonds} 💎 · 🔥 ${streak} ${lang==='en'?'day streak':'gün streak'}</div>
     </div>
   `;
   document.body.appendChild(toast);
@@ -760,6 +797,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
   setupPowerups();
   updateScore();
+
+  setTimeout(() => {
+    if (typeof window.processDailyLogin === 'function' && typeof window.addDiamonds === 'function') {
+      window.processDailyLogin();
+      if (typeof window.updateDailyBtnDot === 'function') window.updateDailyBtnDot();
+    }
+  }, 400);
 });
 
 function playSound(audioEl, volume = 1) {
@@ -1738,24 +1782,43 @@ function generatePieces() {
     for (let y = 0; y < sh.length; y++)
       for (let x = 0; x < sh[0].length; x++)
         if (sh[y][x] === 1) cells++;
-    if (cells <= 2) return 2.2;
-    if (cells <= 4) return 1.6;
-    if (cells <= 6) return 1.2;
-    return 1.0;
+    const mode = window.currentGameMode || 'classic';
+    if (mode === 'easy') {
+      // Easy: küçük ve orta parçaları çok tercih et
+      if (cells <= 2) return 3.0;
+      if (cells <= 4) return 2.5;
+      if (cells <= 6) return 1.8;
+      return 0.8;
+    } else if (mode === 'hard') {
+      // Hard: büyük parçaları tercih et
+      if (cells <= 2) return 0.6;
+      if (cells <= 4) return 1.0;
+      if (cells <= 6) return 1.4;
+      return 2.0;
+    } else {
+      // Normal / timeattack
+      if (cells <= 2) return 2.2;
+      if (cells <= 4) return 1.6;
+      if (cells <= 6) return 1.2;
+      return 1.0;
+    }
   }
 
   // Mod bazlı yardım oranı
   const mode = window.currentGameMode || 'classic';
   let smartChance;
-  if (mode === 'easy')        smartChance = 1.00; // %100 yardımcı
-  else if (mode === 'hard')   smartChance = 0.00; // %0 tamamen rastgele
-  else if (mode === 'timeattack') smartChance = 0.80; // zaman modunda orta
-  else                        smartChance = 0.70; // normal: %70
+  if (mode === 'easy')        smartChance = 1.00; // %100 — her zaman en uygun parçayı seç
+  else if (mode === 'hard')   smartChance = 0.00; // %0 — tamamen rastgele
+  else if (mode === 'timeattack') smartChance = 0.80;
+  else                        smartChance = 0.80; // normal: %80
+
+  // helpScore multiplier mod'a göre
+  const helpMultiplier = mode === 'easy' ? 0.35 : 0.12;
 
   for (let k = 0; k < 3; k++) {
     let shapeIndex;
     if (Math.random() < smartChance && pool.length > 0) {
-      const weights = pool.map(idx => 1.0 + Math.max(0, helpScore.get(idx) ?? 0) * 0.12 + sizeWeightFor(idx));
+      const weights = pool.map(idx => 1.0 + Math.max(0, helpScore.get(idx) ?? 0) * helpMultiplier + sizeWeightFor(idx));
       shapeIndex = weightedPick(pool, weights);
     } else {
       shapeIndex = pool[Math.floor(Math.random() * pool.length)];
@@ -2205,6 +2268,15 @@ function clearCompletedLines() {
       if (animEnabled) {
         const sample = burstCells.filter((_, i) => i % Math.ceil(burstCells.length / 4) === 0).slice(0, 4);
         sample.forEach(({ cell, color }) => spawnBurstParticles(cell, color, 4));
+
+        // Toz efekti — temizlenen hücrelerin konumlarını topla
+        const dustCells = [];
+        for (let y = 0; y < BOARD_SIZE; y++) {
+          for (let x = 0; x < BOARD_SIZE; x++) {
+            if (toClear[y][x]) dustCells.push({ row: y, col: x });
+          }
+        }
+        spawnDustEffect(dustCells);
       }
 
       setTimeout(() => {
@@ -2475,7 +2547,7 @@ function startDragPiece(pieceEl, shape, event) {
   const _inner = bRect.width - 6 * 2;
   const _cell = (_inner - 3 * (BOARD_SIZE - 1)) / BOARD_SIZE;
   const _step = _cell + 3;
-  dragLiftY = (event.pointerType === 'touch') ? Math.round(_step * 3.2) : 0;
+  dragLiftY = (event.pointerType === 'touch') ? Math.round(_step * 3.5) : 0;
 
   document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
   pieceEl.classList.add('selected');
@@ -2546,8 +2618,11 @@ function onPointerUp(e) {
   dragPieceEl = null;
   dragPointerId = null;
   lastGhostCell = null;
+  _lastGhostX = -1;
+  _lastGhostY = -1;
 
   clearGhostPreview();
+  clearPrediction();
 }
 
 function updateDragPosition(e) {
@@ -2634,18 +2709,17 @@ function trySnapToValid(clientX, clientY) {
   if (clientX < rect.left - cellSize || clientX > rect.right + cellSize ||
       clientY < rect.top  - cellSize || clientY > rect.bottom + cellSize) return null;
 
-  // Grid içine klamp et
-  const cx = Math.max(gridLeft, Math.min(rect.right  - pad, clientX));
-  const cy = Math.max(gridTop,  Math.min(rect.bottom - pad, clientY));
+  // Parmağın grid'deki float pozisyonu — klamp yok, ham değer
+  // updateDragPosition de aynı clientX/clientY kullanıyor, böylece ikisi aynı noktayı işaret eder
+  const fx = (clientX - gridLeft) / step;
+  const fy = (clientY - gridTop)  / step;
 
-  // Hangi grid hücresi?
-  const col = Math.floor((cx - gridLeft) / step);
-  const row = Math.floor((cy - gridTop)  / step);
-
-  // Şeklin merkezi bu hücreye gelsin
+  // Şeklin merkezi
   const { cx: shapeCX, cy: shapeCY } = getShapeCenter(selectedShape);
-  const startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(col - shapeCX)));
-  const startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(row - shapeCY)));
+
+  // Shape'in sol-üst köşesi — deterministic round (banker rounding yok)
+  const startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.floor(fx - shapeCX + 0.5)));
+  const startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.floor(fy - shapeCY + 0.5)));
 
   // Çakışma kontrolü — önce tam pozisyon
   let fits = true;
@@ -2673,21 +2747,34 @@ function trySnapToValid(clientX, clientY) {
 let _lastGhostX = -1, _lastGhostY = -1, _ghostThrottleId = null;
 
 function updateGhostPreview(clientX, clientY) {
-  // Throttle — aynı pozisyonda tekrar çalışma
-  const gridSize = 10; // piksel hassasiyeti
-  const gx = Math.round(clientX / gridSize);
-  const gy = Math.round(clientY / gridSize);
-  if (gx === _lastGhostX && gy === _lastGhostY) return;
-  _lastGhostX = gx; _lastGhostY = gy;
-
-  clearPrediction();
-  clearGhostPreview();
-  lastGhostCell = null;
-
-  if (!isDragging || !selectedShape || isGameOver) return;
+  if (!isDragging || !selectedShape || isGameOver) {
+    clearPrediction();
+    clearGhostPreview();
+    lastGhostCell = null;
+    _lastGhostX = -1; _lastGhostY = -1;
+    return;
+  }
 
   const snapped = trySnapToValid(clientX, clientY);
-  if (!snapped) return;
+
+  if (!snapped) {
+    // Board dışında — sadece önceki ghost varsa temizle
+    if (_lastGhostX !== -1 || _lastGhostY !== -1) {
+      clearPrediction();
+      clearGhostPreview();
+      lastGhostCell = null;
+      _lastGhostX = -1; _lastGhostY = -1;
+    }
+    return;
+  }
+
+  // Aynı hücredeyse hiçbir şeye dokunma — ghost zaten doğru yerde
+  if (snapped[0] === _lastGhostX && snapped[1] === _lastGhostY) return;
+
+  // Yeni hücre — eski ghost'u temizle, yenisini çiz
+  clearPrediction();
+  clearGhostPreview();
+  _lastGhostX = snapped[0]; _lastGhostY = snapped[1];
 
   const [startX, startY] = snapped;
   const h = selectedShape.length;
