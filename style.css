@@ -173,6 +173,7 @@ body::before {
   background: rgba(124,111,247,0.2) !important;
   border: 1.5px dashed rgba(124,111,247,0.6) !important;
   box-shadow: none !important;
+  transition: none !important;
 }
 .board-cell.ghost-valid::after { display: none; }
 
