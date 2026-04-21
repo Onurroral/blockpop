@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3000001">
+  <link rel="stylesheet" href="style.css?v=3000004">
 
   <!-- Firebase -->
   <script type="module">
@@ -85,21 +85,64 @@
         let q;
         const col = collection(db, 'scores');
         if (tab === 'weekly') {
+          // Bu hafta — tüm modları çek, JS'de classic filtrele (composite index gerekmez)
           const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
-          q = query(col, where('ts','>=',Timestamp.fromDate(weekAgo)), orderBy('ts','desc'));
-          // Firestore'dan al, JS'de sırala
+          q = query(col, where('ts','>=',Timestamp.fromDate(weekAgo)));
           const snap = await getDocs(q);
-          const rows = snap.docs.map(d=>({...d.data(),id:d.id}));
+          const rows = snap.docs.map(d=>({...d.data(),id:d.id}))
+            .filter(r => !r.mode || r.mode === 'classic');
           rows.sort((a,b)=>b.score-a.score);
           return rows.slice(0,50);
         } else if (tab === 'timeattack') {
           q = query(col, where('mode','==','timeattack'), orderBy('score','desc'), limit(50));
+          const snap = await getDocs(q);
+          return snap.docs.map(d=>({...d.data(),id:d.id}));
+        } else if (tab === 'streak') {
+          // Günlük streak sıralaması — ayrı collection
+          const sCol = collection(db, 'streaks');
+          q = query(sCol, orderBy('streak','desc'), limit(50));
+          const snap = await getDocs(q);
+          return snap.docs.map(d=>({...d.data(),id:d.id}));
         } else {
-          q = query(col, orderBy('score','desc'), limit(50));
+          // Fallback: alltime classic
+          q = query(col, where('mode','==','classic'), orderBy('score','desc'), limit(50));
+          const snap = await getDocs(q);
+          return snap.docs.map(d=>({...d.data(),id:d.id}));
         }
-        const snap = await getDocs(q);
-        return snap.docs.map(d=>({...d.data(),id:d.id}));
       } catch(e) { console.warn('Skorlar alınamadı:', e); return []; }
+    };
+
+    // Günlük streak'i Firebase'e gönder
+    window.fbSubmitStreak = async function(name, streak) {
+      try {
+        const cleanName = (name || '').trim().substring(0,16);
+        if (!cleanName || !streak || streak < 1) return false;
+        const col = collection(db, 'streaks');
+        // Aynı isim için mevcut kaydı bul
+        const q = query(col, where('name','==',cleanName));
+        const snap = await getDocs(q);
+
+        if (!snap.empty) {
+          let bestDoc = null;
+          let bestStreak = 0;
+          snap.forEach(d => {
+            if ((d.data().streak || 0) > bestStreak) {
+              bestStreak = d.data().streak || 0;
+              bestDoc = d;
+            }
+          });
+          // Sadece yeni streak eskisinden büyükse güncelle
+          if (streak <= bestStreak) return 'same';
+          for (const d of snap.docs) await deleteDoc(d.ref);
+        }
+
+        await addDoc(col, {
+          name: cleanName,
+          streak: Math.floor(streak),
+          ts: Timestamp.now(),
+        });
+        return true;
+      } catch(e) { console.warn('Streak gönderilemedi:', e); return false; }
     };
 
     function getWeekStr() {
@@ -1478,8 +1521,8 @@
     <!-- Tab seçimi -->
     <div class="lb-tabs">
       <button class="lb-tab active" data-tab="weekly">Bu Hafta</button>
-      <button class="lb-tab" data-tab="alltime">Tüm Zamanlar</button>
       <button class="lb-tab" data-tab="timeattack">Zaman Modu</button>
+      <button class="lb-tab" data-tab="streak">🔥 Streak</button>
     </div>
 
     <!-- Oyuncunun skoru -->
@@ -1925,7 +1968,7 @@
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
   <audio id="snd-gameover" src="assets/sounds/gameover.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=3000001"></script>
+  <script src="main.js?v=3000004"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -2220,6 +2263,7 @@
       if (dot) dot.classList.toggle('hidden', done);
       if (streakEl) streakEl.textContent = '🔥 ' + streak;
     }
+    window.updateDailyBtnDot = updateDailyBtnDot;
 
     // ===== LEADERBOARD =====
     let currentLbTab = 'weekly';
@@ -2259,6 +2303,7 @@
 
       const myName = getPlayerName();
       let myRank = -1;
+      const isStreak = tab === 'streak';
 
       rows.forEach((row, i) => {
         const div = document.createElement('div');
@@ -2267,13 +2312,18 @@
         const date = row.ts?.toDate ? row.ts.toDate() : new Date();
         const dateStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`;
 
+        // Streak tab'ında skor yerine gün sayısı + 🔥
+        const valDisplay = isStreak
+          ? `🔥 ${row.streak || 0} ${currentLang === 'en' ? 'days' : 'gün'}`
+          : (row.score || 0).toLocaleString();
+
         div.innerHTML = `
           <div class="lb-rank">${getRankEmoji(i)}</div>
           <div>
             <div class="lb-name">${row.name || 'Anonim'}</div>
             <div class="lb-date">${dateStr}</div>
           </div>
-          <div class="lb-score">${row.score.toLocaleString()}</div>
+          <div class="lb-score">${valDisplay}</div>
         `;
         list.appendChild(div);
 
@@ -2282,9 +2332,13 @@
 
       // Oyuncunun kendi skoru
       if (myRank >= 0) {
+        const myRow = rows[myRank];
+        const myValDisplay = isStreak
+          ? `🔥 ${myRow.streak || 0} ${currentLang === 'en' ? 'days' : 'gün'}`
+          : (myRow.score || 0).toLocaleString();
         document.getElementById('lbMyRank').textContent = getRankEmoji(myRank);
         document.getElementById('lbMyName').textContent = myName + t('myRankSuffix');
-        document.getElementById('lbMyVal').textContent = rows[myRank].score.toLocaleString();
+        document.getElementById('lbMyVal').textContent = myValDisplay;
         myScore.classList.remove('hidden');
       }
     }
@@ -2322,13 +2376,21 @@
       savePlayerName(name);
       document.getElementById('nameModal').classList.add('hidden');
 
+      // Mevcut streak'i Firebase'e gönder (yeni isim için)
+      try {
+        const status = typeof getDailyStatus === 'function' ? getDailyStatus() : null;
+        if (status && status.streak > 0 && window.fbSubmitStreak) {
+          window.fbSubmitStreak(name, status.streak);
+        }
+      } catch(e) {}
+
       if (pendingScore && window.fbSubmitScore) {
         const ok = await window.fbSubmitScore(name, pendingScore.score, pendingScore.mode);
         if (ok) {
           const _toast1 = document.createElement('div');
           _toast1.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
           _toast1.textContent = t('scoreSent');
-          document.body.appendChild(t);
+          document.body.appendChild(_toast1);
           setTimeout(() => _toast1.remove(), 2000);
         }
       }
@@ -2545,6 +2607,7 @@
         thisWeek: 'Bu Hafta',
         allTime: 'Tüm Zamanlar',
         timeModeTab: 'Zaman Modu',
+        streakTab: '🔥 Streak',
         loading: 'Yükleniyor...',
         noScore: 'Henüz skor yok. İlk sen gir!',
         // İsim modal
@@ -2621,6 +2684,7 @@
         thisWeek: 'This Week',
         allTime: 'All Time',
         timeModeTab: 'Time Mode',
+        streakTab: '🔥 Streak',
         loading: 'Loading...',
         noScore: 'No scores yet. Be the first!',
         nameModalTitle: '👤 What is your name?',
@@ -2721,8 +2785,8 @@
       if (lbTitleEl) lbTitleEl.textContent = L === 'en' ? '🌍 Leaderboard' : '🌍 Sıralama';
       const tabs = document.querySelectorAll('.lb-tab');
       if (tabs[0]) tabs[0].textContent = tr('thisWeek');
-      if (tabs[1]) tabs[1].textContent = tr('allTime');
-      if (tabs[2]) tabs[2].textContent = tr('timeModeTab');
+      if (tabs[1]) tabs[1].textContent = tr('timeModeTab');
+      if (tabs[2]) tabs[2].textContent = tr('streakTab');
 
       // Rozet ekranı
       const achTitle = document.querySelector('#tab-achieve .tab-title');
@@ -2936,46 +3000,49 @@
 
     // Reklam ile elmas (placeholder - gerçek reklam SDK'sı entegre edilecek)
     window.watchAdForDiamonds = function() {
-      const adModal = document.getElementById('adModal');
-      if (!adModal) {
-        // Basit simulasyon
-        const bar = document.createElement('div');
-        bar.innerHTML = `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9999;">
-          <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px 24px;text-align:center;width:280px;">
-            <div style="font-size:40px;margin-bottom:12px;">📺</div>
-            <div style="font-size:18px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin-bottom:8px;">Reklam İzle</div>
-            <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:20px;">5 saniye izle, +15 💎 kazan!</div>
-            <div style="background:rgba(255,255,255,0.08);border-radius:50px;height:8px;overflow:hidden;margin-bottom:16px;">
-              <div id="adBarFill" style="height:100%;width:0%;background:linear-gradient(90deg,#7c6ff7,#a78bfa);border-radius:50px;transition:width 0.1s;"></div>
-            </div>
-            <div id="adTimer" style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);">5</div>
+      // Elmas kazanma reklamı — tema modal'ından bağımsız
+      const bar = document.createElement('div');
+      bar.innerHTML = `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9999;">
+        <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px 24px;text-align:center;width:280px;">
+          <div style="font-size:40px;margin-bottom:12px;">📺</div>
+          <div style="font-size:18px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin-bottom:8px;">Reklam İzle</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:20px;">5 saniye izle, +15 💎 kazan!</div>
+          <div style="background:rgba(255,255,255,0.08);border-radius:50px;height:8px;overflow:hidden;margin-bottom:16px;">
+            <div id="adDiamondBarFill" style="height:100%;width:0%;background:linear-gradient(90deg,#7c6ff7,#a78bfa);border-radius:50px;transition:width 0.1s;"></div>
           </div>
-        </div>`;
-        document.body.appendChild(bar);
-        let _adT = 5;
-        const interval = setInterval(() => {
-          _adT -= 0.1;
-          const pct = ((5-_adT)/5)*100;
-          const fill = document.getElementById('adBarFill');
-          const timer = document.getElementById('adTimer');
-          if (fill) fill.style.width = pct + '%';
-          if (timer) timer.textContent = Math.ceil(_adT);
-          if (_adT <= 0) {
-            clearInterval(interval);
-            bar.remove();
-            addDiamondsAmount(15);
-            const toast = document.createElement('div');
-            toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(99,179,237,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:15px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
-            toast.textContent = '+15 💎 Kazandın!';
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
-          }
-        }, 100);
-      }
+          <div id="adDiamondTimer" style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);">5</div>
+        </div>
+      </div>`;
+      document.body.appendChild(bar);
+      let _adT = 5;
+      const interval = setInterval(() => {
+        _adT -= 0.1;
+        const pct = ((5-_adT)/5)*100;
+        const fill = document.getElementById('adDiamondBarFill');
+        const timer = document.getElementById('adDiamondTimer');
+        if (fill) fill.style.width = pct + '%';
+        if (timer) timer.textContent = Math.ceil(_adT);
+        if (_adT <= 0) {
+          clearInterval(interval);
+          bar.remove();
+          addDiamondsAmount(15);
+          const toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(99,179,237,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:15px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
+          toast.textContent = '+15 💎 Kazandın!';
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 2000);
+        }
+      }, 100);
     };
 
-    // İlk yüklemede günlük giriş bonusu kontrol et
-    setTimeout(checkDailyLoginBonus, 500);
+    // İlk yüklemede günlük giriş bonusu kontrol et — main.js'deki processDailyLogin kullanılır
+    // (Eski checkDailyLoginBonus streak'i artırmıyordu, devre dışı)
+    setTimeout(() => {
+      if (typeof window.processDailyLogin === 'function') {
+        window.processDailyLogin();
+        if (typeof window.updateDailyBtnDot === 'function') window.updateDailyBtnDot();
+      }
+    }, 500);
 
     // ===== WELCOME EKRANI =====
     function checkFirstLaunch() {
@@ -3572,18 +3639,7 @@
       }
     }
 
-    // addXPDirect — main.js'deki addXP'yi çağırır
-    window.addDiamonds = function(amount) {
-      const current = parseInt(localStorage.getItem('bp_diamonds') || '0');
-      localStorage.setItem('bp_diamonds', current + amount);
-      if (typeof updateDiamondDisplay === 'function') updateDiamondDisplay();
-      // Toast
-      const _toast2 = document.createElement('div');
-      _toast2.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(255,210,77,0.9);color:#1a1a2e;padding:8px 20px;border-radius:50px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;animation:xpToastAnim 1.8s ease forwards;';
-      _toast2.textContent = '+' + amount + ' XP!';
-      document.body.appendChild(t);
-      setTimeout(() => _toast2.remove(), 1800);
-    };
+    // (Eski duplicate addDiamonds kaldırıldı — yukarıdaki addDiamondsAmount kullanılır)
 
     // getTodayStr ve getDailyStatus'u window'a aç
     window.getTodayStr = function() {
