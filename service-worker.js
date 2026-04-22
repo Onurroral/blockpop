@@ -1,14 +1,15 @@
-const CACHE_NAME = 'blockpop-v19';
+const CACHE_NAME = 'blockpop-v21';
 
 const ASSETS = [
   './index.html',
+  './game.html',
   './main.js',
   './style.css',
   './manifest.json',
   './assets/sounds/place.mp3',
   './assets/sounds/clear.mp3',
   './assets/sounds/combo.mp3',
-  './assets/sounds/gameover.mp3',
+  './assets/sounds/gameover1.mp3',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
 ];
@@ -37,11 +38,13 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Network-first: önce ağdan çek, başarısız olursa cache kullan
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
+    fetch(event.request)
+      .then(response => {
         if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => {
@@ -49,9 +52,11 @@ self.addEventListener('fetch', event => {
           });
         }
         return response;
-      }).catch(() => {
-        return caches.match('./index.html');
-      });
-    })
+      })
+      .catch(() => {
+        return caches.match(event.request).then(cached => {
+          return cached || caches.match('./index.html');
+        });
+      })
   );
 });
