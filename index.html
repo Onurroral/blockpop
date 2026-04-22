@@ -3,500 +3,381 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>BlockPop — Oyna</title>
+  <meta property="og:title" content="BlockPop — Blok Yerleştirme Oyunu">
+  <meta property="og:description" content="Ücretsiz tarayıcı oyunu. Oyna ve geri bildirimini paylaş!">
+  <title>BlockPop</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0e1420;
-      --surface: #161e2e;
-      --accent: #7c6ff7;
-      --accent2: #a78bfa;
-      --gold: #fbbf24;
-      --green: #34d399;
-      --text: #ffffff;
-      --muted: rgba(255,255,255,0.45);
+      --ink:    #0a0f1a;
+      --purple: #7c6ff7;
+      --violet: #a78bfa;
+      --teal:   #2dd4bf;
+      --gold:   #fbbf24;
+      --rose:   #f472b6;
+      --text:   #ffffff;
+      --muted:  rgba(255,255,255,0.5);
+      --card:   rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.09);
     }
 
-    html, body {
-      height: 100%;
-      background: var(--bg);
+    html { height: 100%; }
+    body {
+      min-height: 100%;
+      background: var(--ink);
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
       overflow-x: hidden;
     }
 
-    /* ── Animated background ── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
+    /* ── Mesh background ── */
+    .mesh {
+      position: fixed; inset: 0;
       background:
-        radial-gradient(ellipse 70% 50% at 15% 10%, rgba(124,111,247,0.18) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 40% at 85% 85%, rgba(167,139,250,0.12) 0%, transparent 55%),
-        radial-gradient(ellipse 40% 30% at 50% 50%, rgba(52,211,153,0.06) 0%, transparent 60%);
-      pointer-events: none;
-      z-index: 0;
+        radial-gradient(ellipse 90% 60% at 10% 5%,  rgba(124,111,247,0.22) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 55% at 90% 95%, rgba(45,212,191,0.15)  0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(167,139,250,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 80% 20%, rgba(251,191,36,0.07)  0%, transparent 50%);
+      pointer-events: none; z-index: 0;
     }
 
-    /* ── Floating grid blocks ── */
-    .bg-blocks {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
+    /* subtle noise */
+    .mesh::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.35; pointer-events: none;
     }
 
-    .bg-block {
-      position: absolute;
-      border-radius: 8px;
-      opacity: 0;
-      animation: floatBlock var(--dur) ease-in-out infinite var(--delay);
+    /* ── Floating blocks (background) ── */
+    .floats { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .fb {
+      position: absolute; border-radius: 7px; opacity: 0;
+      animation: fbFloat var(--d) ease-in-out infinite var(--dl);
+    }
+    @keyframes fbFloat {
+      0%   { opacity:0;       transform: translateY(14px) rotate(var(--r)); }
+      15%  { opacity:var(--o); }
+      85%  { opacity:var(--o); }
+      100% { opacity:0;       transform: translateY(-18px) rotate(var(--r)); }
     }
 
-    @keyframes floatBlock {
-      0%   { opacity: 0; transform: translateY(20px) rotate(var(--r)); }
-      20%  { opacity: var(--op); }
-      80%  { opacity: var(--op); }
-      100% { opacity: 0; transform: translateY(-30px) rotate(var(--r)); }
-    }
-
-    /* ── Main layout ── */
-    .page {
-      position: relative;
-      z-index: 1;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 24px 60px;
+    /* ── Layout ── */
+    .wrap {
+      position: relative; z-index: 1;
+      max-width: 440px; margin: 0 auto;
+      padding: 48px 22px 64px;
+      display: flex; flex-direction: column; align-items: center;
       gap: 0;
     }
 
-    /* ── Logo / Title area ── */
-    .logo-area {
-      text-align: center;
-      margin-bottom: 32px;
-      animation: fadeUp 0.7s ease both;
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(244,114,182,0.12);
+      border: 1px solid rgba(244,114,182,0.28);
+      border-radius: 50px; padding: 6px 15px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--rose);
+      margin-bottom: 24px;
+      animation: fadeUp .6s ease both;
     }
-
-    .logo-icon {
-      display: inline-grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 5px;
-      margin-bottom: 20px;
-      animation: spinIn 0.8s cubic-bezier(0.2,1.4,0.4,1) both;
+    .badge-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--rose);
+      animation: blink 1.4s ease-in-out infinite;
     }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
 
-    .logo-cell {
-      width: 22px;
-      height: 22px;
-      border-radius: 5px;
-      background: var(--accent);
+    /* ── Title ── */
+    .title-block {
+      text-align: center; margin-bottom: 10px;
+      animation: fadeUp .6s .08s ease both;
     }
-    .logo-cell.e { background: transparent; }
-    .logo-cell.g { background: var(--green); }
-    .logo-cell.p { background: var(--accent2); }
-
-    @keyframes spinIn {
-      from { transform: scale(0.3) rotate(-20deg); opacity: 0; }
-      to   { transform: scale(1) rotate(0deg); opacity: 1; }
-    }
-
-    .game-title {
+    .title-block h1 {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(52px, 14vw, 72px);
-      font-weight: 800;
-      letter-spacing: -2px;
-      line-height: 1;
-      background: linear-gradient(135deg, #fff 0%, var(--accent2) 60%, var(--gold) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-size: clamp(60px, 16vw, 82px);
+      font-weight: 800; letter-spacing: -3px; line-height: .95;
+      background: linear-gradient(135deg, #fff 0%, var(--violet) 55%, var(--teal) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-
-    .game-tag {
-      display: inline-block;
-      margin-top: 10px;
-      background: rgba(124,111,247,0.15);
-      border: 1px solid rgba(124,111,247,0.3);
-      border-radius: 50px;
-      padding: 5px 14px;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--accent2);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
+    .subtitle {
+      margin-top: 12px;
+      font-size: 16px; font-weight: 500;
+      color: rgba(255,255,255,0.62);
+      line-height: 1.55;
+      text-align: center;
+      animation: fadeUp .6s .15s ease both;
     }
 
-    /* ── Preview mini-board ── */
-    .preview-wrap {
-      position: relative;
-      margin-bottom: 36px;
-      animation: fadeUp 0.7s 0.15s ease both;
+    /* ── Mini board ── */
+    .board-wrap {
+      position: relative; margin: 32px 0 28px;
+      padding-top: 22px;
+      animation: fadeUp .6s .22s ease both;
     }
-
-    .preview-board {
+    .mini-board {
       display: grid;
       grid-template-columns: repeat(8, 1fr);
-      gap: 3px;
-      padding: 8px;
-      background: rgba(255,255,255,0.04);
-      border: 1.5px solid rgba(255,255,255,0.1);
+      gap: 3px; padding: 7px;
+      width: min(300px, 82vw); aspect-ratio: 1;
+      background: rgba(255,255,255,0.045);
+      border: 1.5px solid rgba(255,255,255,0.11);
       border-radius: 18px;
-      width: min(320px, 86vw);
-      aspect-ratio: 1;
-      backdrop-filter: blur(8px);
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.04),
-        0 20px 60px rgba(0,0,0,0.4),
-        inset 0 1px 0 rgba(255,255,255,0.07);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+    .mc { border-radius: 4px; aspect-ratio:1; background: rgba(255,255,255,0.065); border: 1px solid rgba(255,255,255,0.085); transition: background .25s, box-shadow .25s; }
+    .mc.on { border:none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.2); }
+    .mc.a { background:#7c6ff7; } .mc.b { background:#2dd4bf; }
+    .mc.c { background:#fbbf24; } .mc.d { background:#f472b6; }
+    .mc.e { background:#60a5fa; }
+
+    /* score chip */
+    .score-chip {
+      position: absolute; top: 0; right: 10px;
+      z-index: 10;
+      background: linear-gradient(135deg, var(--purple), var(--violet));
+      border-radius: 50px; padding: 5px 13px;
+      font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800;
+      box-shadow: 0 4px 18px rgba(124,111,247,0.45);
     }
 
-    .pb-cell {
-      border-radius: 4px;
-      background: rgba(255,255,255,0.055);
-      border: 1px solid rgba(255,255,255,0.08);
-      aspect-ratio: 1;
-      transition: background 0.3s, box-shadow 0.3s;
+    /* pieces row */
+    .pieces-row {
+      display: flex; gap: 14px; justify-content: center; margin-top: 10px;
     }
+    .mp { display: grid; gap: 2px; }
+    .mp-c { width: 13px; height: 13px; border-radius: 3px; }
+    .mp-c.f { background: var(--purple); box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); }
+    .mp-c.g { background: var(--teal);   box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); }
+    .mp-c.h { background: var(--gold);   box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); }
+    .mp-c.x { background: transparent; }
 
-    .pb-cell.filled {
-      border: none;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.25),
-        inset 0 -1px 0 rgba(0,0,0,0.2),
-        0 2px 8px rgba(0,0,0,0.3);
-    }
-
-    .pb-cell.c1 { background: #7c6ff7; }
-    .pb-cell.c2 { background: #34d399; }
-    .pb-cell.c3 { background: #f59e0b; }
-    .pb-cell.c4 { background: #ec4899; }
-    .pb-cell.c5 { background: #60a5fa; }
-
-    /* Score overlay */
-    .preview-score {
-      position: absolute;
-      top: -14px;
-      right: 12px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border-radius: 50px;
-      padding: 6px 14px;
-      font-family: 'Syne', sans-serif;
-      font-size: 15px;
-      font-weight: 800;
-      box-shadow: 0 4px 16px rgba(124,111,247,0.4);
-    }
-
-    /* Pieces below board */
-    .preview-pieces {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      margin-top: 12px;
-    }
-
-    .preview-piece {
-      display: grid;
-      gap: 2.5px;
-      opacity: 0.9;
-    }
-
-    .pp-cell {
-      width: 14px;
-      height: 14px;
-      border-radius: 3px;
-    }
-    .pp-cell.f { background: var(--accent); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25); }
-    .pp-cell.e { background: transparent; }
-
-    /* ── Feature pills ── */
+    /* ── Feature strip ── */
     .features {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-      margin-bottom: 36px;
-      animation: fadeUp 0.7s 0.25s ease both;
+      display: flex; flex-wrap: wrap; gap: 8px;
+      justify-content: center; margin-bottom: 28px;
+      animation: fadeUp .6s .28s ease both;
     }
-
     .feat {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 50px;
-      padding: 7px 14px;
-      font-size: 13px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.8);
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 50px; padding: 7px 13px;
+      font-size: 12px; font-weight: 600;
+      color: rgba(255,255,255,0.78);
     }
 
-    /* ── CTA Button ── */
-    .cta-wrap {
+    /* ── Feedback box ── */
+    .feedback-box {
+      width: 100%; background: rgba(45,212,191,0.07);
+      border: 1px solid rgba(45,212,191,0.22);
+      border-radius: 18px; padding: 18px 20px;
+      margin-bottom: 28px;
+      animation: fadeUp .6s .34s ease both;
+    }
+    .feedback-box .fb-title {
+      font-size: 13px; font-weight: 800; color: var(--teal);
+      letter-spacing: .5px; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .feedback-box ul {
+      list-style: none; display: flex; flex-direction: column; gap: 7px;
+    }
+    .feedback-box ul li {
+      font-size: 13px; color: rgba(255,255,255,0.72);
+      display: flex; align-items: flex-start; gap: 8px; line-height: 1.45;
+    }
+    .feedback-box ul li span.ic { flex-shrink: 0; margin-top: 1px; }
+
+    /* ── CTA ── */
+    .cta-area {
       width: 100%;
-      max-width: 320px;
-      animation: fadeUp 0.7s 0.35s ease both;
+      animation: fadeUp .6s .4s ease both;
     }
-
     .btn-play {
-      display: block;
-      width: 100%;
-      padding: 20px;
-      border: none;
-      border-radius: 18px;
-      background: linear-gradient(135deg, #7c6ff7, #a78bfa);
-      color: #fff;
+      display: block; width: 100%;
+      padding: 19px 24px;
+      border: none; border-radius: 16px;
+      background: linear-gradient(135deg, #7c6ff7 0%, #a78bfa 100%);
+      color: #fff; text-decoration: none; text-align: center;
       font-family: 'Syne', sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
+      font-size: 19px; font-weight: 800; letter-spacing: .3px;
       cursor: pointer;
-      text-decoration: none;
-      text-align: center;
-      box-shadow:
-        0 8px 30px rgba(124,111,247,0.5),
-        inset 0 1px 0 rgba(255,255,255,0.2);
-      transition: transform 0.15s, box-shadow 0.15s;
-      position: relative;
-      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(124,111,247,0.5), inset 0 1px 0 rgba(255,255,255,0.18);
+      position: relative; overflow: hidden;
+      transition: transform .15s, box-shadow .15s;
     }
-
     .btn-play::before {
       content: '';
-      position: absolute;
-      top: 0; left: -100%;
-      width: 100%; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-      animation: shimmer 2.5s infinite 1s;
+      position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.13), transparent);
+      animation: shimmer 2.8s infinite 1.2s;
     }
+    @keyframes shimmer { 0%{left:-100%} 100%{left:200%} }
+    .btn-play:active { transform: scale(0.975); box-shadow: 0 4px 18px rgba(124,111,247,0.4); }
 
-    @keyframes shimmer {
-      0%   { left: -100%; }
-      100% { left: 200%; }
-    }
-
-    .btn-play:active {
-      transform: scale(0.97);
-      box-shadow: 0 4px 16px rgba(124,111,247,0.4);
-    }
-
-    .btn-sub {
-      text-align: center;
-      margin-top: 12px;
-      font-size: 12px;
-      color: var(--muted);
+    .btn-note {
+      text-align: center; margin-top: 10px;
+      font-size: 12px; color: var(--muted);
     }
 
     /* ── Footer ── */
-    .footer {
-      margin-top: 40px;
-      text-align: center;
-      font-size: 11px;
-      color: rgba(255,255,255,0.2);
-      animation: fadeUp 0.7s 0.45s ease both;
+    .foot {
+      margin-top: 44px; text-align: center;
+      font-size: 11px; color: rgba(255,255,255,0.2);
+      line-height: 1.7;
+      animation: fadeUp .6s .46s ease both;
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ── Animated board cells ── */
-    @keyframes cellPop {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.08); }
-    }
-
-    .pb-cell.pulse {
-      animation: cellPop 0.4s ease;
+      from { opacity:0; transform:translateY(22px); }
+      to   { opacity:1; transform:translateY(0); }
     }
   </style>
 </head>
 <body>
 
-<!-- Floating background blocks -->
-<div class="bg-blocks" id="bgBlocks"></div>
+<div class="mesh"></div>
+<div class="floats" id="floats"></div>
 
-<div class="page">
+<div class="wrap">
 
-  <!-- Logo -->
-  <div class="logo-area">
-    <div class="logo-icon">
-      <div class="logo-cell p"></div><div class="logo-cell"></div><div class="logo-cell p"></div>
-      <div class="logo-cell"></div><div class="logo-cell g"></div><div class="logo-cell"></div>
-      <div class="logo-cell p"></div><div class="logo-cell p"></div><div class="logo-cell p"></div>
-    </div>
-    <div class="game-title">BlockPop</div>
-    <div class="game-tag">🎮 Ücretsiz · Tarayıcıda Oyna</div>
+  <!-- Beta badge -->
+  <div class="badge"><div class="badge-dot"></div> Beta · Geri Bildirim İstiyoruz</div>
+
+  <!-- Title -->
+  <div class="title-block">
+    <h1>BlockPop</h1>
   </div>
+  <p class="subtitle">Blokları yerleştir, satırları temizle.<br>Ne kadar yüksek skor yapabilirsin?</p>
 
   <!-- Mini board preview -->
-  <div class="preview-wrap">
-    <div class="preview-score">🏆 12,480</div>
-    <div class="preview-board" id="previewBoard"></div>
-    <div class="preview-pieces">
-      <!-- L şekli -->
-      <div class="preview-piece" style="grid-template-columns: repeat(2,1fr)">
-        <div class="pp-cell f"></div><div class="pp-cell e"></div>
-        <div class="pp-cell f"></div><div class="pp-cell e"></div>
-        <div class="pp-cell f"></div><div class="pp-cell f"></div>
+  <div class="board-wrap">
+    <div class="score-chip">🏆 8,640</div>
+    <div class="mini-board" id="miniBoard"></div>
+    <div class="pieces-row">
+      <div class="mp" style="grid-template-columns:repeat(2,1fr)">
+        <div class="mp-c f"></div><div class="mp-c x"></div>
+        <div class="mp-c f"></div><div class="mp-c x"></div>
+        <div class="mp-c f"></div><div class="mp-c f"></div>
       </div>
-      <!-- 2x2 kare -->
-      <div class="preview-piece" style="grid-template-columns: repeat(2,1fr)">
-        <div class="pp-cell f" style="background:#34d399"></div><div class="pp-cell f" style="background:#34d399"></div>
-        <div class="pp-cell f" style="background:#34d399"></div><div class="pp-cell f" style="background:#34d399"></div>
+      <div class="mp" style="grid-template-columns:repeat(2,1fr)">
+        <div class="mp-c g"></div><div class="mp-c g"></div>
+        <div class="mp-c g"></div><div class="mp-c g"></div>
       </div>
-      <!-- Yatay 3 -->
-      <div class="preview-piece" style="grid-template-columns: repeat(3,1fr)">
-        <div class="pp-cell f" style="background:#f59e0b"></div>
-        <div class="pp-cell f" style="background:#f59e0b"></div>
-        <div class="pp-cell f" style="background:#f59e0b"></div>
+      <div class="mp" style="grid-template-columns:repeat(3,1fr)">
+        <div class="mp-c h"></div><div class="mp-c h"></div><div class="mp-c h"></div>
       </div>
     </div>
   </div>
 
   <!-- Features -->
   <div class="features">
-    <div class="feat">⚡ Akıcı Oynanış</div>
-    <div class="feat">🏆 Sıralama Tablosu</div>
+    <div class="feat">🎮 3 Zorluk</div>
+    <div class="feat">⏱ Zaman Modu</div>
+    <div class="feat">🏆 Sıralama</div>
     <div class="feat">🔥 Günlük Streak</div>
     <div class="feat">🎨 8 Tema</div>
+    <div class="feat">💎 Powerup'lar</div>
+  </div>
+
+  <!-- Feedback box -->
+  <div class="feedback-box">
+    <div class="fb-title">💬 Görüşlerin Bizim İçin Değerli</div>
+    <ul>
+      <li><span class="ic">🎯</span> Oynarken neler dikkatini çekti? Sıkıldın mı, devam etmek istedin mi?</li>
+      <li><span class="ic">📱</span> Telefonunda akıcı çalıştı mı? Takılma veya yavaşlama oldu mu?</li>
+      <li><span class="ic">✨</span> Neyi beğendin, neyi değiştirirdin? Her yorum işe yarıyor.</li>
+    </ul>
   </div>
 
   <!-- CTA -->
-  <div class="cta-wrap">
-    <a class="btn-play" href="./game.html">
-      Oynamaya Başla →
-    </a>
-    <div class="btn-sub">Kurulum yok · Tarayıcıda çalışır</div>
+  <div class="cta-area">
+    <a class="btn-play" href="./game.html">Oynamaya Başla →</a>
+    <p class="btn-note">Ücretsiz · Kurulum yok · Tarayıcıda çalışır</p>
   </div>
 
-  <div class="footer">BlockPop &nbsp;·&nbsp; 2025 &nbsp;·&nbsp; Tarayıcıda ücretsiz</div>
+  <!-- Footer -->
+  <div class="foot">
+    BlockPop &nbsp;·&nbsp; Erken Erişim Demo<br>
+    Yorumlarını Instagram'dan paylaşabilirsin 🙌
+  </div>
+
 </div>
 
 <script>
-  // === Mini board state ===
-  const COLS = ['c1','c2','c3','c4','c5'];
-
-  // Başlangıç board durumu (8x8)
-  const boardState = [
+  // ── Mini board ──
+  const B = [
     [0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0],
-    [0,3,3,3,0,0,0,0],
-    [0,3,0,0,0,2,2,0],
-    [1,1,1,1,0,2,2,0],
-    [4,0,0,1,0,2,2,0],
-    [4,4,0,1,5,5,5,0],
+    [0,2,2,0,0,0,0,0],
+    [0,2,2,0,0,3,3,3],
+    [1,1,0,0,0,3,0,0],
+    [1,0,0,4,0,3,5,5],
+    [1,1,4,4,4,3,5,5],
   ];
-
-  // Board oluştur
-  const boardEl = document.getElementById('previewBoard');
+  const CLS = ['','a','b','c','d','e'];
+  const board = document.getElementById('miniBoard');
   const cells = [];
-  for (let y = 0; y < 8; y++) {
-    for (let x = 0; x < 8; x++) {
-      const cell = document.createElement('div');
-      cell.className = 'pb-cell';
-      const v = boardState[y][x];
-      if (v > 0) {
-        cell.classList.add('filled', COLS[v-1]);
-      }
-      boardEl.appendChild(cell);
-      cells.push({ el: cell, x, y, val: v });
-    }
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+    const c = document.createElement('div');
+    c.className = 'mc' + (B[y][x] ? ` on ${CLS[B[y][x]]}` : '');
+    board.appendChild(c);
+    cells.push({ el:c, x, y, v: B[y][x] });
   }
 
-  // Animasyonlu blok ekleme simülasyonu
+  // Simple loop animation: drop a piece, clear a row, repeat
   const moves = [
-    // L şekli c1 rengi
-    { cells: [[2,2],[3,2],[4,2],[4,3]], color: 'c1', delay: 1200 },
-    // 2x2 yeşil
-    { cells: [[5,4],[5,5],[6,4],[6,5]], color: 'c2', delay: 2800 },
-    // Satır temizleme efekti
-    { clear: [5], delay: 4200 },
-    // Yeni blok
-    { cells: [[5,6],[5,7],[6,6],[6,7]], color: 'c3', delay: 5500 },
+    { add: [[2,2,'a'],[3,2,'a'],[4,2,'a']], delay:1000 },
+    { add: [[2,3,'a'],[2,4,'a'],[3,4,'a']], delay:2400 },
+    { clearRow: 7,                           delay:3800 },
+    { add: [[5,5,'b'],[5,6,'b'],[6,5,'b'],[6,6,'b']], delay:5000 },
   ];
-
-  let mIdx = 0;
-  function runMove() {
-    if (mIdx >= moves.length) {
-      // Reset
+  let mi = 0;
+  function next() {
+    if (mi >= moves.length) {
       setTimeout(() => {
-        cells.forEach(c => {
-          c.el.className = 'pb-cell';
-          const v = boardState[c.y][c.x];
-          if (v > 0) c.el.classList.add('filled', COLS[v-1]);
-        });
-        mIdx = 0;
-        setTimeout(runMove, 800);
-      }, 2000);
-      return;
+        cells.forEach(c => { c.el.className = 'mc' + (B[c.y][c.x] ? ` on ${CLS[B[c.y][c.x]]}` : ''); });
+        mi = 0; setTimeout(next, 1200);
+      }, 2200); return;
     }
-
-    const move = moves[mIdx++];
+    const m = moves[mi++];
     setTimeout(() => {
-      if (move.clear) {
-        // Clear row animation
-        const row = move.clear[0];
-        cells.filter(c => c.y === row).forEach(c => {
-          c.el.classList.add('pulse');
-          setTimeout(() => {
-            c.el.className = 'pb-cell';
-            c.el.classList.remove('pulse');
-          }, 300);
+      if (m.clearRow !== undefined) {
+        cells.filter(c => c.y === m.clearRow).forEach(c => {
+          c.el.style.transition = 'background .25s, opacity .25s';
+          c.el.style.opacity = '0';
+          setTimeout(() => { c.el.className = 'mc'; c.el.style.opacity = ''; }, 280);
         });
       } else {
-        move.cells.forEach(([x, y]) => {
-          const c = cells.find(c => c.x === x && c.y === y);
-          if (c) {
-            c.el.classList.add('filled', move.color, 'pulse');
-            setTimeout(() => c.el.classList.remove('pulse'), 400);
-          }
+        m.add.forEach(([x,y,cl]) => {
+          const c = cells.find(c => c.x===x && c.y===y);
+          if (c) c.el.className = `mc on ${cl}`;
         });
       }
-      runMove();
-    }, move.delay);
+      next();
+    }, m.delay);
   }
+  setTimeout(next, 700);
 
-  // Başlat
-  setTimeout(runMove, 800);
-
-  // === Floating background blocks ===
-  const bgEl = document.getElementById('bgBlocks');
-  const colors = ['#7c6ff7','#a78bfa','#34d399','#fbbf24','#60a5fa','#ec4899'];
-  const sizes = [18, 22, 26, 30];
-
-  for (let i = 0; i < 18; i++) {
-    const block = document.createElement('div');
-    block.className = 'bg-block';
-    const size = sizes[Math.floor(Math.random() * sizes.length)];
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const left = Math.random() * 100;
-    const top = Math.random() * 100;
-    const dur = 6 + Math.random() * 8;
-    const delay = -(Math.random() * dur);
-    const rot = (Math.random() - 0.5) * 30;
-    const op = 0.08 + Math.random() * 0.12;
-
-    block.style.cssText = `
-      width:${size}px; height:${size}px;
-      background:${color};
-      left:${left}%;
-      top:${top}%;
-      --dur:${dur}s;
-      --delay:${delay}s;
-      --r:${rot}deg;
-      --op:${op};
-    `;
-    bgEl.appendChild(block);
+  // ── Floating background blocks ──
+  const fl = document.getElementById('floats');
+  const cols = ['#7c6ff7','#a78bfa','#2dd4bf','#fbbf24','#f472b6','#60a5fa'];
+  for (let i = 0; i < 20; i++) {
+    const el = document.createElement('div');
+    el.className = 'fb';
+    const s  = 14 + Math.random()*18;
+    const c  = cols[Math.floor(Math.random()*cols.length)];
+    const d  = 7 + Math.random()*9;
+    const dl = -(Math.random()*d);
+    const r  = (Math.random()-.5)*28;
+    const o  = .05 + Math.random()*.1;
+    el.style.cssText = `width:${s}px;height:${s}px;background:${c};border-radius:${3+Math.random()*5}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${d}s;--dl:${dl}s;--r:${r}deg;--o:${o};`;
+    fl.appendChild(el);
   }
 </script>
 </body>
