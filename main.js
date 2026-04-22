@@ -354,10 +354,7 @@ function showXPSpentToast(cost, type) {
 
 // === ELEMENT TİPLERİ ===
 function getRandomElementType() {
-  const r = Math.random();
-  if (r < 0.07) return 'fire';   // %7 ateş
-  if (r < 0.14) return 'water';  // %7 su
-  return 'normal';               // %86 normal
+  return 'normal'; // Element blokları kaldırıldı
 }
 
 function getColorForType(type) {
