@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3000004">
+  <link rel="stylesheet" href="style.css?v=3000006">
 
   <!-- Firebase -->
   <script type="module">
@@ -43,32 +43,22 @@
       try {
         const cleanName = name.trim().substring(0,16);
         const col = collection(db, 'scores');
-        const modeVal = mode || 'classic';
+        // timeattack ayrı kalır, diğer tüm modlar 'classic' olarak kaydedilir
+        const modeVal = (mode === 'timeattack') ? 'timeattack' : 'classic';
 
         // Aynı isim ve mod için mevcut kayıtları bul
         const q = query(col, where('name','==',cleanName), where('mode','==',modeVal));
         const snap = await getDocs(q);
 
         if (!snap.empty) {
-          // Kayıt var — en yüksek score'u bul
-          let bestDoc = null;
           let bestScore = 0;
           snap.forEach(d => {
-            if (d.data().score > bestScore) {
-              bestScore = d.data().score;
-              bestDoc = d;
-            }
+            if (d.data().score > bestScore) bestScore = d.data().score;
           });
-
-          if (score <= bestScore) return 'same'; // Daha düşük — kaydetme
-
-          // Eski kayıtları sil, yeni yüksek score'u ekle
-          for (const d of snap.docs) {
-            await deleteDoc(d.ref);
-          }
+          if (score <= bestScore) return 'same';
+          for (const d of snap.docs) await deleteDoc(d.ref);
         }
 
-        // Yeni kayıt ekle
         await addDoc(col, {
           name: cleanName,
           score: Math.floor(score),
@@ -82,33 +72,45 @@
 
     window.fbGetScores = async function(tab) {
       try {
-        let q;
         const col = collection(db, 'scores');
+
         if (tab === 'weekly') {
-          // Bu hafta — tüm modları çek, JS'de classic filtrele (composite index gerekmez)
+          // Bu hafta klasik: ts'ye göre filtrele, JS'de sırala (index gerekmez)
           const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
-          q = query(col, where('ts','>=',Timestamp.fromDate(weekAgo)));
-          const snap = await getDocs(q);
+          const snap = await getDocs(query(col, where('ts','>=',Timestamp.fromDate(weekAgo))));
           const rows = snap.docs.map(d=>({...d.data(),id:d.id}))
-            .filter(r => !r.mode || r.mode === 'classic');
-          rows.sort((a,b)=>b.score-a.score);
-          return rows.slice(0,50);
+            .filter(r => r.mode === 'classic' || !r.mode);
+          // Her oyuncudan sadece en yüksek skoru al
+          const best = new Map();
+          rows.forEach(r => {
+            if (!best.has(r.name) || r.score > best.get(r.name).score) best.set(r.name, r);
+          });
+          return [...best.values()].sort((a,b)=>b.score-a.score).slice(0,50);
+
         } else if (tab === 'timeattack') {
-          q = query(col, where('mode','==','timeattack'), orderBy('score','desc'), limit(50));
-          const snap = await getDocs(q);
-          return snap.docs.map(d=>({...d.data(),id:d.id}));
+          // Tüm zaman en yüksek — JS'de sırala
+          const snap = await getDocs(query(col, where('mode','==','timeattack')));
+          const rows = snap.docs.map(d=>({...d.data(),id:d.id}));
+          // Her oyuncudan sadece en yüksek skoru al
+          const best = new Map();
+          rows.forEach(r => {
+            if (!best.has(r.name) || r.score > best.get(r.name).score) best.set(r.name, r);
+          });
+          return [...best.values()].sort((a,b)=>b.score-a.score).slice(0,50);
+
         } else if (tab === 'streak') {
-          // Günlük streak sıralaması — ayrı collection
+          // Streak — streaks collection, JS'de sırala
           const sCol = collection(db, 'streaks');
-          q = query(sCol, orderBy('streak','desc'), limit(50));
-          const snap = await getDocs(q);
-          return snap.docs.map(d=>({...d.data(),id:d.id}));
-        } else {
-          // Fallback: alltime classic
-          q = query(col, where('mode','==','classic'), orderBy('score','desc'), limit(50));
-          const snap = await getDocs(q);
-          return snap.docs.map(d=>({...d.data(),id:d.id}));
+          const snap = await getDocs(sCol);
+          const rows = snap.docs.map(d=>({...d.data(),id:d.id}));
+          // Her oyuncudan sadece en yüksek streak'i al
+          const best = new Map();
+          rows.forEach(r => {
+            if (!best.has(r.name) || r.streak > best.get(r.name).streak) best.set(r.name, r);
+          });
+          return [...best.values()].sort((a,b)=>b.streak-a.streak).slice(0,50);
         }
+        return [];
       } catch(e) { console.warn('Skorlar alınamadı:', e); return []; }
     };
 
@@ -118,20 +120,13 @@
         const cleanName = (name || '').trim().substring(0,16);
         if (!cleanName || !streak || streak < 1) return false;
         const col = collection(db, 'streaks');
-        // Aynı isim için mevcut kaydı bul
-        const q = query(col, where('name','==',cleanName));
-        const snap = await getDocs(q);
+        const snap = await getDocs(query(col, where('name','==',cleanName)));
 
         if (!snap.empty) {
-          let bestDoc = null;
           let bestStreak = 0;
           snap.forEach(d => {
-            if ((d.data().streak || 0) > bestStreak) {
-              bestStreak = d.data().streak || 0;
-              bestDoc = d;
-            }
+            if ((d.data().streak || 0) > bestStreak) bestStreak = d.data().streak || 0;
           });
-          // Sadece yeni streak eskisinden büyükse güncelle
           if (streak <= bestStreak) return 'same';
           for (const d of snap.docs) await deleteDoc(d.ref);
         }
@@ -160,7 +155,7 @@
   <style>
     /* ===== GENEL ===== */
     body {
-      background: linear-gradient(160deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
+      background: linear-gradient(160deg, #1e2a3a 0%, #1a3148 55%, #1a3a5c 100%);
       min-height: 100vh;
     }
 
@@ -180,7 +175,7 @@
     /* ===== ANA MENÜ ===== */
     #welcomeScreen {
       position: fixed; inset: 0;
-      background: #0d0d14;
+      background: #1e2a3a;
       z-index: 1002;
       overflow: hidden;
     }
@@ -188,8 +183,8 @@
       content: '';
       position: absolute; inset: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 30% 20%, rgba(124,111,247,0.18) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 70% 80%, rgba(52,211,153,0.1) 0%, transparent 60%);
+        radial-gradient(ellipse 80% 60% at 30% 20%, rgba(124,111,247,0.22) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 70% 80%, rgba(52,211,153,0.14) 0%, transparent 60%);
     }
     #welcomeScreen.hidden { display: none; }
     .lang-active {
@@ -1614,7 +1609,7 @@
         <div class="diff-icon">🟢</div>
         <div class="diff-info">
           <div class="diff-name">Kolay</div>
-          <div class="diff-desc">Yardımcı bloklar, powerup var</div>
+          <div class="diff-desc">Tam yardımcı bloklar, powerup var</div>
         </div>
       </button>
 
@@ -1622,7 +1617,7 @@
         <div class="diff-icon">🟡</div>
         <div class="diff-info">
           <div class="diff-name">Normal</div>
-          <div class="diff-desc">%70 yardımcı, powerup var</div>
+          <div class="diff-desc">%80 yardımcı, powerup var</div>
         </div>
       </button>
 
@@ -1968,7 +1963,7 @@
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
   <audio id="snd-gameover" src="assets/sounds/gameover.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=3000004"></script>
+  <script src="main.js?v=3000006"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -2998,15 +2993,23 @@
       }, 1000);
     }
 
-    // Reklam ile elmas (placeholder - gerçek reklam SDK'sı entegre edilecek)
+    // Reklam ile elmas — günlük 1 kez
     window.watchAdForDiamonds = function() {
-      // Elmas kazanma reklamı — tema modal'ından bağımsız
+      const todayKey = 'bp_ad_watched_' + new Date().toDateString();
+      if (localStorage.getItem(todayKey)) {
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
+        toast.textContent = currentLang === 'en' ? 'Come back tomorrow for more! 📅' : 'Yarın tekrar gel! 📅';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+        return;
+      }
       const bar = document.createElement('div');
       bar.innerHTML = `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9999;">
         <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px 24px;text-align:center;width:280px;">
           <div style="font-size:40px;margin-bottom:12px;">📺</div>
-          <div style="font-size:18px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin-bottom:8px;">Reklam İzle</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:20px;">5 saniye izle, +15 💎 kazan!</div>
+          <div style="font-size:18px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin-bottom:8px;">${currentLang==='en'?'Watch Ad':'Reklam İzle'}</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:20px;">${currentLang==='en'?'Watch 5 seconds, earn +15 💎!':'5 saniye izle, +15 💎 kazan!'}</div>
           <div style="background:rgba(255,255,255,0.08);border-radius:50px;height:8px;overflow:hidden;margin-bottom:16px;">
             <div id="adDiamondBarFill" style="height:100%;width:0%;background:linear-gradient(90deg,#7c6ff7,#a78bfa);border-radius:50px;transition:width 0.1s;"></div>
           </div>
@@ -3025,6 +3028,7 @@
         if (_adT <= 0) {
           clearInterval(interval);
           bar.remove();
+          localStorage.setItem(todayKey, '1');
           addDiamondsAmount(15);
           const toast = document.createElement('div');
           toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(99,179,237,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:15px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
