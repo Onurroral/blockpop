@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>BlockPop — Oyna</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e1420;
+      --surface: #161e2e;
+      --accent: #7c6ff7;
+      --accent2: #a78bfa;
+      --gold: #fbbf24;
+      --green: #34d399;
+      --text: #ffffff;
+      --muted: rgba(255,255,255,0.45);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 15% 10%, rgba(124,111,247,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 85% 85%, rgba(167,139,250,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 30% at 50% 50%, rgba(52,211,153,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Floating grid blocks ── */
+    .bg-blocks {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-block {
+      position: absolute;
+      border-radius: 8px;
+      opacity: 0;
+      animation: floatBlock var(--dur) ease-in-out infinite var(--delay);
+    }
+
+    @keyframes floatBlock {
+      0%   { opacity: 0; transform: translateY(20px) rotate(var(--r)); }
+      20%  { opacity: var(--op); }
+      80%  { opacity: var(--op); }
+      100% { opacity: 0; transform: translateY(-30px) rotate(var(--r)); }
+    }
+
+    /* ── Main layout ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px 60px;
+      gap: 0;
+    }
+
+    /* ── Logo / Title area ── */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 32px;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    .logo-icon {
+      display: inline-grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      margin-bottom: 20px;
+      animation: spinIn 0.8s cubic-bezier(0.2,1.4,0.4,1) both;
+    }
+
+    .logo-cell {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      background: var(--accent);
+    }
+    .logo-cell.e { background: transparent; }
+    .logo-cell.g { background: var(--green); }
+    .logo-cell.p { background: var(--accent2); }
+
+    @keyframes spinIn {
+      from { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .game-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(52px, 14vw, 72px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1;
+      background: linear-gradient(135deg, #fff 0%, var(--accent2) 60%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .game-tag {
+      display: inline-block;
+      margin-top: 10px;
+      background: rgba(124,111,247,0.15);
+      border: 1px solid rgba(124,111,247,0.3);
+      border-radius: 50px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent2);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* ── Preview mini-board ── */
+    .preview-wrap {
+      position: relative;
+      margin-bottom: 36px;
+      animation: fadeUp 0.7s 0.15s ease both;
+    }
+
+    .preview-board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 3px;
+      padding: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      width: min(320px, 86vw);
+      aspect-ratio: 1;
+      backdrop-filter: blur(8px);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.04),
+        0 20px 60px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+
+    .pb-cell {
+      border-radius: 4px;
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(255,255,255,0.08);
+      aspect-ratio: 1;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    .pb-cell.filled {
+      border: none;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.25),
+        inset 0 -1px 0 rgba(0,0,0,0.2),
+        0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .pb-cell.c1 { background: #7c6ff7; }
+    .pb-cell.c2 { background: #34d399; }
+    .pb-cell.c3 { background: #f59e0b; }
+    .pb-cell.c4 { background: #ec4899; }
+    .pb-cell.c5 { background: #60a5fa; }
+
+    /* Score overlay */
+    .preview-score {
+      position: absolute;
+      top: -14px;
+      right: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      box-shadow: 0 4px 16px rgba(124,111,247,0.4);
+    }
+
+    /* Pieces below board */
+    .preview-pieces {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .preview-piece {
+      display: grid;
+      gap: 2.5px;
+      opacity: 0.9;
+    }
+
+    .pp-cell {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+    }
+    .pp-cell.f { background: var(--accent); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25); }
+    .pp-cell.e { background: transparent; }
+
+    /* ── Feature pills ── */
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 36px;
+      animation: fadeUp 0.7s 0.25s ease both;
+    }
+
+    .feat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 50px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.8);
+    }
+
+    /* ── CTA Button ── */
+    .cta-wrap {
+      width: 100%;
+      max-width: 320px;
+      animation: fadeUp 0.7s 0.35s ease both;
+    }
+
+    .btn-play {
+      display: block;
+      width: 100%;
+      padding: 20px;
+      border: none;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #7c6ff7, #a78bfa);
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      box-shadow:
+        0 8px 30px rgba(124,111,247,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-play::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      animation: shimmer 2.5s infinite 1s;
+    }
+
+    @keyframes shimmer {
+      0%   { left: -100%; }
+      100% { left: 200%; }
+    }
+
+    .btn-play:active {
+      transform: scale(0.97);
+      box-shadow: 0 4px 16px rgba(124,111,247,0.4);
+    }
+
+    .btn-sub {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      animation: fadeUp 0.7s 0.45s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Animated board cells ── */
+    @keyframes cellPop {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    .pb-cell.pulse {
+      animation: cellPop 0.4s ease;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Floating background blocks -->
+<div class="bg-blocks" id="bgBlocks"></div>
+
+<div class="page">
+
+  <!-- Logo -->
+  <div class="logo-area">
+    <div class="logo-icon">
+      <div class="logo-cell p"></div><div class="logo-cell"></div><div class="logo-cell p"></div>
+      <div class="logo-cell"></div><div class="logo-cell g"></div><div class="logo-cell"></div>
+      <div class="logo-cell p"></div><div class="logo-cell p"></div><div class="logo-cell p"></div>
+    </div>
+    <div class="game-title">BlockPop</div>
+    <div class="game-tag">🎮 Ücretsiz · Tarayıcıda Oyna</div>
+  </div>
+
+  <!-- Mini board preview -->
+  <div class="preview-wrap">
+    <div class="preview-score">🏆 12,480</div>
+    <div class="preview-board" id="previewBoard"></div>
+    <div class="preview-pieces">
+      <!-- L şekli -->
+      <div class="preview-piece" style="grid-template-columns: repeat(2,1fr)">
+        <div class="pp-cell f"></div><div class="pp-cell e"></div>
+        <div class="pp-cell f"></div><div class="pp-cell e"></div>
+        <div class="pp-cell f"></div><div class="pp-cell f"></div>
+      </div>
+      <!-- 2x2 kare -->
+      <div class="preview-piece" style="grid-template-columns: repeat(2,1fr)">
+        <div class="pp-cell f" style="background:#34d399"></div><div class="pp-cell f" style="background:#34d399"></div>
+        <div class="pp-cell f" style="background:#34d399"></div><div class="pp-cell f" style="background:#34d399"></div>
+      </div>
+      <!-- Yatay 3 -->
+      <div class="preview-piece" style="grid-template-columns: repeat(3,1fr)">
+        <div class="pp-cell f" style="background:#f59e0b"></div>
+        <div class="pp-cell f" style="background:#f59e0b"></div>
+        <div class="pp-cell f" style="background:#f59e0b"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="features">
+    <div class="feat">⚡ Akıcı Oynanış</div>
+    <div class="feat">🏆 Sıralama Tablosu</div>
+    <div class="feat">🔥 Günlük Streak</div>
+    <div class="feat">🎨 8 Tema</div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-wrap">
+    <a class="btn-play" href="./game.html">
+      Oynamaya Başla →
+    </a>
+    <div class="btn-sub">Kurulum yok · Tarayıcıda çalışır</div>
+  </div>
+
+  <div class="footer">BlockPop &nbsp;·&nbsp; 2025 &nbsp;·&nbsp; Tarayıcıda ücretsiz</div>
+</div>
+
+<script>
+  // === Mini board state ===
+  const COLS = ['c1','c2','c3','c4','c5'];
+
+  // Başlangıç board durumu (8x8)
+  const boardState = [
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,3,3,3,0,0,0,0],
+    [0,3,0,0,0,2,2,0],
+    [1,1,1,1,0,2,2,0],
+    [4,0,0,1,0,2,2,0],
+    [4,4,0,1,5,5,5,0],
+  ];
+
+  // Board oluştur
+  const boardEl = document.getElementById('previewBoard');
+  const cells = [];
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'pb-cell';
+      const v = boardState[y][x];
+      if (v > 0) {
+        cell.classList.add('filled', COLS[v-1]);
+      }
+      boardEl.appendChild(cell);
+      cells.push({ el: cell, x, y, val: v });
+    }
+  }
+
+  // Animasyonlu blok ekleme simülasyonu
+  const moves = [
+    // L şekli c1 rengi
+    { cells: [[2,2],[3,2],[4,2],[4,3]], color: 'c1', delay: 1200 },
+    // 2x2 yeşil
+    { cells: [[5,4],[5,5],[6,4],[6,5]], color: 'c2', delay: 2800 },
+    // Satır temizleme efekti
+    { clear: [5], delay: 4200 },
+    // Yeni blok
+    { cells: [[5,6],[5,7],[6,6],[6,7]], color: 'c3', delay: 5500 },
+  ];
+
+  let mIdx = 0;
+  function runMove() {
+    if (mIdx >= moves.length) {
+      // Reset
+      setTimeout(() => {
+        cells.forEach(c => {
+          c.el.className = 'pb-cell';
+          const v = boardState[c.y][c.x];
+          if (v > 0) c.el.classList.add('filled', COLS[v-1]);
+        });
+        mIdx = 0;
+        setTimeout(runMove, 800);
+      }, 2000);
+      return;
+    }
+
+    const move = moves[mIdx++];
+    setTimeout(() => {
+      if (move.clear) {
+        // Clear row animation
+        const row = move.clear[0];
+        cells.filter(c => c.y === row).forEach(c => {
+          c.el.classList.add('pulse');
+          setTimeout(() => {
+            c.el.className = 'pb-cell';
+            c.el.classList.remove('pulse');
+          }, 300);
+        });
+      } else {
+        move.cells.forEach(([x, y]) => {
+          const c = cells.find(c => c.x === x && c.y === y);
+          if (c) {
+            c.el.classList.add('filled', move.color, 'pulse');
+            setTimeout(() => c.el.classList.remove('pulse'), 400);
+          }
+        });
+      }
+      runMove();
+    }, move.delay);
+  }
+
+  // Başlat
+  setTimeout(runMove, 800);
+
+  // === Floating background blocks ===
+  const bgEl = document.getElementById('bgBlocks');
+  const colors = ['#7c6ff7','#a78bfa','#34d399','#fbbf24','#60a5fa','#ec4899'];
+  const sizes = [18, 22, 26, 30];
+
+  for (let i = 0; i < 18; i++) {
+    const block = document.createElement('div');
+    block.className = 'bg-block';
+    const size = sizes[Math.floor(Math.random() * sizes.length)];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const left = Math.random() * 100;
+    const top = Math.random() * 100;
+    const dur = 6 + Math.random() * 8;
+    const delay = -(Math.random() * dur);
+    const rot = (Math.random() - 0.5) * 30;
+    const op = 0.08 + Math.random() * 0.12;
+
+    block.style.cssText = `
+      width:${size}px; height:${size}px;
+      background:${color};
+      left:${left}%;
+      top:${top}%;
+      --dur:${dur}s;
+      --delay:${delay}s;
+      --r:${rot}deg;
+      --op:${op};
+    `;
+    bgEl.appendChild(block);
+  }
+</script>
+</body>
+</html>
