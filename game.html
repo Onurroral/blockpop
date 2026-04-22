@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3000006">
+  <link rel="stylesheet" href="style.css?v=3000007">
 
   <!-- Firebase -->
   <script type="module">
@@ -1458,23 +1458,23 @@
           </div>
         </div>
         <div class="settings-row">
-          <span>Ses Efektleri</span>
+          <span data-lang-key="soundFx">Ses Efektleri</span>
           <div class="toggle" id="tgl-sfx"></div>
         </div>
         <div class="settings-row">
-          <span>Müzik</span>
+          <span data-lang-key="music">Müzik</span>
           <div class="toggle off" id="tgl-music"></div>
         </div>
         <div class="settings-row">
-          <span>Titreşim</span>
+          <span data-lang-key="vibration">Titreşim</span>
           <div class="toggle" id="tgl-haptic"></div>
         </div>
         <div class="settings-row">
-          <span>Animasyonlar</span>
+          <span data-lang-key="animations">Animasyonlar</span>
           <div class="toggle" id="tgl-anim"></div>
         </div>
         <div class="settings-row" style="border-bottom:none;">
-          <span>Dil / Language</span>
+          <span data-lang-key="language">Dil / Language</span>
           <div style="display:flex;gap:6px;">
             <button id="langTR" onclick="setLang('tr')" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;" class="lang-active">🇹🇷 TR</button>
             <button id="langEN" onclick="setLang('en')" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;">🇬🇧 EN</button>
@@ -1961,9 +1961,9 @@
   <audio id="snd-place" src="assets/sounds/place.mp3" preload="auto"></audio>
   <audio id="snd-clear" src="assets/sounds/clear.mp3" preload="auto"></audio>
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
-  <audio id="snd-gameover" src="assets/sounds/gameover.mp3" preload="auto"></audio>
+  <audio id="snd-gameover" src="assets/sounds/gameover1.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=3000006"></script>
+  <script src="main.js?v=3000007"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -2566,7 +2566,7 @@
         music: 'Müzik',
         vibration: 'Titreşim',
         animations: 'Animasyonlar',
-        language: 'Dil',
+        language: 'Dil / Language',
         back: '← Geri',
         // Oyun içi
         menuBtn: '🏠 Menü',
@@ -2728,18 +2728,9 @@
 
       // Ayarlar toggle etiketleri
       document.querySelectorAll('.settings-row span:first-child, .igs-row span:first-child').forEach(el => {
-        const txt = el.textContent.trim();
-        const map = {
-          'Ses Efektleri':'Sound Effects','Sound Effects':'Ses Efektleri',
-          'Müzik':'Music','Music':'Müzik',
-          'Titreşim':'Vibration','Vibration':'Titreşim',
-          'Animasyonlar':'Animations','Animations':'Animasyonlar',
-          'Dil / Language':'Dil / Language',
-        };
-        if (L === 'en' && map[txt]) el.textContent = map[txt];
-        else if (L === 'tr') {
-          const rev = Object.entries(map).find(([,v])=>v===txt);
-          if (rev) el.textContent = rev[0];
+        const key = el.dataset.langKey;
+        if (key && LANGS[L] && LANGS[L][key]) {
+          el.textContent = LANGS[L][key];
         }
       });
 
