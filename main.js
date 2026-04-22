@@ -294,7 +294,7 @@ function vibrate(pattern) {
 }
 
 
-// === POWERUP XP SİSTEMİ ===
+// === POWERUP ELMAS MALİYETİ ===
 const POWERUP_XP_COST = {
   clearRow: 100,
   reroll:   75,
@@ -347,7 +347,7 @@ function showXPSpentToast(cost, type) {
   const names = { clearRow: 'Satır Sil', reroll: 'Parça Yenile', undo: 'Geri Al' };
   const t = document.createElement('div');
   t.style.cssText = 'position:fixed;bottom:140px;left:50%;transform:translateX(-50%);background:rgba(255,210,77,0.9);color:#1a1a2e;padding:8px 18px;border-radius:50px;font-size:13px;font-weight:600;z-index:9999;pointer-events:none;animation:xpToastAnim 1.8s ease forwards;';
-  t.textContent = `-${cost} XP → ${names[type]} +1`;
+  t.textContent = `-${cost} 💎 → ${names[type]} +1`;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 1800);
 }
@@ -1576,7 +1576,7 @@ function updatePowerupUI() {
       btn.dataset.xpMode = 'false';
     } else if (!isGameOver) {
       btn.disabled = false;
-      btn.innerHTML = `${label} <span class="pu-xp-buy">💎 +1 · ${xpCost} XP</span>`;
+      btn.innerHTML = `${label} <span class="pu-xp-buy">💎 ${xpCost}</span>`;
       btn.dataset.xpMode = 'true';
       btn.dataset.xpKey  = xpKey;
       btn.classList.remove('active');
