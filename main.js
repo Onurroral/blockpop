@@ -1102,7 +1102,12 @@ document.addEventListener('pointerdown', _getCtx, { once: true });
 // === ARKA PLAN MÜZİĞİ ===
 let _bgMusic = null;
 
-function _isMusicOn() { return localStorage.getItem('tgl-music') !== 'off'; }
+function _isMusicOn() {
+  const val = localStorage.getItem('tgl-music');
+  // default 'off' — kullanıcı açmadıysa çalma
+  if (val === null) return false;
+  return val !== 'off';
+}
 
 function startBgMusic() {
   if (!_bgMusic) _bgMusic = document.getElementById('snd-bg');
