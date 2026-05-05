@@ -328,6 +328,7 @@ function buyPowerupWithXP(type) {
   if (type === 'clearRow') { clearRowCharges++; }
   else if (type === 'reroll') { rerollCharges++; }
   else if (type === 'undo') { undoCharges++; }
+  localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
 
   updatePowerupUI();
   vibrate(40);
@@ -1024,7 +1025,7 @@ function playSndCombo(level) {
 
 // Game over: dramatik çöküş
 function playSndGameOver() {
-  // assets/sounds/gameover1.mp3 kullan
+  if (!_isOn()) return; // Ses efekti kapalıysa çalma
   if (!sndGameOver) sndGameOver = document.getElementById('snd-gameover');
   if (sndGameOver) {
     sndGameOver.currentTime = 0;
@@ -1480,7 +1481,27 @@ function restoreState() {
 // === POWER-UP SETUP ===
 let powerupsInitialized = false;
 
+function giveFirstLaunchGift() {
+  if (localStorage.getItem('bp_first_gift_given')) return;
+  localStorage.setItem('bp_first_gift_given', '1');
+  // Sadece localStorage'a kaydet — memory'e değil (resetGame okuyacak)
+  localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges: 2, rerollCharges: 2, undoCharges: 2 }));
+  setTimeout(() => {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,rgba(15,15,25,0.98),rgba(20,20,40,0.98));border:1px solid rgba(251,191,36,0.4);border-radius:18px;padding:16px 20px;display:flex;align-items:center;gap:12px;z-index:9999;pointer-events:none;box-shadow:0 8px 32px rgba(251,191,36,0.2);animation:achieveSlide 4s ease forwards;min-width:280px;';
+    toast.innerHTML = '<div style="font-size:32px">🎁</div><div><div style="font-size:11px;font-weight:700;color:#fbbf24;letter-spacing:1px;text-transform:uppercase;">HOŞ GELDİN!</div><div style="font-size:14px;font-weight:900;color:#fff;font-family:Nunito,sans-serif;margin:3px 0">Başlangıç hediyeni aldın!</div><div style="font-size:12px;color:rgba(255,255,255,0.6);">🗑️×2 &nbsp; 🔄×2 &nbsp; ↩️×2 powerup</div></div>';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }, 1500);
+}
+
 function setupPowerups() {
+  giveFirstLaunchGift();
+  // LocalStorage'dan powerup değerlerini hemen yükle
+  const _pu = JSON.parse(localStorage.getItem('bp_powerups') || '{}');
+  clearRowCharges = _pu.clearRowCharges ?? 0;
+  rerollCharges   = _pu.rerollCharges   ?? 0;
+  undoCharges     = _pu.undoCharges     ?? 0;
   const btnClearRow = document.getElementById('pu-clear-row');
   const btnReroll   = document.getElementById('pu-reroll');
   const btnUndo     = document.getElementById('pu-undo');
@@ -1522,6 +1543,7 @@ function setupPowerups() {
       saveState();
       rerollPieces();
       rerollCharges--;
+      localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
       playSndWhoosh();
       btnReroll.classList.add('used-flash');
       setTimeout(() => btnReroll.classList.remove('used-flash'), 250);
@@ -1538,6 +1560,7 @@ function setupPowerups() {
       if (undoCharges <= 0 || !lastState) return;
       restoreState();
       undoCharges--;
+      localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
       lastState = null;
       playSndWhoosh();
       btnUndo.classList.add('used-flash');
@@ -1843,11 +1866,8 @@ function checkGameOver() {
 
   if (anyCanPlace) return;
 
-  // Zor mod ve zaman modunda powerup yok sayılır
-  const isHard = window.currentGameMode === 'hard';
+  // Direkt game over — powerup kullanımı game over ekranından yapılır
   const isTime = window.currentGameMode === 'timeattack';
-  if (!isHard && !isTime && (clearRowCharges > 0 || rerollCharges > 0 || undoCharges > 0)) return;
-
   isGameOver = true;
   updatePowerupUI();
   playSndGameOver();
@@ -1978,6 +1998,7 @@ function clearRowAt(rowY) {
     }
 
     clearRowCharges--;
+    localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
     clearRowMode = false;
 
     updatePowerupUI();
@@ -2232,17 +2253,18 @@ function clearCompletedLines() {
       }
       const animEnabled = localStorage.getItem('tgl-anim') !== 'off';
       if (animEnabled) {
-        const sample = burstCells.filter((_, i) => i % Math.ceil(burstCells.length / 4) === 0).slice(0, 4);
-        sample.forEach(({ cell, color }) => spawnBurstParticles(cell, color, 4));
+        // Max 3 burst particle — kasma azaltmak için
+        const sample = burstCells.filter((_, i) => i % Math.ceil(burstCells.length / 3) === 0).slice(0, 3);
+        sample.forEach(({ cell, color }) => spawnBurstParticles(cell, color, 3));
 
-        // Toz efekti — temizlenen hücrelerin konumlarını topla
-        const dustCells = [];
-        for (let y = 0; y < BOARD_SIZE; y++) {
-          for (let x = 0; x < BOARD_SIZE; x++) {
-            if (toClear[y][x]) dustCells.push({ row: y, col: x });
-          }
+        // Toz efekti — sadece 9+ hücre temizlenince (büyük patlama)
+        if (burstCells.length >= 9) {
+          const dustCells = [];
+          for (let y = 0; y < BOARD_SIZE; y++)
+            for (let x = 0; x < BOARD_SIZE; x++)
+              if (toClear[y][x]) dustCells.push({ row: y, col: x });
+          spawnDustEffect(dustCells);
         }
-        spawnDustEffect(dustCells);
       }
 
       setTimeout(() => {
@@ -2425,9 +2447,11 @@ function resetGame() {
   gameMaxCombo = 0;
   isGameOver = false;
   score = 0;
-  clearRowCharges = 1;
-  rerollCharges = 1;
-  undoCharges = 1;
+  // Powerup'ları localStorage'dan yükle — her oyunda sıfırlanmaz
+  const _pu = JSON.parse(localStorage.getItem('bp_powerups') || '{}');
+  clearRowCharges = _pu.clearRowCharges ?? 0;
+  rerollCharges   = _pu.rerollCharges   ?? 0;
+  undoCharges     = _pu.undoCharges     ?? 0;
   clearRowMode = false;
   lastState = null;
   selectedPiece = null;
@@ -2456,9 +2480,11 @@ function createGridSizedPreview(shape, colorName) {
   const color = colorToHex(colorName) || '#7c6ff7';
 
   // %80 boyutunda preview
-  const scale = 1.0;  // BlockBlast gibi tam boyut — küçülme yok
+  const scale = 1.0;
   const previewCell = cellSize * scale;
   const previewGap  = gap * scale;
+
+  // Container
   const el = document.createElement('div');
   el.style.cssText = `
     position: fixed;
@@ -2537,12 +2563,22 @@ function startDragPiece(pieceEl, shape, event) {
   window.addEventListener('pointercancel', onPointerUp);
 }
 
+let _rafPending = false;
+let _lastE = null;
+
 function onPointerMove(e) {
   if (!isDragging) return;
   if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
-  updateDragPosition(e);
-  // Ghost: parmağın tam koordinatı — preview ile aynı merkez
-  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
+  _lastE = e;
+  if (!_rafPending) {
+    _rafPending = true;
+    requestAnimationFrame(() => {
+      _rafPending = false;
+      if (!isDragging || !_lastE) return;
+      updateDragPosition(_lastE);
+      updateGhostPreview(_lastE.clientX, _lastE.clientY - dragLiftY);
+    });
+  }
 }
 
 function updateGhostFromEvent(e) {
@@ -2571,13 +2607,49 @@ function onPointerUp(e) {
   setTimeout(() => document.body.classList.remove("snap-slow"), 80);
 
 
-  // lastGhostCell artık [startX, startY] — direkt tryPlacePiece'e ver
+  // Önce lastGhostCell'i dene
   if (lastGhostCell && selectedShape) {
     const [startX, startY] = lastGhostCell;
     tryPlacePieceAt(startX, startY);
   } else if (selectedShape) {
+    // lastGhostCell yoksa (hızlı sürükleme) — parmağın pozisyonundan hesapla
     const snapped = trySnapToValid(e.clientX, e.clientY - dragLiftY);
-    if (snapped) tryPlacePieceAt(snapped[0], snapped[1]);
+    if (snapped) {
+      tryPlacePieceAt(snapped[0], snapped[1]);
+    } else {
+      // Hâlâ fit etmiyorsa — board üzerindeyse en yakın boş pozisyonu bul
+      const boardEl = document.getElementById('board');
+      const rect = boardEl ? boardEl.getBoundingClientRect() : null;
+      if (rect) {
+        const pad = 6, gap = 3;
+        const innerW = rect.width - pad * 2;
+        const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+        const step = cellSize + gap;
+        const fx = (e.clientX - rect.left - pad) / step;
+        const fy = (e.clientY - dragLiftY - rect.top - pad) / step;
+        const h = selectedShape.length, w = selectedShape[0].length;
+        const anchorX = (w - 1) / 2, anchorY = (h - 1) / 2;
+        const baseX = Math.max(0, Math.min(BOARD_SIZE - w, Math.floor(fx - anchorX + 0.5)));
+        const baseY = Math.max(0, Math.min(BOARD_SIZE - h, Math.floor(fy - anchorY + 0.5)));
+        // Çevresinde ara — 2 hücrelik radius
+        let best = null, bestDist = Infinity;
+        for (let dy = -2; dy <= 2; dy++) {
+          for (let dx = -2; dx <= 2; dx++) {
+            const sx = Math.max(0, Math.min(BOARD_SIZE - w, baseX + dx));
+            const sy = Math.max(0, Math.min(BOARD_SIZE - h, baseY + dy));
+            let fits = true;
+            for (let y = 0; y < h && fits; y++)
+              for (let x = 0; x < w && fits; x++)
+                if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) fits = false;
+            if (fits) {
+              const dist = dx*dx + dy*dy;
+              if (dist < bestDist) { bestDist = dist; best = [sx, sy]; }
+            }
+          }
+        }
+        if (best) tryPlacePieceAt(best[0], best[1]);
+      }
+    }
   }
 
   isDragging = false;
@@ -2604,7 +2676,7 @@ function updateDragPosition(e) {
   const h = selectedShape.length;
   const w = selectedShape[0].length;
 
-  const scale = 1.0;  // tam boyut
+  const scale = 1.0;
   const previewW = (w * cellSize + (w - 1) * gap) * scale;
   const previewH = (h * cellSize + (h - 1) * gap) * scale;
 
