@@ -1107,8 +1107,7 @@ let _bgMusic = null;
 
 function _isMusicOn() {
   const val = localStorage.getItem('tgl-music');
-  // default 'off' — kullanıcı açmadıysa çalma
-  if (val === null) return false;
+  if (val === null) return true; // default açık
   return val !== 'off';
 }
 
@@ -2612,44 +2611,9 @@ function onPointerUp(e) {
     const [startX, startY] = lastGhostCell;
     tryPlacePieceAt(startX, startY);
   } else if (selectedShape) {
-    // lastGhostCell yoksa (hızlı sürükleme) — parmağın pozisyonundan hesapla
+    // lastGhostCell yoksa parmağın son pozisyonundan hesapla
     const snapped = trySnapToValid(e.clientX, e.clientY - dragLiftY);
-    if (snapped) {
-      tryPlacePieceAt(snapped[0], snapped[1]);
-    } else {
-      // Hâlâ fit etmiyorsa — board üzerindeyse en yakın boş pozisyonu bul
-      const boardEl = document.getElementById('board');
-      const rect = boardEl ? boardEl.getBoundingClientRect() : null;
-      if (rect) {
-        const pad = 6, gap = 3;
-        const innerW = rect.width - pad * 2;
-        const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
-        const step = cellSize + gap;
-        const fx = (e.clientX - rect.left - pad) / step;
-        const fy = (e.clientY - dragLiftY - rect.top - pad) / step;
-        const h = selectedShape.length, w = selectedShape[0].length;
-        const anchorX = (w - 1) / 2, anchorY = (h - 1) / 2;
-        const baseX = Math.max(0, Math.min(BOARD_SIZE - w, Math.floor(fx - anchorX + 0.5)));
-        const baseY = Math.max(0, Math.min(BOARD_SIZE - h, Math.floor(fy - anchorY + 0.5)));
-        // Çevresinde ara — 2 hücrelik radius
-        let best = null, bestDist = Infinity;
-        for (let dy = -2; dy <= 2; dy++) {
-          for (let dx = -2; dx <= 2; dx++) {
-            const sx = Math.max(0, Math.min(BOARD_SIZE - w, baseX + dx));
-            const sy = Math.max(0, Math.min(BOARD_SIZE - h, baseY + dy));
-            let fits = true;
-            for (let y = 0; y < h && fits; y++)
-              for (let x = 0; x < w && fits; x++)
-                if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) fits = false;
-            if (fits) {
-              const dist = dx*dx + dy*dy;
-              if (dist < bestDist) { bestDist = dist; best = [sx, sy]; }
-            }
-          }
-        }
-        if (best) tryPlacePieceAt(best[0], best[1]);
-      }
-    }
+    if (snapped) tryPlacePieceAt(snapped[0], snapped[1]);
   }
 
   isDragging = false;
@@ -2731,7 +2695,6 @@ function trySnapToValid(clientX, clientY) {
   const h = selectedShape.length;
   const w = selectedShape[0].length;
 
-  // Board CSS sabit değerleri: padding=6px, gap=3px
   const pad  = 6;
   const gap  = 3;
   const innerW = rect.width - pad * 2;
@@ -2741,19 +2704,18 @@ function trySnapToValid(clientX, clientY) {
   const gridLeft = rect.left + pad;
   const gridTop  = rect.top  + pad;
 
-  // Koordinat tamamen board dışındaysa null
+  // Board dışındaysa null
   if (clientX < rect.left - cellSize || clientX > rect.right + cellSize ||
       clientY < rect.top  - cellSize || clientY > rect.bottom + cellSize) return null;
 
-  // Parmağın grid'deki float pozisyonu — klamp yok, ham değer
-  // updateDragPosition de aynı clientX/clientY kullanıyor, böylece ikisi aynı noktayı işaret eder
+  // Float pozisyon
   const fx = (clientX - gridLeft) / step;
   const fy = (clientY - gridTop)  / step;
 
   // Şeklin merkezi
   const { cx: shapeCX, cy: shapeCY } = getShapeCenter(selectedShape);
 
-  // Shape'in sol-üst köşesi — deterministic round (banker rounding yok)
+  // Sol-üst köşe — board sınırlarına klamp
   const startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.floor(fx - shapeCX + 0.5)));
   const startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.floor(fy - shapeCY + 0.5)));
 
@@ -2765,31 +2727,23 @@ function trySnapToValid(clientX, clientY) {
         fits = false;
   if (fits) return [startX, startY];
 
-  // Tam pozisyon tutmadı — parmağın hareket yönüne göre akıllı nudge
-  // Sadece parmak hücre sınırına çok yakınsa (±0.35 hücre) komşuyu dene
-  const fracX = (fx - shapeCX) - Math.floor(fx - shapeCX + 0.5); // -0.5..+0.5
+  // Tam fit etmiyorsa — parmağın fraksiyon yönüne göre sıralı 4 yön dene
+  const fracX = (fx - shapeCX) - Math.floor(fx - shapeCX + 0.5);
   const fracY = (fy - shapeCY) - Math.floor(fy - shapeCY + 0.5);
 
-  // En yakın komşu yönü — sadece 1 adım, 4 yön değil
-  const nudges = [];
-  if (Math.abs(fracX) > Math.abs(fracY)) {
-    nudges.push([fracX > 0 ? 1 : -1, 0]);
-    nudges.push([0, fracY > 0 ? 1 : -1]);
-  } else {
-    nudges.push([0, fracY > 0 ? 1 : -1]);
-    nudges.push([fracX > 0 ? 1 : -1, 0]);
-  }
+  // Yatay mı dikey mi daha yakın?
+  const offsets = Math.abs(fracX) >= Math.abs(fracY)
+    ? [[fracX >= 0 ? 1 : -1, 0], [0, fracY >= 0 ? 1 : -1], [fracX >= 0 ? -1 : 1, 0], [0, fracY >= 0 ? -1 : 1]]
+    : [[0, fracY >= 0 ? 1 : -1], [fracX >= 0 ? 1 : -1, 0], [0, fracY >= 0 ? -1 : 1], [fracX >= 0 ? -1 : 1, 0]];
 
-  for (const [dx, dy] of nudges) {
+  for (const [dx, dy] of offsets) {
     const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX + dx));
     const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY + dy));
-    // Aynı pozisyona tekrar bakma
     if (sx === startX && sy === startY) continue;
     let ok = true;
     for (let y = 0; y < h && ok; y++)
       for (let x = 0; x < w && ok; x++)
-        if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null)
-          ok = false;
+        if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) ok = false;
     if (ok) return [sx, sy];
   }
 
