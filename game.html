@@ -2022,7 +2022,7 @@
     // Ana ayarlar + oyun içi ayarlar eşleşiyor
     const togglePairs = [
       { main: 'tgl-sfx',    ig: 'tgl-sfx-ig',    key: 'tgl-sfx',    default: 'on'  },
-      { main: 'tgl-music',  ig: 'tgl-music-ig',   key: 'tgl-music',  default: 'off' },
+      { main: 'tgl-music',  ig: 'tgl-music-ig',   key: 'tgl-music',  default: 'on'  },
       { main: 'tgl-haptic', ig: 'tgl-haptic-ig',  key: 'tgl-haptic', default: 'on'  },
       { main: 'tgl-anim',   ig: 'tgl-anim-ig',    key: 'tgl-anim',   default: 'on'  },
     ];
@@ -3876,7 +3876,7 @@
       const _toast4 = document.createElement('div');
       _toast4.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(124,111,247,0.95);color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
       _toast4.textContent = msg;
-      document.body.appendChild(t);
+      document.body.appendChild(_toast4);
       setTimeout(() => _toast4.remove(), 2500);
     }
 
