@@ -2565,6 +2565,109 @@ function startDragPiece(pieceEl, shape, event) {
 let _rafPending = false;
 let _lastE = null;
 
+// Tek birleşik update — önce grid pozisyonu hesapla, sonra preview ve ghost ikisini de ona göre yerleştir
+function _updateAll(e) {
+  if (!isDragging || !selectedShape || !dragPreviewEl) return;
+
+  const boardEl = document.getElementById('board');
+  const rect = boardEl.getBoundingClientRect();
+  const pad = 6, gap = 3;
+  const innerW = rect.width - pad * 2;
+  const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+  const step = cellSize + gap;
+  const gridLeft = rect.left + pad;
+  const gridTop  = rect.top  + pad;
+
+  const fingerX = e.clientX;
+  const fingerY = e.clientY - dragLiftY;
+
+  const h = selectedShape.length;
+  const w = selectedShape[0].length;
+
+  // 1. Parmağın grid'deki float pozisyonu
+  const fx = (fingerX - gridLeft) / step;
+  const fy = (fingerY - gridTop)  / step;
+
+  // 2. Şeklin sol-üst köşesi (en yakın hücreye yuvarla)
+  let startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(fx - (w - 1) / 2)));
+  let startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(fy - (h - 1) / 2)));
+
+  // 3. Board üzerinde mi?
+  const overBoard = fingerX >= rect.left - cellSize && fingerX <= rect.right + cellSize &&
+                    fingerY >= rect.top  - cellSize && fingerY <= rect.bottom + cellSize;
+
+  // 4. Fit kontrolü
+  let fits = false;
+  if (overBoard) {
+    fits = true;
+    for (let y = 0; y < h && fits; y++)
+      for (let x = 0; x < w && fits; x++)
+        if (selectedShape[y][x] === 1 && board[startY+y][startX+x] !== null)
+          fits = false;
+
+    // Fit etmiyorsa komşu yönlere bak
+    if (!fits) {
+      const fracX = fx - (w - 1) / 2 - Math.round(fx - (w - 1) / 2);
+      const fracY = fy - (h - 1) / 2 - Math.round(fy - (h - 1) / 2);
+      const offsets = Math.abs(fracX) >= Math.abs(fracY)
+        ? [[fracX >= 0 ? 1 : -1, 0], [0, fracY >= 0 ? 1 : -1], [fracX >= 0 ? -1 : 1, 0], [0, fracY >= 0 ? -1 : 1]]
+        : [[0, fracY >= 0 ? 1 : -1], [fracX >= 0 ? 1 : -1, 0], [0, fracY >= 0 ? -1 : 1], [fracX >= 0 ? -1 : 1, 0]];
+      for (const [dx, dy] of offsets) {
+        const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX + dx));
+        const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY + dy));
+        if (sx === startX && sy === startY) continue;
+        let ok = true;
+        for (let y = 0; y < h && ok; y++)
+          for (let x = 0; x < w && ok; x++)
+            if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) ok = false;
+        if (ok) { startX = sx; startY = sy; fits = true; break; }
+      }
+    }
+  }
+
+  // 5. PREVIEW: parmağı serbest takip et (uçsun)
+  const previewW = (w * cellSize + (w-1) * gap);
+  const previewH = (h * cellSize + (h-1) * gap);
+  const tx = Math.round(fingerX - previewW / 2);
+  const ty = Math.round(fingerY - previewH / 2);
+  dragPreviewEl.style.transform = `translate3d(${tx}px,${ty}px,0)`;
+  dragPreviewEl.style.opacity = '0.9';
+
+  // 6. GHOST: preview ile aynı hücre — ikisi zaten örtüşüyor
+  if (fits) {
+    if (startX === _lastGhostX && startY === _lastGhostY) return; // değişmediyse skip
+    clearGhostPreview();
+    clearPrediction();
+    _lastGhostX = startX;
+    _lastGhostY = startY;
+    lastGhostCell = [startX, startY];
+
+    const cells = getCells();
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (selectedShape[y][x] !== 1) continue;
+        const idx = (startY + y) * BOARD_SIZE + (startX + x);
+        const cellEl = cells[idx];
+        if (cellEl) { cellEl.classList.add('ghost-valid'); _activeGhostCells.push(cellEl); }
+      }
+    }
+
+    const tempBoard = board.map(r => r.slice());
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++)
+        if (selectedShape[y][x] === 1) tempBoard[startY+y][startX+x] = { type:'normal' };
+    showClearPrediction(tempBoard);
+
+  } else {
+    if (_lastGhostX !== -1 || _lastGhostY !== -1) {
+      clearGhostPreview();
+      clearPrediction();
+      _lastGhostX = -1; _lastGhostY = -1;
+      lastGhostCell = null;
+    }
+  }
+}
+
 function onPointerMove(e) {
   if (!isDragging) return;
   if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
@@ -2574,15 +2677,13 @@ function onPointerMove(e) {
     requestAnimationFrame(() => {
       _rafPending = false;
       if (!isDragging || !_lastE) return;
-      updateDragPosition(_lastE);
-      updateGhostPreview(_lastE.clientX, _lastE.clientY - dragLiftY);
+      _updateAll(_lastE);
     });
   }
 }
 
 function updateGhostFromEvent(e) {
-  updateDragPosition(e);
-  updateGhostPreview(e.clientX, e.clientY - dragLiftY);
+  _updateAll(e);
 }
 
 function onPointerUp(e) {
@@ -2715,9 +2816,9 @@ function trySnapToValid(clientX, clientY) {
   // Şeklin merkezi
   const { cx: shapeCX, cy: shapeCY } = getShapeCenter(selectedShape);
 
-  // Sol-üst köşe — board sınırlarına klamp
-  const startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.floor(fx - shapeCX + 0.5)));
-  const startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.floor(fy - shapeCY + 0.5)));
+  // Parmağın float pozisyonundan şeklin merkezi çıkarılır, en yakın hücreye yuvarlanır
+  const startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(fx - (w - 1) / 2)));
+  const startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(fy - (h - 1) / 2)));
 
   // Çakışma kontrolü — tam pozisyon
   let fits = true;
