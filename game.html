@@ -1845,15 +1845,22 @@
         <button id="continueDiamondBtn" onclick="continueWithDiamonds()" style="width:100%;padding:14px;border-radius:14px;border:1px solid rgba(96,165,250,0.4);background:rgba(96,165,250,0.08);color:#60a5fa;font-size:15px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
           <span id="continueDiamondText">💎 500</span>
         </button>
+
+        <!-- Powerup'lar -->
+        <div id="goPowerups" style="display:flex;gap:8px;width:100%;margin-top:2px;"></div>
+
         <!-- Sayaç -->
         <div style="text-align:center;margin-top:4px;">
           <span id="continueCountdown" style="font-size:13px;color:rgba(255,255,255,0.3);font-family:'Nunito',sans-serif;font-weight:700;"></span>
         </div>
       </div>
 
-      <!-- Tekrar Oyna (sayaç bitince görünür) -->
+      <!-- Tekrar Oyna + Ana Menü (sayaç bitince görünür) -->
       <button id="restartBtn" style="width:100%;display:none;">
         <span id="restartBtnText">Play Again</span>
+      </button>
+      <button id="goHomeBtn" style="width:100%;display:none;margin-top:8px;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);font-size:15px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;" onclick="goToMainMenu()">
+        🏠 Ana Menü
       </button>
     </div>
   </div>
@@ -1963,7 +1970,7 @@
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
   <audio id="snd-gameover" src="assets/sounds/gameover1.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=3000008"></script>
+  <script src="main.js?v=3000010"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -2155,6 +2162,8 @@
       gc.style.visibility = 'visible';
       gc.style.position = 'relative';
       gc.style.pointerEvents = '';
+      // Müziği başlat
+      if (typeof startBgMusic === 'function') setTimeout(startBgMusic, 200);
       const timerBar = document.getElementById('timerBar');
       if (mode === 'timeattack') {
         currentTimeLevel = extra || 1;
@@ -3278,6 +3287,14 @@
       goToMenu();
     });
 
+    // Game over ana menü butonu
+    window.goToMainMenu = function() {
+      const goScreen = document.getElementById('gameOverScreen');
+      if (goScreen) { goScreen.style.visibility = 'hidden'; goScreen.style.pointerEvents = 'none'; goScreen.classList.remove('active'); }
+      if (_restartCountdownTimer) clearInterval(_restartCountdownTimer);
+      goToMenu();
+    };
+
     // Reset butonu → onay sor
     document.getElementById('btnResetGame').addEventListener('click', () => {
       document.getElementById('inGameSettingsPanel').classList.add('hidden');
@@ -3295,7 +3312,16 @@
 
     // ===== GAME OVER =====
     document.getElementById('restartBtn').addEventListener('click', () => {
-      window._gameOverCancelled = true; // animasyonu iptal et
+      window._gameOverCancelled = true;
+      if (_restartCountdownTimer) clearInterval(_restartCountdownTimer);
+      // Powerup'ları kaydet (reload sonrası okunacak)
+      if (typeof clearRowCharges !== 'undefined') {
+        localStorage.setItem('bp_powerups', JSON.stringify({
+          clearRowCharges: clearRowCharges,
+          rerollCharges: rerollCharges,
+          undoCharges: undoCharges
+        }));
+      }
       const mode = window.currentGameMode || 'normal';
       const level = window.currentTimeLevel || 1;
       localStorage.setItem('bp_restart_mode', mode);
@@ -3657,11 +3683,16 @@
     function startRestartCountdown() {
       const opts = document.getElementById('continueOptions');
       const restartBtn = document.getElementById('restartBtn');
+      const homeBtn = document.getElementById('goHomeBtn');
       const countdown = document.getElementById('continueCountdown');
       if (!opts || !restartBtn) return;
 
       restartBtn.style.display = 'none';
+      if (homeBtn) homeBtn.style.display = 'none';
       opts.style.display = 'flex';
+
+      // Powerup'ları göster
+      renderGameOverPowerups();
 
       let secs = 5;
       if (countdown) countdown.textContent = secs + 's';
@@ -3673,10 +3704,75 @@
           clearInterval(_restartCountdownTimer);
           opts.style.display = 'none';
           restartBtn.style.display = 'block';
+          if (homeBtn) homeBtn.style.display = 'block';
         } else {
           if (countdown) countdown.textContent = secs + 's';
         }
       }, 1000);
+    }
+
+    function renderGameOverPowerups() {
+      const container = document.getElementById('goPowerups');
+      if (!container) return;
+      container.innerHTML = '';
+
+      // Zor mod ve zaman modunda powerup yok
+      const mode = window.currentGameMode || 'normal';
+      if (mode === 'hard' || mode === 'timeattack') {
+        container.style.display = 'none';
+        return;
+      }
+
+      const L = currentLang === 'en' ? 'en' : 'tr';
+      const pus = [
+        { id:'go-pu-clearrow', charges: typeof clearRowCharges !== 'undefined' ? clearRowCharges : 0, icon:'🗑️', label: L==='en'?'Clear Row':'Satır Sil', color:'rgba(124,111,247,0.2)', border:'rgba(124,111,247,0.4)', textColor:'#a78bfa', action:'clearRow' },
+        { id:'go-pu-reroll',   charges: typeof rerollCharges !== 'undefined' ? rerollCharges : 0,     icon:'🔄', label: L==='en'?'Reroll':'Yenile',     color:'rgba(52,211,153,0.15)', border:'rgba(52,211,153,0.35)',   textColor:'#34d399', action:'reroll' },
+        { id:'go-pu-undo',     charges: typeof undoCharges !== 'undefined' ? undoCharges : 0,         icon:'↩️', label: L==='en'?'Undo':'Geri Al',       color:'rgba(251,191,36,0.15)',  border:'rgba(251,191,36,0.35)',   textColor:'#fbbf24', action:'undo' },
+      ];
+
+      pus.forEach(pu => {
+        if (pu.charges <= 0) return;
+        const btn = document.createElement('button');
+        btn.style.cssText = `flex:1;padding:10px 6px;border:1px solid ${pu.border};border-radius:12px;background:${pu.color};color:${pu.textColor};font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;text-align:center;`;
+        btn.innerHTML = `<div style="font-size:20px;margin-bottom:2px">${pu.icon}</div><div>${pu.label}</div><div style="font-size:10px;opacity:0.7">${pu.charges}×</div>`;
+        btn.addEventListener('click', () => {
+          // Powerup kullan — game over ekranını kapat ve powerup'ı aktifleştir
+          usePowerupFromGameOver(pu.action);
+        });
+        container.appendChild(btn);
+      });
+
+      // Hiç powerup yoksa container'ı gizle
+      if (container.children.length === 0) container.style.display = 'none';
+      else container.style.display = 'flex';
+    }
+
+    function usePowerupFromGameOver(action) {
+      // Game over ekranını kapat
+      const goScreen = document.getElementById('gameOverScreen');
+      if (goScreen) { goScreen.style.visibility = 'hidden'; goScreen.style.pointerEvents = 'none'; goScreen.classList.remove('active'); }
+      if (_restartCountdownTimer) clearInterval(_restartCountdownTimer);
+
+      // Oyunu devam ettir
+      if (typeof window._gameOverCancelled !== 'undefined') window._gameOverCancelled = true;
+      if (typeof isGameOver !== 'undefined') window._resumeGame && window._resumeGame();
+
+      // main.js'deki resumeFromGameOver çağır
+      if (typeof resumeFromGameOver === 'function') resumeFromGameOver();
+
+      // Powerup'ı aktifleştir
+      setTimeout(() => {
+        if (action === 'clearRow') {
+          const btn = document.getElementById('pu-clear-row');
+          if (btn) btn.click();
+        } else if (action === 'reroll') {
+          const btn = document.getElementById('pu-reroll');
+          if (btn) btn.click();
+        } else if (action === 'undo') {
+          const btn = document.getElementById('pu-undo');
+          if (btn) btn.click();
+        }
+      }, 100);
     }
 
     function updateContinueButtons() {
