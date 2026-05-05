@@ -2456,14 +2456,14 @@ function createGridSizedPreview(shape, colorName) {
   const color = colorToHex(colorName) || '#7c6ff7';
 
   // %80 boyutunda preview
-  const scale = 0.80;
+  const scale = 1.0;  // BlockBlast gibi tam boyut — küçülme yok
   const previewCell = cellSize * scale;
   const previewGap  = gap * scale;
-
-  // Container
   const el = document.createElement('div');
   el.style.cssText = `
     position: fixed;
+    top: 0;
+    left: 0;
     pointer-events: none;
     z-index: 9999;
     opacity: 0.85;
@@ -2471,6 +2471,7 @@ function createGridSizedPreview(shape, colorName) {
     grid-template-columns: repeat(${w}, ${previewCell}px);
     grid-template-rows: repeat(${h}, ${previewCell}px);
     gap: ${previewGap}px;
+    will-change: transform;
   `;
 
   // Her hücreyi ekle
@@ -2595,29 +2596,26 @@ function updateDragPosition(e) {
   if (!dragPreviewEl || !selectedShape) return;
   const boardEl = document.getElementById('board');
   const boardRect = boardEl.getBoundingClientRect();
-  // Board CSS sabit değerleri: padding=6px, gap=3px
   const pad = 6;
   const gap = 3;
   const innerW = boardRect.width - pad * 2;
   const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
-  const step = cellSize + gap;
 
   const h = selectedShape.length;
   const w = selectedShape[0].length;
 
-  // Preview boyutu — grid hücresinin %80'i kadar
-  const scale = 0.80;
+  const scale = 1.0;  // tam boyut
   const previewW = (w * cellSize + (w - 1) * gap) * scale;
   const previewH = (h * cellSize + (h - 1) * gap) * scale;
 
-  // Drag preview merkezi: parmağın dragLiftY kadar üstünde
   const previewCX = e.clientX;
   const previewCY = e.clientY - dragLiftY;
 
-  dragPreviewEl.style.left = (previewCX - previewW / 2) + 'px';
-  dragPreviewEl.style.top  = (previewCY - previewH / 2) + 'px';
+  // translate3d → GPU composite layer, left/top'tan çok daha smooth
+  const tx = Math.round(previewCX - previewW / 2);
+  const ty = Math.round(previewCY - previewH / 2);
+  dragPreviewEl.style.transform = `translate3d(${tx}px,${ty}px,0)`;
 
-  // Ghost için merkez koordinatını kaydet
   window._dragPreviewCX = previewCX;
   window._dragPreviewCY = previewCY;
 }
@@ -2687,7 +2685,7 @@ function trySnapToValid(clientX, clientY) {
   const startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.floor(fx - shapeCX + 0.5)));
   const startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.floor(fy - shapeCY + 0.5)));
 
-  // Çakışma kontrolü — önce tam pozisyon
+  // Çakışma kontrolü — tam pozisyon
   let fits = true;
   for (let y = 0; y < h && fits; y++)
     for (let x = 0; x < w && fits; x++)
@@ -2695,10 +2693,26 @@ function trySnapToValid(clientX, clientY) {
         fits = false;
   if (fits) return [startX, startY];
 
-  // Tam pozisyon tutmadıysa ±1 hücre hafif manyetizma
-  for (const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]) {
+  // Tam pozisyon tutmadı — parmağın hareket yönüne göre akıllı nudge
+  // Sadece parmak hücre sınırına çok yakınsa (±0.35 hücre) komşuyu dene
+  const fracX = (fx - shapeCX) - Math.floor(fx - shapeCX + 0.5); // -0.5..+0.5
+  const fracY = (fy - shapeCY) - Math.floor(fy - shapeCY + 0.5);
+
+  // En yakın komşu yönü — sadece 1 adım, 4 yön değil
+  const nudges = [];
+  if (Math.abs(fracX) > Math.abs(fracY)) {
+    nudges.push([fracX > 0 ? 1 : -1, 0]);
+    nudges.push([0, fracY > 0 ? 1 : -1]);
+  } else {
+    nudges.push([0, fracY > 0 ? 1 : -1]);
+    nudges.push([fracX > 0 ? 1 : -1, 0]);
+  }
+
+  for (const [dx, dy] of nudges) {
     const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX + dx));
     const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY + dy));
+    // Aynı pozisyona tekrar bakma
+    if (sx === startX && sy === startY) continue;
     let ok = true;
     for (let y = 0; y < h && ok; y++)
       for (let x = 0; x < w && ok; x++)
