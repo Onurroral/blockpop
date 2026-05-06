@@ -2599,29 +2599,23 @@ function _updateAll(e) {
   // 4. Fit kontrolü
   let fits = false;
   if (overBoard) {
-    fits = true;
-    for (let y = 0; y < h && fits; y++)
-      for (let x = 0; x < w && fits; x++)
-        if (selectedShape[y][x] === 1 && board[startY+y][startX+x] !== null)
-          fits = false;
+    // Tam pozisyon + komşu yönleri arasından en yakın fit'i bul
+    const fracX = fx - (w - 1) / 2 - Math.round(fx - (w - 1) / 2);
+    const fracY = fy - (h - 1) / 2 - Math.round(fy - (h - 1) / 2);
 
-    // Fit etmiyorsa komşu yönlere bak
-    if (!fits) {
-      const fracX = fx - (w - 1) / 2 - Math.round(fx - (w - 1) / 2);
-      const fracY = fy - (h - 1) / 2 - Math.round(fy - (h - 1) / 2);
-      const offsets = Math.abs(fracX) >= Math.abs(fracY)
-        ? [[fracX >= 0 ? 1 : -1, 0], [0, fracY >= 0 ? 1 : -1], [fracX >= 0 ? -1 : 1, 0], [0, fracY >= 0 ? -1 : 1]]
-        : [[0, fracY >= 0 ? 1 : -1], [fracX >= 0 ? 1 : -1, 0], [0, fracY >= 0 ? -1 : 1], [fracX >= 0 ? -1 : 1, 0]];
-      for (const [dx, dy] of offsets) {
-        const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX + dx));
-        const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY + dy));
-        if (sx === startX && sy === startY) continue;
-        let ok = true;
-        for (let y = 0; y < h && ok; y++)
-          for (let x = 0; x < w && ok; x++)
-            if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) ok = false;
-        if (ok) { startX = sx; startY = sy; fits = true; break; }
-      }
+    // Önce tam pozisyon, sonra parmak yönüne göre sıralı komşular
+    const candidates = Math.abs(fracX) >= Math.abs(fracY)
+      ? [[0,0], [fracX >= 0 ? 1 : -1, 0], [0, fracY >= 0 ? 1 : -1]]
+      : [[0,0], [0, fracY >= 0 ? 1 : -1], [fracX >= 0 ? 1 : -1, 0]];
+
+    for (const [dx, dy] of candidates) {
+      const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX + dx));
+      const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY + dy));
+      let ok = true;
+      for (let y = 0; y < h && ok; y++)
+        for (let x = 0; x < w && ok; x++)
+          if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) ok = false;
+      if (ok) { startX = sx; startY = sy; fits = true; break; }
     }
   }
 
