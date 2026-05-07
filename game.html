@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3000007">
+  <link rel="stylesheet" href="style.css?v=1.0.4">
 
   <!-- Firebase -->
   <script type="module">
@@ -1048,34 +1048,41 @@
       margin: 4px 0;
     }
 
-    /* ===== OYUN İÇİ ÜST BAR ===== */
     /* ===== OYUN İÇİ TOPBAR ===== */
     #game-topbar {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       padding: 10px 12px 0;
-      position: relative;
-      z-index: 10;
+      width: 100%;
+      gap: 2px;
+    }
+    .topbar-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       width: 100%;
     }
     .topbar-left {
       display: flex; align-items: center; gap: 5px;
       font-family: 'Nunito', sans-serif;
     }
-    .topbar-crown { font-size: 16px; }
+    .topbar-right {
+      display: flex; align-items: center;
+    }
+    .topbar-crown { font-size: 18px; }
     #high-score {
       font-size: 15px; font-weight: 800;
       color: #fbbf24; font-family: 'Nunito', sans-serif;
     }
     .topbar-center {
-      display: flex; justify-content: center;
+      width: 100%; text-align: center;
     }
     #score {
-      font-size: 36px; font-weight: 900;
+      font-size: 52px; font-weight: 900;
       color: #fff; line-height: 1;
       font-family: 'Nunito', sans-serif;
-      letter-spacing: -1px;
+      letter-spacing: -2px;
       text-align: center;
     }
     .topbar-btn {
@@ -1481,7 +1488,7 @@
           </div>
         </div>
         <div class="settings-footer">
-          <p>BlockPop v1.0.2</p>
+          <p>BlockPop v1.0.4</p>
           <p>Made by Onur</p>
         </div>
       </div>
@@ -1883,17 +1890,20 @@
     <!-- Sağ üst tek ayarlar butonu -->
     <!-- OYUN İÇİ TOPBAR - BlockBlast tarzı -->
     <div id="game-topbar">
-      <!-- Sol: En yüksek skor -->
-      <div class="topbar-left">
-        <span class="topbar-crown">👑</span>
-        <span id="high-score">0</span>
+      <!-- Üst satır: sol best score, sağ ayarlar -->
+      <div class="topbar-top-row">
+        <div class="topbar-left">
+          <span class="topbar-crown">👑</span>
+          <span id="high-score">0</span>
+        </div>
+        <div class="topbar-right">
+          <button class="topbar-btn" id="btnInGameSettings">⚙️</button>
+        </div>
       </div>
-      <!-- Orta: Skor -->
+      <!-- Alt satır: büyük skor ortada -->
       <div class="topbar-center">
         <div id="score">0</div>
       </div>
-      <!-- Sağ: Ayarlar -->
-      <button class="topbar-btn" id="btnInGameSettings">🔧</button>
     </div>
 
     <!-- OYUN İÇİ AYARLAR - Ekran ortasında modal -->
@@ -1970,7 +1980,7 @@
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
   <audio id="snd-gameover" src="assets/sounds/gameover1.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=3000010"></script>
+  <script src="main.js?v=1.0.4"></script>
 
   <script>
     // ===== YARDIMCI =====
