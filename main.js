@@ -249,21 +249,33 @@ const PIECES = [
   // Büyük T (5'li)
   [[1,1,1,1,1],[0,0,1,0,0]],
 
-  // === YENİ: Büyük kare 3x3 (her zaman mevcut) ===
-  // (yukarıdaki 3x3 score-locked, bu kopya temel havuzda)
-
   // === YENİ: Dikdörtgen 2x3 ===
   [[1,1],[1,1],[1,1]],
   // Dikdörtgen 3x2
   [[1,1,1],[1,1,1]],
+
+  // === YENİ: 3x3 L şekli (4 yön) ===
+  // Sağa bakan L (3x3)
+  [[1,0],[1,0],[1,1]],  // zaten var ama bu 3x3 versiyonu
+  // Aşağı bakan
+  [[1,1,1],[1,0,0],[1,0,0]],
+  // Sola bakan
+  [[1,1],[0,1],[0,1]],
+  // Yukarı bakan
+  [[0,0,1],[0,0,1],[1,1,1]],
+
+  // === YENİ: 2 karelik dik blok (her yön) — bunlar zaten var ama ekstra ağırlık için ===
+  // 2x1 yatay  (index 24 - var)
+  // 1x2 dikey  (index 25 - var)
 ];
 
 // === SCORE BAZLI PARÇA UNLOCK SİSTEMİ ===
-// Index sırası: 0-23 temel, 24-25 Büyük L, 26-27 Büyük I,
-//               28-29 Artı+U, 30-31 3x3+BüyükT, 32-33 Dikdörtgenler (temel havuzda)
+// 0-23: temel, 24-25: Büyük L, 26-27: Büyük I
+// 28-29: Artı+U, 30-31: 3x3+BüyükT, 32-33: Dikdörtgenler
+// 34-37: 3x3 L şekilleri (temel havuzda)
 const PIECE_UNLOCKS = [
   { minScore: 0,       maxIndex: 23 },  // temel parçalar
-  { minScore: 0,       maxIndex: 33 },  // dikdörtgenler de temel havuzda (32-33) — hepsini aç
+  { minScore: 0,       maxIndex: 37 },  // dikdörtgenler + 3x3 L'ler temel havuzda
   { minScore: 10000,   maxIndex: 25 },  // +2: Büyük L halleri (24-25)
   { minScore: 30000,   maxIndex: 27 },  // +2: Büyük I (5'li) (26-27)
   { minScore: 50000,   maxIndex: 29 },  // +2: Artı + U (28-29)
@@ -1150,15 +1162,22 @@ function initBoard() {
     }
     board.push(row);
   }
+  // DOM hücrelerini sıfırla — bir sonraki renderBoard'da yeniden oluşturulacak
+  _boardCells = null;
 }
 
 // === TAHTAYI ÇİZ ===
-function renderBoard() {
+// Board hücrelerini bir kez oluştur, sonra sadece güncelle
+let _boardCells = null; // 2D array: _boardCells[y][x] = cellEl
+
+function initBoardDOM() {
   const boardEl = document.getElementById('board');
   boardEl.innerHTML = '';
   invalidateCellCache();
+  _boardCells = [];
 
   for (let y = 0; y < BOARD_SIZE; y++) {
+    _boardCells[y] = [];
     for (let x = 0; x < BOARD_SIZE; x++) {
       const cellEl = document.createElement('div');
       cellEl.classList.add('board-cell');
@@ -1167,49 +1186,64 @@ function renderBoard() {
       cellEl.dataset.row = y;
       cellEl.dataset.col = x;
 
-      if (board[y][x] !== null) {
-       const type = board[y][x].type || 'normal';
-        cellEl.style.background = board[y][x].color || getColorForType(type);
-
-        // ✅ Element ayırt etmek için
-        cellEl.classList.add(`type-${type}`);
-        cellEl.dataset.type = type;
-
-      if (board[y][x].justPlaced) {
-        cellEl.classList.add('placed');
-        board[y][x].justPlaced = false;
-        }
-        setTimeout(() => cellEl.classList.remove("pop"), 200);
-      }
-
-
-      // Satır sil modu hover
-      if (clearRowMode && clearRowCharges > 0) {
-        cellEl.addEventListener('mouseenter', () => {
-          highlightRow(y, true);
-        });
-        cellEl.addEventListener('mouseleave', () => {
-          highlightRow(y, false);
-        });
-      }
-
+      // Event listener'ları bir kez ekle
+      cellEl.addEventListener('mouseenter', () => {
+        if (clearRowMode && clearRowCharges > 0) highlightRow(y, true);
+      });
+      cellEl.addEventListener('mouseleave', () => {
+        if (clearRowMode && clearRowCharges > 0) highlightRow(y, false);
+      });
       cellEl.addEventListener('click', () => {
         if (isGameOver) return;
-
-        // Satır sil modu
         if (clearRowMode && clearRowCharges > 0) {
           saveState();
           clearRowAt(y);
           return;
         }
-
         if (!selectedShape) return;
         tryPlacePiece(x, y);
       });
 
       boardEl.appendChild(cellEl);
+      _boardCells[y][x] = cellEl;
     }
   }
+}
+
+function renderBoard() {
+  // Board DOM yoksa oluştur
+  if (!_boardCells) initBoardDOM();
+
+  for (let y = 0; y < BOARD_SIZE; y++) {
+    for (let x = 0; x < BOARD_SIZE; x++) {
+      const cellEl = _boardCells[y][x];
+      const cell = board[y][x];
+
+      if (cell !== null) {
+        const type = cell.type || 'normal';
+        const color = cell.color || getColorForType(type);
+        cellEl.style.background = color;
+        cellEl.dataset.type = type;
+
+        // Eski type class'larını temizle, yenisini ekle
+        cellEl.className = `board-cell type-${type}`;
+
+        if (cell.justPlaced) {
+          cellEl.classList.add('placed');
+          cell.justPlaced = false;
+          setTimeout(() => cellEl.classList.remove('placed'), 200);
+        }
+      } else {
+        // Boş hücre
+        cellEl.style.background = '';
+        cellEl.className = 'board-cell';
+        cellEl.dataset.type = '';
+      }
+    }
+  }
+
+  // Cell cache'ini güncelle
+  invalidateCellCache();
 }
 
 // === SCORE UNLOCK BİLDİRİM ===
@@ -1467,9 +1501,18 @@ function restoreState() {
     selectedPiece = null;
     selectedShape = null;
 
-    lastState.piecesData.forEach(shapeIndex => {
-      piecesEl.appendChild(createPieceElement(shapeIndex));
-    });
+    // Her zaman 3 slot oluştur — kayıp olanlar boş kalır
+    const savedData = lastState.piecesData;
+    for (let i = 0; i < 3; i++) {
+      if (savedData[i] !== undefined) {
+        piecesEl.appendChild(createPieceElement(savedData[i]));
+      } else {
+        const emptySlot = document.createElement('div');
+        emptySlot.classList.add('piece-slot');
+        emptySlot.style.pointerEvents = 'none';
+        piecesEl.appendChild(emptySlot);
+      }
+    }
   }
 
   renderBoard();
@@ -1772,19 +1815,25 @@ function generatePieces() {
         if (sh[y][x] === 1) cells++;
     const mode = window.currentGameMode || 'classic';
     if (mode === 'easy') {
-      // Easy: küçük ve orta parçaları çok tercih et
-      if (cells <= 2) return 3.0;
-      if (cells <= 4) return 2.5;
-      if (cells <= 6) return 1.8;
-      return 0.8;
+      // Easy: 1-3 kare çok ağırlıklı, büyükler nadiren
+      if (cells === 1) return 4.0;
+      if (cells <= 3) return 3.5;
+      if (cells <= 4) return 2.0;
+      if (cells <= 6) return 0.8;
+      return 0.3;
     } else if (mode === 'hard') {
-      // Hard: büyük parçaları tercih et
-      if (cells <= 2) return 0.6;
+      if (cells <= 2) return 0.5;
       if (cells <= 4) return 1.0;
-      if (cells <= 6) return 1.4;
-      return 2.0;
+      if (cells <= 6) return 1.5;
+      return 2.2;
+    } else if (mode === 'normal') {
+      // Normal: küçük-orta ağırlıklı ama dengeli
+      if (cells <= 2) return 2.8;
+      if (cells <= 4) return 2.0;
+      if (cells <= 6) return 1.2;
+      return 0.7;
     } else {
-      // Normal / timeattack
+      // timeattack vb
       if (cells <= 2) return 2.2;
       if (cells <= 4) return 1.6;
       if (cells <= 6) return 1.2;
@@ -1795,13 +1844,14 @@ function generatePieces() {
   // Mod bazlı yardım oranı
   const mode = window.currentGameMode || 'classic';
   let smartChance;
-  if (mode === 'easy')        smartChance = 1.00; // %100 — her zaman en uygun parçayı seç
-  else if (mode === 'hard')   smartChance = 0.00; // %0 — tamamen rastgele
-  else if (mode === 'timeattack') smartChance = 0.80;
-  else                        smartChance = 0.80; // normal: %80
+  if (mode === 'easy')            smartChance = 1.00; // %100 — her zaman en uygun
+  else if (mode === 'normal')     smartChance = 0.90; // %90 — çok yardımcı
+  else if (mode === 'hard')       smartChance = 0.00; // %0 — tamamen rastgele
+  else if (mode === 'timeattack') smartChance = 0.75;
+  else                            smartChance = 0.85;
 
-  // helpScore multiplier mod'a göre
-  const helpMultiplier = mode === 'easy' ? 0.35 : 0.12;
+  // helpScore multiplier — easy çok yüksek, normal orta
+  const helpMultiplier = mode === 'easy' ? 0.60 : mode === 'normal' ? 0.30 : 0.12;
 
   for (let k = 0; k < 3; k++) {
     let shapeIndex;
