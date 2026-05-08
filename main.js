@@ -938,70 +938,89 @@ function playSndClear(count) {
   const ctx = _getCtx(); if (!ctx) return;
   try {
     const t = ctx.currentTime;
-    const n = Math.min(count, 3);
-    const vol = 0.8 + n * 0.1;
+    const n = Math.min(count, 4);
 
-    // === DARBE GÖVDESI ===
-    // Davul gibi derin bas — anında düşen frekans
+    // === PATLAMA GÜRÜLTÜSÜ (noise burst) ===
+    const bufLen = Math.floor(ctx.sampleRate * 0.15);
+    const noiseBuf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const nd = noiseBuf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) nd[i] = (Math.random()*2-1) * Math.pow(1 - i/bufLen, 0.5);
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = noiseBuf;
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.value = 800 + n*200;
+    noiseFilter.Q.value = 0.5;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.5 + n*0.1, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    noiseSrc.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(ctx.destination);
+    noiseSrc.start(t);
+
+    // === DERİN BAS DARBE ===
     const kick = ctx.createOscillator();
     const kickGain = ctx.createGain();
     kick.connect(kickGain); kickGain.connect(ctx.destination);
     kick.type = 'sine';
-    kick.frequency.setValueAtTime(200, t);
-    kick.frequency.exponentialRampToValueAtTime(40, t + 0.08);
-    kickGain.gain.setValueAtTime(vol, t);
-    kickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-    kick.start(t); kick.stop(t + 0.18);
+    kick.frequency.setValueAtTime(180 + n*20, t);
+    kick.frequency.exponentialRampToValueAtTime(35, t + 0.12);
+    kickGain.gain.setValueAtTime(0.9 + n*0.1, t);
+    kickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    kick.start(t); kick.stop(t + 0.22);
 
-    // İkinci harmonik — dolgunluk
-    const kick2 = ctx.createOscillator();
-    const kick2Gain = ctx.createGain();
-    kick2.connect(kick2Gain); kick2Gain.connect(ctx.destination);
-    kick2.type = 'sine';
-    kick2.frequency.setValueAtTime(400, t);
-    kick2.frequency.exponentialRampToValueAtTime(80, t + 0.06);
-    kick2Gain.gain.setValueAtTime(vol * 0.5, t);
-    kick2Gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-    kick2.start(t); kick2.stop(t + 0.1);
+    // === PARLAK CRACK ===
+    const crack = ctx.createOscillator();
+    const crackGain = ctx.createGain();
+    crack.connect(crackGain); crackGain.connect(ctx.destination);
+    crack.type = 'square';
+    crack.frequency.setValueAtTime(2400, t);
+    crack.frequency.exponentialRampToValueAtTime(400, t + 0.04);
+    crackGain.gain.setValueAtTime(0.3, t);
+    crackGain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+    crack.start(t); crack.stop(t + 0.06);
 
-    // === PARLAK VURGU (üst) ===
-    const snap = ctx.createOscillator();
-    const snapGain = ctx.createGain();
-    snap.connect(snapGain); snapGain.connect(ctx.destination);
-    snap.type = 'triangle';
-    snap.frequency.setValueAtTime(1200, t + 0.01);
-    snap.frequency.exponentialRampToValueAtTime(600, t + 0.08);
-    snapGain.gain.setValueAtTime(0.35, t + 0.01);
-    snapGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
-    snap.start(t + 0.01); snap.stop(t + 0.12);
+    // === YÜKSELEN IŞILTILI SWEEP ===
+    const sweep = ctx.createOscillator();
+    const sweepGain = ctx.createGain();
+    sweep.connect(sweepGain); sweepGain.connect(ctx.destination);
+    sweep.type = 'triangle';
+    sweep.frequency.setValueAtTime(600 + n*100, t + 0.02);
+    sweep.frequency.exponentialRampToValueAtTime(2400 + n*300, t + 0.2);
+    sweepGain.gain.setValueAtTime(0.18, t + 0.02);
+    sweepGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    sweep.start(t + 0.02); sweep.stop(t + 0.25);
 
-    // === ÇOK SATIRLI BONUS ===
+    // === ÇOK SATIRLI EKSTRA ===
     if (n >= 2) {
-      // Ekstra bas katmanı
-      const kick3 = ctx.createOscillator();
-      const k3g = ctx.createGain();
-      kick3.connect(k3g); k3g.connect(ctx.destination);
-      kick3.type = 'sine';
-      kick3.frequency.setValueAtTime(300, t + 0.02);
-      kick3.frequency.exponentialRampToValueAtTime(50, t + 0.1);
-      k3g.gain.setValueAtTime(0.5, t + 0.02);
-      k3g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-      kick3.start(t + 0.02); kick3.stop(t + 0.15);
+      // İkinci bas katmanı — daha düşük
+      const kick2 = ctx.createOscillator();
+      const k2g = ctx.createGain();
+      kick2.connect(k2g); k2g.connect(ctx.destination);
+      kick2.type = 'sine';
+      kick2.frequency.setValueAtTime(120, t + 0.03);
+      kick2.frequency.exponentialRampToValueAtTime(28, t + 0.18);
+      k2g.gain.setValueAtTime(0.7, t + 0.03);
+      k2g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      kick2.start(t + 0.03); kick2.stop(t + 0.22);
 
-      // Yüksek çınlama
-      const ring = ctx.createOscillator();
-      const rg = ctx.createGain();
-      ring.connect(rg); rg.connect(ctx.destination);
-      ring.type = 'sine';
-      ring.frequency.value = 2400;
-      rg.gain.setValueAtTime(0.2, t + 0.05);
-      rg.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-      ring.start(t + 0.05); ring.stop(t + 0.3);
+      // Metalik çınlama
+      _tone(3200, 3200, 'sine', 0.12, 0.4, 0.06);
+    }
+    if (n >= 3) {
+      // Epik bass drop
+      _tone(60, 30, 'sine', 0.4, 0.5, 0.05);
+      _tone(4000, 800, 'sine', 0.18, 0.3, 0.08);
+    }
+    if (n >= 4) {
+      // Tam patlama — tüm frekanslar
+      _tone(40, 20, 'sine', 0.5, 0.6, 0.02);
+      _tone(5000, 1000, 'triangle', 0.2, 0.35, 0.04);
+      _tone(1200, 600, 'sawtooth', 0.15, 0.25, 0.1);
     }
   } catch(e) {}
 }
 
-// Combo: her seviyede farklı, giderek coşkulu
+// Combo: üst üste patlamada giderek daha epic
 function playSndCombo(level) {
   if (!_isOn()) return;
   const ctx = _getCtx(); if (!ctx) return;
@@ -1009,28 +1028,65 @@ function playSndCombo(level) {
     const t = ctx.currentTime;
     const lv = Math.min(Math.max(level, 2), 8);
 
-    // Hızlanan arpej — seviyeye göre daha fazla nota
-    const baseNotes = [523, 659, 784, 880, 1047, 1175, 1319, 1568];
-    const noteCount = Math.min(lv, baseNotes.length);
-    const speed = Math.max(0.025, 0.06 - lv*0.005); // hızlanır
+    // Tok, bas ağırlıklı arpej — tiz sweep YOK
+    const allNotes = [
+      [261, 329],                    // lv2
+      [261, 329, 392],               // lv3
+      [261, 329, 392, 523],          // lv4
+      [329, 392, 523, 659],          // lv5
+      [392, 523, 659, 784],          // lv6
+      [440, 587, 698, 880],          // lv7
+      [523, 659, 784, 1047, 1319],   // lv8
+    ];
+    const notes = allNotes[Math.min(lv-2, allNotes.length-1)];
+    const speed = Math.max(0.03, 0.07 - lv*0.006);
+    const vol = Math.min(0.18 + lv*0.025, 0.38);
 
-    baseNotes.slice(0, noteCount).forEach((f, i) => {
-      const vol = 0.12 + lv*0.02;
-      _tone(f, f, 'triangle', Math.min(vol, 0.28), 0.22, i*speed);
+    // Tok triangle + sine karışımı — ıslık yok
+    notes.forEach((f, i) => {
+      _tone(f, f, 'triangle', vol, 0.28, i*speed);
+      _tone(f*0.5, f*0.5, 'sine', vol*0.4, 0.22, i*speed); // alt oktav bas
     });
 
-    // Yüksek parlama — seviyeye göre artar
-    const sweepVol = 0.1 + lv*0.03;
-    _tone(1000+lv*100, 3000+lv*200, 'sine', Math.min(sweepVol, 0.35), 0.25, 0.05);
+    // Bas punch — her combo'da
+    _tone(120, 50, 'sine', 0.45, 0.2, 0);
 
-    // 3x ve üstü: ekstra "pow" darbe
+    // 3x+: güçlü mid darbe
     if (lv >= 3) {
-      _tone(200, 600, 'sine', 0.25, 0.18, 0);
+      _tone(180, 80, 'sine', 0.35, 0.22, 0.02);
+      _tone(400, 200, 'triangle', 0.2, 0.18, 0.04);
     }
-    // 5x ve üstü: tüm ekrana hissettiren düşük bas
+    // 4x+: noise punch (bas, tiz değil)
+    if (lv >= 4) {
+      const bufLen = Math.floor(ctx.sampleRate * 0.1);
+      const nb = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      const nd = nb.getChannelData(0);
+      for (let i = 0; i < bufLen; i++) nd[i] = (Math.random()*2-1) * Math.pow(1-i/bufLen, 1.5);
+      const ns = ctx.createBufferSource(); ns.buffer = nb;
+      const nf = ctx.createBiquadFilter();
+      nf.type = 'lowpass'; // LOWPASS — tiz kesilir
+      nf.frequency.value = 600;
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.3+lv*0.04, t);
+      ng.gain.exponentialRampToValueAtTime(0.001, t+0.12);
+      ns.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
+      ns.start(t);
+    }
+    // 5x+: sub-bass
     if (lv >= 5) {
-      _tone(100, 60, 'sine', 0.3, 0.4, 0.05);
-      _tone(2000, 4000, 'sine', 0.15, 0.2, 0.1);
+      _tone(80, 40, 'sine', 0.45, 0.4, 0.02);
+      _tone(160, 80, 'sine', 0.25, 0.3, 0.05);
+    }
+    // 6x+: epik bas katmanı
+    if (lv >= 6) {
+      _tone(50, 25, 'sine', 0.55, 0.55, 0);
+      _tone(523, 784, 'triangle', 0.22, 0.35, notes.length*speed);
+    }
+    // 7x+: tam bas patlama
+    if (lv >= 7) {
+      _tone(40, 20, 'sine', 0.6, 0.65, 0.01);
+      _tone(261, 392, 'sawtooth', 0.18, 0.3, 0.03);
+      _tone(130, 65, 'sine', 0.35, 0.4, 0.05);
     }
   } catch(e) {}
 }
@@ -1110,6 +1166,117 @@ window.playSndPop      = playSndPop;
 window.playSndWhoosh   = playSndWhoosh;
 window.playSndZing     = playSndZing;
 window.playSndHighScore= playSndHighScore;
+
+// === YENİ SES EFEKTLERİ ===
+
+// Yeni rekor — epik fanfare
+function playSndNewRecord() {
+  if (!_isOn()) return;
+  // Yükselen arpej
+  [523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => {
+    _tone(f, f * 1.1, 'triangle', 0.18, 0.3, i * 0.06);
+  });
+  // Parlak üst nota
+  setTimeout(() => {
+    _tone(2093, 2637, 'sine', 0.22, 0.6, 0);
+    _tone(2637, 3136, 'sine', 0.15, 0.5, 0.1);
+    // Trill efekti
+    [0.3, 0.35, 0.4, 0.45, 0.5].forEach((d, i) => {
+      _tone(i % 2 === 0 ? 2093 : 2637, i % 2 === 0 ? 2637 : 2093, 'triangle', 0.1, 0.07, d);
+    });
+  }, 350);
+}
+
+// Streak bonusu — merdiven çıkış sesi
+function playSndStreakBonus() {
+  if (!_isOn()) return;
+  const ctx = _getCtx(); if (!ctx) return;
+  // Yukarı çıkan hızlı arpej
+  [440, 554, 659, 880, 1109, 1319].forEach((f, i) => {
+    _tone(f, f, 'sine', 0.16, 0.15, i * 0.04);
+  });
+  // Son parıltı
+  _tone(1760, 2200, 'triangle', 0.2, 0.4, 0.22);
+  _tone(2200, 2637, 'sine', 0.12, 0.35, 0.28);
+}
+
+// Menü butonu — daha zengin click
+function playSndMenuClick() {
+  if (!_isOn()) return;
+  _tone(800, 1200, 'sine', 0.1, 0.06, 0);
+  _tone(1200, 800, 'sine', 0.06, 0.04, 0.03);
+}
+
+// Elmas kazanma — kristal ding
+function playSndDiamond() {
+  if (!_isOn()) return;
+  // İnce kristal sesi
+  [2093, 2637, 3136].forEach((f, i) => {
+    _tone(f, f * 0.98, 'sine', 0.18, 0.5, i * 0.04);
+  });
+  // Titreşim efekti
+  const ctx = _getCtx(); if (!ctx) return;
+  try {
+    const t = ctx.currentTime + 0.1;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(4186, t);
+    o.frequency.exponentialRampToValueAtTime(3136, t + 0.3);
+    g.gain.setValueAtTime(0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    o.start(t); o.stop(t + 0.5);
+  } catch(e) {}
+}
+
+// Powerup kullanma — güçlü whoosh + enerji
+function playSndPowerup() {
+  if (!_isOn()) return;
+  const ctx = _getCtx(); if (!ctx) return;
+  // Gürültü sweep
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 0.35, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 1.2);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(400, ctx.currentTime);
+  filter.frequency.exponentialRampToValueAtTime(4000, ctx.currentTime + 0.3);
+  filter.Q.value = 1.2;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.35, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+  src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  src.start();
+  // Enerji notası
+  _tone(220, 880, 'sawtooth', 0.15, 0.3, 0);
+  _tone(880, 1760, 'sine', 0.12, 0.25, 0.08);
+}
+
+// Geri sayım tick — normal
+function playSndCountdownTick() {
+  if (!_isOn()) return;
+  _tone(880, 880, 'sine', 0.12, 0.08, 0);
+}
+
+// Geri sayım son 5 saniye — acil, kırmızı his
+function playSndCountdownUrgent() {
+  if (!_isOn()) return;
+  _tone(1100, 1100, 'square', 0.15, 0.06, 0);
+  _tone(1200, 1200, 'sine', 0.1, 0.05, 0.07);
+}
+
+window.playSndNewRecord     = playSndNewRecord;
+window.playSndStreakBonus   = playSndStreakBonus;
+window.playSndMenuClick     = playSndMenuClick;
+window.playSndDiamond       = playSndDiamond;
+window.playSndPowerup       = playSndPowerup;
+window.playSndCountdownTick = playSndCountdownTick;
+window.playSndCountdownUrgent = playSndCountdownUrgent;
 
 // AudioContext'i ilk dokunuşta başlat
 document.addEventListener('pointerdown', _getCtx, { once: true });
@@ -1280,6 +1447,7 @@ function showUnlockToast(threshold) {
 
 // === SKOR GÜNCELLE + HIGH SCORE ===
 function updateScore() {
+  window.currentScore = score; // game.html'den erişilebilsin
 
   const scoreEl = document.getElementById("score");
   const highScoreEl = document.getElementById("high-score");
@@ -1331,7 +1499,7 @@ function showGameOver(){
   if (score > savedHS) {
     localStorage.setItem(hsKey, score);
     if (!isTimeMode) highScore = score;
-    setTimeout(() => { triggerNewRecord(); playSndRecord(); playSndHighScore(); }, 2200);
+    setTimeout(() => { triggerNewRecord(); playSndNewRecord(); playSndHighScore(); }, 2200);
   }
   if (!isTimeMode && score > highScore) {
     highScore = score;
@@ -1586,7 +1754,7 @@ function setupPowerups() {
       rerollPieces();
       rerollCharges--;
       localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
-      playSndWhoosh();
+      playSndPowerup();
       btnReroll.classList.add('used-flash');
       setTimeout(() => btnReroll.classList.remove('used-flash'), 250);
       updatePowerupUI();
@@ -1603,7 +1771,7 @@ function setupPowerups() {
       restoreState();
       undoCharges--;
       localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
-      lastState = null;
+      playSndPowerup();
       playSndWhoosh();
       btnUndo.classList.add('used-flash');
       setTimeout(() => btnUndo.classList.remove('used-flash'), 250);
@@ -2048,6 +2216,7 @@ function clearRowAt(rowY) {
 
     clearRowCharges--;
     localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
+    playSndPowerup();
     clearRowMode = false;
 
     updatePowerupUI();
@@ -2289,37 +2458,50 @@ function clearCompletedLines() {
     // Görsel animasyon için timeout
     setTimeout(() => {
       const burstCells = [];
-      for (let y = 0; y < BOARD_SIZE; y++) {
-        for (let x = 0; x < BOARD_SIZE; x++) {
-          if (toClear[y][x]) {
-            const cell = cells[y * BOARD_SIZE + x];
-            if (cell) {
-              cell.classList.add("explode");
-              burstCells.push({ cell, color: '#fff' });
-            }
-          }
-        }
-      }
+
+      // Satır/sütun hücrelerini sıralı flash et (dalga efekti)
+      const clearList = [];
+      for (let y = 0; y < BOARD_SIZE; y++)
+        for (let x = 0; x < BOARD_SIZE; x++)
+          if (toClear[y][x]) clearList.push({ y, x, cell: cells[y * BOARD_SIZE + x] });
+
+      // Soldan sağa, yukarıdan aşağıya sırala
+      clearList.sort((a, b) => a.x - b.x || a.y - b.y);
+
+      clearList.forEach(({ cell, y, x }, i) => {
+        if (!cell) return;
+        setTimeout(() => {
+          cell.classList.add('line-flash');
+          cell.classList.add('explode');
+        }, i * 12);
+      });
+
       const animEnabled = localStorage.getItem('tgl-anim') !== 'off';
-      if (animEnabled) {
-        // Max 3 burst particle — kasma azaltmak için
-        const sample = burstCells.filter((_, i) => i % Math.ceil(burstCells.length / 3) === 0).slice(0, 3);
-        sample.forEach(({ cell, color }) => spawnBurstParticles(cell, color, 3));
+      const waveDuration = clearList.length * 12 + 50;
 
-        // Toz efekti — sadece 9+ hücre temizlenince (büyük patlama)
-        if (burstCells.length >= 9) {
-          const dustCells = [];
-          for (let y = 0; y < BOARD_SIZE; y++)
-            for (let x = 0; x < BOARD_SIZE; x++)
-              if (toClear[y][x]) dustCells.push({ row: y, col: x });
-          spawnDustEffect(dustCells);
-        }
+      if (animEnabled) {
+        setTimeout(() => {
+          const sample = clearList.filter((_, i) => i % Math.ceil(clearList.length / 5) === 0).slice(0, 5);
+          sample.forEach(({ cell }) => spawnBurstParticles(cell, '#fff', 4));
+          if (clearList.length >= 9) {
+            const dustCells = clearList.map(({ y, x }) => ({ row: y, col: x }));
+            spawnDustEffect(dustCells);
+          }
+        }, waveDuration);
       }
 
+      // renderBoard dalga bittikten SONRA çalışsın + animasyonları temizle
       setTimeout(() => {
+        clearList.forEach(({ cell }) => {
+          if (!cell) return;
+          cell.classList.remove('line-flash', 'explode', 'line-warning', 'pre-glow', 'clearing');
+          cell.style.animation = '';
+          cell.style.opacity = '';
+          cell.style.transform = '';
+        });
         renderBoard();
         boardEl.classList.remove("shake");
-      }, 200);
+      }, waveDuration + 80);
 
     }, 50);
 
@@ -2474,11 +2656,21 @@ function clearGameSave() {
 function resumeFromGameOver() {
   isGameOver = false;
   window._gameOverCancelled = true;
+
+  // Game over animasyonunu temizle — hücreler hâlâ opacity:0 olabilir
+  const cells = getCells();
+  cells.forEach(cell => {
+    if (cell) {
+      cell.style.animation = '';
+      cell.style.opacity = '';
+      cell.style.transform = '';
+    }
+  });
+
   generatePieces();
   renderBoard();
   updateScore();
   updatePowerupUI();
-  // Zaman modundaysa timer'ı yeniden başlat
   if (window.currentGameMode === 'timeattack' && typeof startTimer === 'function') {
     startTimer();
   }
@@ -3003,22 +3195,23 @@ function showClearPrediction(testBoard) {
 // Çoklu satır yazı seviyeleri (aynı hamlede 3+)
 const MULTILINE_LABELS = [
   null, null, null,
-  { tr: 'HARİKA!',   en: 'GREAT!',      color: '#34d399', size: '36px', shake: false },
-  { tr: 'MUHTEŞEM!', en: 'AMAZING!',    color: '#f59e0b', size: '42px', shake: true  },
-  { tr: 'İNANILMAZ!',en: 'INCREDIBLE!', color: '#f97316', size: '46px', shake: true  },
-  { tr: 'EFSANEVİ!', en: 'LEGENDARY!',  color: '#a78bfa', size: '50px', shake: true  },
+  { tr: 'TRIPLE!',    en: 'TRIPLE!',      color: '#34d399', size: '38px', shake: false },
+  { tr: 'ULTRA!',     en: 'ULTRA!',       color: '#f59e0b', size: '44px', shake: true  },
+  { tr: 'PERFECT!',   en: 'PERFECT!',     color: '#f97316', size: '48px', shake: true  },
+  { tr: 'PERFECT!',   en: 'PERFECT!',     color: '#a78bfa', size: '52px', shake: true  },
 ];
 
 // Combo yazı seviyeleri (streak bazlı)
 const COMBO_LABELS = [
   null,
   null,
-  { tr: 'İYİ!',      en: 'GOOD!',       color: '#60a5fa', size: '28px', shake: false },
-  { tr: 'HARİKA!',   en: 'GREAT!',      color: '#34d399', size: '34px', shake: false },
-  { tr: 'MUHTEŞEM!', en: 'AMAZING!',    color: '#f59e0b', size: '40px', shake: true  },
-  { tr: 'İNANILMAZ!',en: 'INCREDIBLE!', color: '#f97316', size: '44px', shake: true  },
-  { tr: 'EFSANEVİ!', en: 'LEGENDARY!',  color: '#a78bfa', size: '48px', shake: true  },
-  { tr: 'TANRISAL!', en: 'GODLIKE!',    color: '#ff4ecd', size: '52px', shake: true  },
+  { tr: 'GÜZELDİ!',       en: 'NICE!',          color: '#60a5fa', size: '30px', shake: false },
+  { tr: 'HARİKA!',         en: 'GREAT!',         color: '#34d399', size: '36px', shake: false },
+  { tr: 'ATEŞTE!',         en: 'ON FIRE!',        color: '#f59e0b', size: '42px', shake: true  },
+  { tr: 'DURDURULAMAZ!',   en: 'UNSTOPPABLE!',   color: '#f97316', size: '44px', shake: true  },
+  { tr: 'TANRISAL!',       en: 'GODLIKE!',       color: '#a78bfa', size: '50px', shake: true  },
+  { tr: 'EFSANE!',         en: 'LEGENDARY!',     color: '#ff4ecd', size: '54px', shake: true  },
+  { tr: 'EFSANE!',         en: 'LEGENDARY!',     color: '#ff4ecd', size: '54px', shake: true  },
 ];
 
 // clearStreak: streak sayısı (null ise streak yok)
@@ -3048,19 +3241,24 @@ function showComboLabel(clearStreak, lineCount) {
   const lbl = document.createElement('div');
   lbl.style.cssText = `
     position:fixed;
-    top:35%;
+    top:32%;
     left:50%;
-    transform:translateX(-50%) translateY(10px);
+    transform:translateX(-50%) scale(0.5);
     font-size:${label.size};
     font-weight:900;
     font-family:'Nunito',sans-serif;
     color:${label.color};
-    text-shadow:0 0 20px ${label.color}99, 0 2px 8px rgba(0,0,0,0.6);
+    text-shadow:
+      0 0 30px ${label.color},
+      0 0 60px ${label.color}66,
+      0 3px 12px rgba(0,0,0,0.8),
+      -1px -1px 0 rgba(0,0,0,0.5),
+      1px 1px 0 rgba(0,0,0,0.5);
     z-index:9998;
     pointer-events:none;
     white-space:nowrap;
     letter-spacing:-1px;
-    animation:comboLabelPop 0.9s cubic-bezier(0.2,1.3,0.4,1) forwards;
+    animation:comboLabelPop 0.85s cubic-bezier(0.2,1.4,0.3,1) forwards;
   `;
   lbl.textContent = lang === 'en' ? label.en : label.tr;
   document.body.appendChild(lbl);
