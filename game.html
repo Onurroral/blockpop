@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.0.4">
+  <link rel="stylesheet" href="style.css?v=1.1.7">
 
   <!-- Firebase -->
   <script type="module">
@@ -42,11 +42,11 @@
     window.fbSubmitScore = async function(name, score, mode) {
       try {
         const cleanName = name.trim().substring(0,16);
+        if (!cleanName || !score || score <= 0) return false;
         const col = collection(db, 'scores');
-        // timeattack ayrı kalır, diğer tüm modlar 'classic' olarak kaydedilir
         const modeVal = (mode === 'timeattack') ? 'timeattack' : 'classic';
 
-        // Aynı isim ve mod için mevcut kayıtları bul
+        // Aynı isim ve mod için mevcut tüm kayıtları bul
         const q = query(col, where('name','==',cleanName), where('mode','==',modeVal));
         const snap = await getDocs(q);
 
@@ -55,7 +55,9 @@
           snap.forEach(d => {
             if (d.data().score > bestScore) bestScore = d.data().score;
           });
+          // Yeni skor daha düşükse gönderme
           if (score <= bestScore) return 'same';
+          // Eski kayıtları sil (hepsini — duplicate temizle)
           for (const d of snap.docs) await deleteDoc(d.ref);
         }
 
@@ -67,7 +69,10 @@
           week: getWeekStr(),
         });
         return true;
-      } catch(e) { console.warn('Score gönderilemedi:', e); return false; }
+      } catch(e) {
+        console.warn('Score gönderilemedi:', e);
+        return false;
+      }
     };
 
     window.fbGetScores = async function(tab) {
@@ -75,12 +80,31 @@
         const col = collection(db, 'scores');
 
         if (tab === 'weekly') {
-          // Bu hafta klasik: ts'ye göre filtrele, JS'de sırala (index gerekmez)
+          // Index: mode ASC + ts DESC — server'da sırala
           const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
-          const snap = await getDocs(query(col, where('ts','>=',Timestamp.fromDate(weekAgo))));
-          const rows = snap.docs.map(d=>({...d.data(),id:d.id}))
-            .filter(r => r.mode === 'classic' || !r.mode);
-          // Her oyuncudan sadece en yüksek skoru al
+          const snap = await getDocs(query(
+            col,
+            where('mode','==','classic'),
+            where('ts','>=',Timestamp.fromDate(weekAgo)),
+            orderBy('ts','desc')
+          ));
+          const rows = snap.docs.map(d=>({...d.data(),id:d.id}));
+          // Her oyuncudan en yüksek skoru al (JS'de)
+          const best = new Map();
+          rows.forEach(r => {
+            if (!best.has(r.name) || r.score > best.get(r.name).score) best.set(r.name, r);
+          });
+          return [...best.values()].sort((a,b)=>b.score-a.score).slice(0,50);
+
+        } else if (tab === 'alltime') {
+          // Index: mode ASC + score DESC — server'da sırala
+          const snap = await getDocs(query(
+            col,
+            where('mode','==','classic'),
+            orderBy('score','desc'),
+            limit(200)
+          ));
+          const rows = snap.docs.map(d=>({...d.data(),id:d.id}));
           const best = new Map();
           rows.forEach(r => {
             if (!best.has(r.name) || r.score > best.get(r.name).score) best.set(r.name, r);
@@ -88,10 +112,14 @@
           return [...best.values()].sort((a,b)=>b.score-a.score).slice(0,50);
 
         } else if (tab === 'timeattack') {
-          // Tüm zaman en yüksek — JS'de sırala
-          const snap = await getDocs(query(col, where('mode','==','timeattack')));
+          // Index: mode ASC + score DESC
+          const snap = await getDocs(query(
+            col,
+            where('mode','==','timeattack'),
+            orderBy('score','desc'),
+            limit(200)
+          ));
           const rows = snap.docs.map(d=>({...d.data(),id:d.id}));
-          // Her oyuncudan sadece en yüksek skoru al
           const best = new Map();
           rows.forEach(r => {
             if (!best.has(r.name) || r.score > best.get(r.name).score) best.set(r.name, r);
@@ -99,11 +127,9 @@
           return [...best.values()].sort((a,b)=>b.score-a.score).slice(0,50);
 
         } else if (tab === 'streak') {
-          // Streak — streaks collection, JS'de sırala
           const sCol = collection(db, 'streaks');
           const snap = await getDocs(sCol);
           const rows = snap.docs.map(d=>({...d.data(),id:d.id}));
-          // Her oyuncudan sadece en yüksek streak'i al
           const best = new Map();
           rows.forEach(r => {
             if (!best.has(r.name) || r.streak > best.get(r.name).streak) best.set(r.name, r);
@@ -144,7 +170,7 @@
       const d = new Date();
       const start = new Date(d);
       start.setDate(d.getDate() - d.getDay());
-      return `${start.getFullYear()}-${start.getMonth()}-${start.getDate()}`;
+      return `${start.getFullYear()}-${start.getMonth()+1}-${start.getDate()}`;
     }
 
 
@@ -378,24 +404,36 @@
 
     .menu-best-score-box {
       width: 100%;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 20px;
-      padding: 20px;
+      background: linear-gradient(135deg, rgba(124,111,247,0.12), rgba(167,139,250,0.06));
+      border: 1px solid rgba(124,111,247,0.3);
+      border-radius: 24px;
+      padding: 22px 20px;
       text-align: center;
       margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(124,111,247,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .menu-best-score-box::before {
+      content: '';
+      position: absolute;
+      top: -30%; left: -20%;
+      width: 60%; height: 60%;
+      background: radial-gradient(circle, rgba(124,111,247,0.2), transparent 70%);
+      pointer-events: none;
     }
     .menu-best-score-label {
-      font-size: 11px; font-weight: 700;
-      color: rgba(255,255,255,0.4);
-      letter-spacing: 2px; text-transform: uppercase;
-      margin-bottom: 6px;
+      font-size: 10px; font-weight: 800;
+      color: rgba(167,139,250,0.7);
+      letter-spacing: 3px; text-transform: uppercase;
+      margin-bottom: 8px;
     }
     .menu-best-score-val {
-      font-size: 52px; font-weight: 900;
+      font-size: 56px; font-weight: 900;
       color: #fff; font-family: 'Nunito', sans-serif;
-      letter-spacing: -2px; line-height: 1;
+      letter-spacing: -3px; line-height: 1;
       margin-bottom: 8px;
+      text-shadow: 0 0 40px rgba(167,139,250,0.4);
     }
     .menu-best-score-sub {
       font-size: 12px; color: rgba(255,255,255,0.4);
@@ -407,13 +445,13 @@
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
       height: 64px;
-      background: rgba(40,40,65,0.98);
-      border-top: 1px solid rgba(255,255,255,0.12);
+      background: rgba(10,14,25,0.96);
+      border-top: 1px solid rgba(124,111,247,0.2);
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       align-items: center;
       z-index: 100;
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(24px);
       padding-bottom: env(safe-area-inset-bottom);
     }
     .nav-btn {
@@ -425,43 +463,59 @@
       width: 100%; height: 100%;
     }
     .nav-btn:active { transform: scale(0.82); opacity: 0.7; }
-    .nav-icon { font-size: 30px; line-height: 1; display: block; }
-    .nav-btn.active .nav-icon { filter: drop-shadow(0 0 8px rgba(167,139,250,0.9)); transform: scale(1.15); }
+    .nav-icon { font-size: 28px; line-height: 1; display: block; }
+    .nav-btn.active .nav-icon { filter: drop-shadow(0 0 10px rgba(167,139,250,1)); transform: scale(1.18); }
     .nav-btn-home {
-      background: rgba(124,111,247,0.2);
+      background: rgba(124,111,247,0.18);
       border-radius: 16px;
       margin: 6px 2px;
+      border: 1px solid rgba(124,111,247,0.25);
       transition: background 0.2s, border-radius 0.2s !important;
     }
 
     /* Menü butonları */
     .menu-btn {
       display: block; width: 100%;
-      padding: 16px; border-radius: 16px; border: none;
-      font-size: 17px; font-weight: 800;
+      padding: 17px; border-radius: 18px; border: none;
+      font-size: 16px; font-weight: 900;
       font-family: 'Nunito', sans-serif;
       cursor: pointer;
-      transition: transform 0.12s, filter 0.12s;
+      transition: transform 0.12s, box-shadow 0.12s;
       margin-bottom: 10px;
+      letter-spacing: 0.3px;
+      position: relative;
+      overflow: hidden;
     }
-    .menu-btn:active { transform: scale(0.96); filter: brightness(0.9); }
+    .menu-btn::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+      animation: btnShimmer 3s infinite;
+    }
+    @keyframes btnShimmer {
+      0% { left: -100%; }
+      100% { left: 200%; }
+    }
+    .menu-btn:active { transform: scale(0.96); box-shadow: none !important; }
     .btn-play {
-      background: linear-gradient(135deg, #7c6ff7, #a78bfa);
+      background: linear-gradient(135deg, #6d5ff5, #9d78f0, #7c6ff7);
       color: #fff;
-      box-shadow: 0 4px 24px rgba(124,111,247,0.4);
+      box-shadow: 0 6px 28px rgba(124,111,247,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
     }
     .btn-timeattack {
-      background: linear-gradient(135deg, #ef4444, #f97316);
+      background: linear-gradient(135deg, #dc2626, #f97316, #ef4444);
       color: #fff;
-      box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+      box-shadow: 0 6px 20px rgba(239,68,68,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
     }
 
     .menu-block {
       position: absolute;
-      border-radius: 10px;
+      border-radius: 8px;
       animation: blockFloat var(--dur) ease-in-out infinite;
       animation-delay: var(--delay);
-      opacity: 0.12;
+      opacity: 0.15;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
     }
 
     .menu-inner {
@@ -581,16 +635,22 @@
 
     .menu-logo {
       font-family: 'Nunito', sans-serif;
-      font-size: 56px; font-weight: 900;
+      font-size: 58px; font-weight: 900;
       letter-spacing: -2px; line-height: 1;
       margin-bottom: 4px; text-align: center;
+      filter: drop-shadow(0 0 20px rgba(124,111,247,0.4));
+      animation: logoGlow 3s ease-in-out infinite alternate;
+    }
+    @keyframes logoGlow {
+      from { filter: drop-shadow(0 0 16px rgba(124,111,247,0.3)); }
+      to   { filter: drop-shadow(0 0 28px rgba(124,111,247,0.6)) drop-shadow(0 0 60px rgba(167,139,250,0.2)); }
     }
     .menu-tagline {
       font-family: 'Nunito', sans-serif;
-      font-size: 11px; letter-spacing: 4px;
-      color: rgba(255,255,255,0.3);
+      font-size: 10px; letter-spacing: 5px;
+      color: rgba(255,255,255,0.25);
       text-transform: uppercase;
-      margin-bottom: 20px; font-weight: 600;
+      margin-bottom: 20px; font-weight: 700;
     }
     .menu-daily-card {
       width: 100%;
@@ -685,15 +745,16 @@
     #leaderboardScreen.hidden { display:none; }
 
     .lb-tabs {
-      display:flex; gap:6px; margin-bottom:16px;
+      display:flex; gap:4px; margin-bottom:16px;
     }
     .lb-tab {
-      flex:1; padding:9px 6px;
+      flex:1; padding:8px 4px;
       border-radius:10px; border:1px solid rgba(255,255,255,0.08);
       background:rgba(255,255,255,0.04);
-      color:rgba(255,255,255,0.4); font-size:12px; font-weight:700;
+      color:rgba(255,255,255,0.4); font-size:10px; font-weight:700;
       font-family:'Nunito',sans-serif; cursor:pointer;
-      transition:all 0.15s;
+      transition:all 0.15s; white-space:nowrap;
+      overflow:hidden; text-overflow:ellipsis;
     }
     .lb-tab.active {
       background:rgba(124,111,247,0.15);
@@ -1488,7 +1549,7 @@
           </div>
         </div>
         <div class="settings-footer">
-          <p>BlockPop v1.0.4</p>
+          <p>BlockPop v1.1.7</p>
           <p>Made by Onur</p>
         </div>
       </div>
@@ -1523,7 +1584,8 @@
     <!-- Tab seçimi -->
     <div class="lb-tabs">
       <button class="lb-tab active" data-tab="weekly">Bu Hafta</button>
-      <button class="lb-tab" data-tab="timeattack">Zaman Modu</button>
+      <button class="lb-tab" data-tab="alltime">🌍 Tüm</button>
+      <button class="lb-tab" data-tab="timeattack">⏱ Zaman</button>
       <button class="lb-tab" data-tab="streak">🔥 Streak</button>
     </div>
 
@@ -1980,7 +2042,7 @@
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
   <audio id="snd-gameover" src="assets/sounds/gameover1.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=1.0.4"></script>
+  <script src="main.js?v=1.1.7"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -2120,10 +2182,25 @@
       window.timeLeft = timeLeft;
       updateTimerUI();
       clearInterval(timerInterval);
+      let lastSecond = Math.ceil(timeLeft);
       timerInterval = setInterval(() => {
         timeLeft = Math.max(0, timeLeft - 0.1);
         window.timeLeft = timeLeft;
         updateTimerUI();
+
+        // Geri sayım sesi
+        const currentSecond = Math.ceil(timeLeft);
+        if (currentSecond !== lastSecond && currentSecond > 0) {
+          lastSecond = currentSecond;
+          if (currentSecond <= 5) {
+            // Son 5 saniye — acil ses
+            if (typeof playSndCountdownUrgent === 'function') playSndCountdownUrgent();
+          } else if (currentSecond <= 10) {
+            // 6-10 saniye — normal tick
+            if (typeof playSndCountdownTick === 'function') playSndCountdownTick();
+          }
+        }
+
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
           endTimeAttack();
@@ -2789,9 +2866,10 @@
       const lbTitleEl = document.querySelector('#leaderboardScreen .settings-title');
       if (lbTitleEl) lbTitleEl.textContent = L === 'en' ? '🌍 Leaderboard' : '🌍 Sıralama';
       const tabs = document.querySelectorAll('.lb-tab');
-      if (tabs[0]) tabs[0].textContent = tr('thisWeek');
-      if (tabs[1]) tabs[1].textContent = tr('timeModeTab');
-      if (tabs[2]) tabs[2].textContent = tr('streakTab');
+      if (tabs[0]) tabs[0].textContent = L === 'en' ? 'This Week' : 'Bu Hafta';
+      if (tabs[1]) tabs[1].textContent = L === 'en' ? '🌍 All' : '🌍 Tüm';
+      if (tabs[2]) tabs[2].textContent = L === 'en' ? '⏱ Time' : '⏱ Zaman';
+      if (tabs[3]) tabs[3].textContent = L === 'en' ? '🔥 Streak' : '🔥 Streak';
 
       // Rozet ekranı
       const achTitle = document.querySelector('#tab-achieve .tab-title');
@@ -2958,6 +3036,8 @@
       const current = getDiamonds();
       localStorage.setItem('bp_diamonds', current + amount);
       if (typeof updateDiamondDisplay === 'function') updateDiamondDisplay();
+      // Elmas kazanma sesi
+      if (amount > 0 && typeof playSndDiamond === 'function') playSndDiamond();
     }
     window.addDiamonds = addDiamondsAmount;
     window.getDiamonds = getDiamonds;
@@ -2982,8 +3062,8 @@
       else if (streak >= 3) bonus = 10;
       
       addDiamondsAmount(bonus);
-      
-      // Bildirim
+      // Streak bonusu sesi
+      if (typeof playSndStreakBonus === 'function') setTimeout(playSndStreakBonus, 300);
       setTimeout(() => {
         const toast = document.createElement('div');
         toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);
@@ -3192,16 +3272,19 @@
 
     // Zorluk seçimleri
     document.getElementById('btnEasy').addEventListener('click', () => {
+      if (typeof playSndMenuClick === 'function') playSndMenuClick();
       document.getElementById('difficultyModal').classList.add('hidden');
       if (typeof resetGame === 'function') resetGame();
       startGame('easy');
     });
     document.getElementById('btnNormal').addEventListener('click', () => {
+      if (typeof playSndMenuClick === 'function') playSndMenuClick();
       document.getElementById('difficultyModal').classList.add('hidden');
       if (typeof resetGame === 'function') resetGame();
       startGame('normal');
     });
     document.getElementById('btnHard').addEventListener('click', () => {
+      if (typeof playSndMenuClick === 'function') playSndMenuClick();
       document.getElementById('difficultyModal').classList.add('hidden');
       if (typeof resetGame === 'function') resetGame();
       startGame('hard');
@@ -3212,10 +3295,12 @@
 
     // Zaman modu → seviye seçim
     document.getElementById('btnPlayTime').addEventListener('click', () => {
+      if (typeof playSndMenuClick === 'function') playSndMenuClick();
       document.getElementById('timeLevelModal').classList.remove('hidden');
     });
     [1,2,3,4,5].forEach(lvl => {
       document.getElementById(`btnTimeL${lvl}`).addEventListener('click', () => {
+        if (typeof playSndMenuClick === 'function') playSndMenuClick();
         document.getElementById('timeLevelModal').classList.add('hidden');
         if (typeof resetGame === 'function') resetGame();
         startGame('timeattack', lvl);
@@ -3847,7 +3932,16 @@
     };
 
     function resumeGame() {
-      const _gos = document.getElementById('gameOverScreen'); _gos.style.visibility = 'hidden'; _gos.style.pointerEvents = 'none'; _gos.classList.remove('active');
+      // Devam etmeden önce mevcut skoru kaydet
+      // window.currentScore main.js'deki score değişkenini taşır
+      const currentScore = window.currentScore || (typeof score !== 'undefined' ? score : 0);
+      if (typeof window.submitScoreToLeaderboard === 'function' && currentScore > 0) {
+        window.submitScoreToLeaderboard(currentScore, window.currentGameMode || 'normal');
+      }
+      const _gos = document.getElementById('gameOverScreen');
+      _gos.style.visibility = 'hidden';
+      _gos.style.pointerEvents = 'none';
+      _gos.classList.remove('active');
       window._gameOverCancelled = true;
       if (typeof resumeFromGameOver === 'function') resumeFromGameOver();
     }
