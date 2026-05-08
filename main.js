@@ -135,6 +135,13 @@ function colorToHex(name) {
   return t.colors[name] || '#4a8';
 }
 
+// Hex rengi "r,g,b" formatına çevir (CSS variable için)
+function hexToRgb(hex) {
+  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!r) return '124,111,247';
+  return `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}`;
+}
+
 // Power-up: Satır Sil
 let clearRowCharges = 1;
 let clearRowMode = false;
@@ -1511,11 +1518,16 @@ function showGameOver(){
   scoreText.innerHTML = `<span style="font-size:12px;opacity:0.5;display:block;margin-bottom:4px;">${modeLabel}</span>Score: ${score}`;
 
   // Skoru HEMEN gönder — animasyon callback'inden bağımsız
-  // (reklam izleyip devam edince de çalışsın)
   window.currentScore = score;
   setTimeout(() => {
     if (typeof window.submitScoreToLeaderboard === 'function') {
       window.submitScoreToLeaderboard(score, window.currentGameMode || 'normal');
+    }
+    // Her 3 oyunda bir interstitial göster
+    const goCount = (parseInt(localStorage.getItem('bp_go_count')||'0') + 1);
+    localStorage.setItem('bp_go_count', goCount);
+    if (goCount % 3 === 0 && typeof window.showAdMobInterstitial === 'function') {
+      setTimeout(window.showAdMobInterstitial, 1500);
     }
   }, 300);
 
@@ -3021,9 +3033,11 @@ function getBoardCellFromClient(clientX, clientY) {
 let _activeGhostCells = [];
 
 function clearGhostPreview() {
-  // Sadece ghost olan hücreleri temizle, tümünü tarama
   _activeGhostCells.forEach(c => {
     c.classList.remove('ghost-valid', 'ghost-invalid');
+    c.style.removeProperty('--ghost-color');
+    c.style.removeProperty('--ghost-border');
+    c.style.removeProperty('--ghost-glow');
   });
   _activeGhostCells = [];
 }
@@ -3130,6 +3144,13 @@ function updateGhostPreview(clientX, clientY) {
   lastGhostCell = [startX, startY];
 
   // Ghost çiz - aktif hücreleri kaydet
+  // Ghost rengi — seçili parçanın rengi
+  const ghostHex = selectedPieceColor ? (colorToHex(selectedPieceColor) || '#7c6ff7') : '#7c6ff7';
+  const ghostRgb = hexToRgb(ghostHex);
+  const ghostBg     = `rgba(${ghostRgb},0.22)`;
+  const ghostBorder = `rgba(${ghostRgb},0.95)`;
+  const ghostGlow   = `rgba(${ghostRgb},0.5)`;
+
   const cells = getCells();
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -3138,6 +3159,9 @@ function updateGhostPreview(clientX, clientY) {
         const cellEl = cells[idx];
         if (cellEl) {
           cellEl.classList.add('ghost-valid');
+          cellEl.style.setProperty('--ghost-color', ghostBg);
+          cellEl.style.setProperty('--ghost-border', ghostBorder);
+          cellEl.style.setProperty('--ghost-glow', ghostGlow);
           _activeGhostCells.push(cellEl);
         }
       }
