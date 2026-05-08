@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.2.0">
+  <link rel="stylesheet" href="style.css?v=1.2.6">
 
   <!-- Firebase -->
   <script type="module">
@@ -1499,7 +1499,7 @@
           </div>
           <button class="menu-btn btn-play" id="btnPlay">🎮  Klasik Mod</button>
           <button class="menu-btn btn-timeattack" id="btnPlayTime">⏱  Zaman Modu</button>
-          <button onclick="watchAdForDiamonds()" class="menu-ad-btn">📺  Reklam İzle → +15 💎</button>
+          <button onclick="watchAdForDiamonds()" class="menu-ad-btn">📺  Reklam İzle → +50 💎</button>
         </div>
       </div>
 
@@ -1562,7 +1562,7 @@
           </div>
         </div>
         <div class="settings-footer">
-          <p>BlockPop v1.2.0</p>
+          <p>BlockPop v1.2.6</p>
           <p>Made by Onur</p>
         </div>
       </div>
@@ -2055,7 +2055,7 @@
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
   <audio id="snd-gameover" src="assets/sounds/gameover1.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=1.2.0"></script>
+  <script src="main.js?v=1.2.6"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -2522,15 +2522,22 @@
       const name = document.getElementById('nameInput').value.trim();
       if (!name) return;
 
-      // İsim zaten kilitliyse değiştirme
+      // İsim zaten kilitliyse değiştirme — sadece kapat
       if (isNameLocked()) {
         document.getElementById('nameModal').classList.add('hidden');
+        // Yine de skoru gönder
+        if (pendingScore && window.fbSubmitScore) {
+          const saved = getPlayerName();
+          if (saved) window.fbSubmitScore(saved, pendingScore.score, pendingScore.mode);
+        }
+        pendingScore = null;
         return;
       }
 
+      // İlk kez isim kaydediliyor — HEMEN kilitle
       savePlayerName(name);
-      // Firebase'e cihaz kaydı yap ve ismi kilitle
-      await registerDeviceWithName(name);
+      localStorage.setItem('bp_name_locked', '1');
+      localStorage.setItem('bp_device_id', getDeviceId());
       document.getElementById('nameModal').classList.add('hidden');
 
       // Mevcut streak'i Firebase'e gönder (yeni isim için)
@@ -2782,7 +2789,7 @@
         levelLabel: 'Sev.',
         exitPrompt: '← Çıkmak için tekrar basın',
         rewardLabel: '💎 ödül',
-        watchAd: '📺  Reklam İzle → +15 💎',
+        watchAd: '📺  Reklam İzle → +50 💎',
         resetGameTitle: 'Oyunu Sıfırla',
         resetGameDesc: 'Mevcut oyun silinecek. Emin misin?',
       },
@@ -2858,7 +2865,7 @@
         levelLabel: 'Lv.',
         exitPrompt: '← Press again to exit',
         rewardLabel: '💎 reward',
-        watchAd: '📺  Watch Ad → +15 💎',
+        watchAd: '📺  Watch Ad → +50 💎',
         resetGameTitle: 'Reset Game',
         resetGameDesc: 'Current game will be deleted. Sure?',
       }
@@ -2960,7 +2967,18 @@
 
       // Reklam butonu
       const adBtn = document.querySelector('.menu-ad-btn');
-      if (adBtn) adBtn.textContent = tr('watchAd');
+      if (adBtn) {
+        const todayKey = 'bp_ad_watched_' + new Date().toDateString();
+        if (localStorage.getItem(todayKey)) {
+          adBtn.textContent = L === 'en' ? '✅ Watched today' : '✅ Bugün izlendi';
+          adBtn.style.opacity = '0.5';
+          adBtn.style.pointerEvents = 'none';
+        } else {
+          adBtn.textContent = tr('watchAd');
+          adBtn.style.opacity = '';
+          adBtn.style.pointerEvents = '';
+        }
+      }
 
       // Zorluk seçim modalı
       const diffTitle = document.querySelector('#difficultyModal .diff-title');
@@ -3152,47 +3170,66 @@
     // Reklam ile elmas — günlük 1 kez
     window.watchAdForDiamonds = function() {
       const todayKey = 'bp_ad_watched_' + new Date().toDateString();
+
+      // Günde 1 kez
       if (localStorage.getItem(todayKey)) {
         const toast = document.createElement('div');
-        toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
-        toast.textContent = currentLang === 'en' ? 'Come back tomorrow for more! 📅' : 'Yarın tekrar gel! 📅';
+        toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;animation:xpToastAnim 2.5s ease forwards;font-family:Nunito,sans-serif;text-align:center;';
+        toast.textContent = currentLang === 'en' ? '📅 Come back tomorrow!' : '📅 Yarın tekrar gel!';
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 2500);
         return;
       }
-      const bar = document.createElement('div');
-      bar.innerHTML = `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9999;">
-        <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px 24px;text-align:center;width:280px;">
-          <div style="font-size:40px;margin-bottom:12px;">📺</div>
-          <div style="font-size:18px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin-bottom:8px;">${currentLang==='en'?'Watch Ad':'Reklam İzle'}</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:20px;">${currentLang==='en'?'Watch 5 seconds, earn +15 💎!':'5 saniye izle, +15 💎 kazan!'}</div>
-          <div style="background:rgba(255,255,255,0.08);border-radius:50px;height:8px;overflow:hidden;margin-bottom:16px;">
-            <div id="adDiamondBarFill" style="height:100%;width:0%;background:linear-gradient(90deg,#7c6ff7,#a78bfa);border-radius:50px;transition:width 0.1s;"></div>
+
+      // Simülasyon overlay — hem web hem native'de göster
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9999;';
+      overlay.innerHTML = `
+        <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:32px 28px;text-align:center;width:min(300px,85vw);">
+          <div style="font-size:44px;margin-bottom:12px;">📺</div>
+          <div style="font-size:18px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin-bottom:6px;">${currentLang==='en'?'Watch Ad':'Reklam İzle'}</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:20px;">${currentLang==='en'?'Earn +50 💎':'+50 💎 kazan!'}</div>
+          <div style="background:rgba(255,255,255,0.08);border-radius:50px;height:6px;overflow:hidden;margin-bottom:12px;">
+            <div id="_adFill" style="height:100%;width:0%;background:linear-gradient(90deg,#7c6ff7,#a78bfa);border-radius:50px;transition:width 0.1s;"></div>
           </div>
-          <div id="adDiamondTimer" style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);">5</div>
-        </div>
-      </div>`;
-      document.body.appendChild(bar);
-      let _adT = 5;
-      const interval = setInterval(() => {
-        _adT -= 0.1;
-        const pct = ((5-_adT)/5)*100;
-        const fill = document.getElementById('adDiamondBarFill');
-        const timer = document.getElementById('adDiamondTimer');
-        if (fill) fill.style.width = pct + '%';
-        if (timer) timer.textContent = Math.ceil(_adT);
-        if (_adT <= 0) {
-          clearInterval(interval);
-          bar.remove();
-          localStorage.setItem(todayKey, '1');
-          addDiamondsAmount(15);
-          const toast = document.createElement('div');
-          toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(99,179,237,0.9);color:#0d0d14;padding:10px 22px;border-radius:50px;font-size:15px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
-          toast.textContent = '+15 💎 Kazandın!';
-          document.body.appendChild(toast);
-          setTimeout(() => toast.remove(), 2000);
+          <div id="_adTimer" style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.4);">5</div>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      const giveReward = () => {
+        overlay.remove();
+        localStorage.setItem(todayKey, '1');
+        addDiamondsAmount(50);
+        // Butonu güncelle
+        const btn = document.querySelector('.menu-ad-btn');
+        if (btn) {
+          btn.textContent = currentLang === 'en' ? '✅ Watched today' : '✅ Bugün izlendi';
+          btn.style.opacity = '0.5';
+          btn.style.pointerEvents = 'none';
         }
-      }, 100);
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(99,179,237,0.95);color:#0d0d14;padding:12px 24px;border-radius:50px;font-size:15px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
+        toast.textContent = '+50 💎 Kazandın!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+      };
+
+      if (IS_NATIVE && AdMob) {
+        // Native — gerçek reklam, overlay kapat
+        overlay.remove();
+        showRewarded(giveReward);
+      } else {
+        // Web simülasyonu — 5 saniye sayaç
+        let t = 5;
+        const iv = setInterval(() => {
+          t -= 0.1;
+          const fill = document.getElementById('_adFill');
+          const timer = document.getElementById('_adTimer');
+          if (fill) fill.style.width = ((5-t)/5*100) + '%';
+          if (timer) timer.textContent = Math.ceil(Math.max(0,t));
+          if (t <= 0) { clearInterval(iv); giveReward(); }
+        }, 100);
+      }
     };
 
     // İlk yüklemede günlük giriş bonusu kontrol et — main.js'deki processDailyLogin kullanılır
@@ -3257,19 +3294,46 @@
 
     // Ayarlardan isim değiştirme
     document.getElementById('btnSaveName').addEventListener('click', () => {
+      // İsim kilitliyse değiştirme
+      if (isNameLocked()) {
+        const btn = document.getElementById('btnSaveName');
+        btn.textContent = '🔒 Değiştirilemez';
+        btn.style.background = 'rgba(255,255,255,0.1)';
+        setTimeout(() => {
+          btn.textContent = 'Kaydet';
+          btn.style.background = 'linear-gradient(135deg,#7c6ff7,#a78bfa)';
+        }, 1500);
+        return;
+      }
       const input = document.getElementById('settingsNameInput');
       const name = input.value.trim();
       if (!name) return;
       savePlayerName(name);
-      // Başarı bildirimi
+      localStorage.setItem('bp_name_locked', '1');
       const btn = document.getElementById('btnSaveName');
       btn.textContent = '✓';
       btn.style.background = 'linear-gradient(135deg,#34d399,#059669)';
       setTimeout(() => {
-        btn.textContent = 'Kaydet';
-        btn.style.background = 'linear-gradient(135deg,#7c6ff7,#a78bfa)';
+        btn.textContent = '🔒 Kilitlendi';
+        btn.style.background = 'rgba(255,255,255,0.1)';
+        input.readOnly = true;
+        input.style.opacity = '0.5';
       }, 1500);
     });
+
+    // Ayarlar sekmesi açılınca input'u kilitle
+    function updateSettingsNameLock() {
+      const input = document.getElementById('settingsNameInput');
+      const btn = document.getElementById('btnSaveName');
+      if (!input || !btn) return;
+      if (isNameLocked()) {
+        input.readOnly = true;
+        input.style.opacity = '0.5';
+        btn.textContent = '🔒 Kilitli';
+        btn.style.background = 'rgba(255,255,255,0.08)';
+        btn.style.color = 'rgba(255,255,255,0.4)';
+      }
+    }
 
     // İlk açılış kontrolü
     checkFirstLaunch();
@@ -3313,6 +3377,7 @@
       if (tabId === 'tab-settings') {
         const nameInput = document.getElementById('settingsNameInput');
         if (nameInput) nameInput.value = getPlayerName();
+        updateSettingsNameLock();
       }
     }
 
@@ -3475,20 +3540,31 @@
     document.getElementById('restartBtn').addEventListener('click', () => {
       window._gameOverCancelled = true;
       if (_restartCountdownTimer) clearInterval(_restartCountdownTimer);
-      // Powerup'ları kaydet (reload sonrası okunacak)
+      // Powerup'ları kaydet
       if (typeof clearRowCharges !== 'undefined') {
         localStorage.setItem('bp_powerups', JSON.stringify({
-          clearRowCharges: clearRowCharges,
-          rerollCharges: rerollCharges,
-          undoCharges: undoCharges
+          clearRowCharges, rerollCharges, undoCharges
         }));
       }
-      const mode = window.currentGameMode || 'normal';
-      const level = window.currentTimeLevel || 1;
-      localStorage.setItem('bp_restart_mode', mode);
-      localStorage.setItem('bp_restart_level', level);
-      localStorage.removeItem('bp_game_save');
-      location.reload();
+      // Her 2 tekrar oynada 1 interstitial
+      const restartCount = (parseInt(localStorage.getItem('bp_restart_count')||'0') + 1);
+      localStorage.setItem('bp_restart_count', restartCount);
+
+      const doRestart = () => {
+        const mode = window.currentGameMode || 'normal';
+        const level = window.currentTimeLevel || 1;
+        localStorage.setItem('bp_restart_mode', mode);
+        localStorage.setItem('bp_restart_level', level);
+        localStorage.removeItem('bp_game_save');
+        location.reload();
+      };
+
+      if (restartCount % 2 === 0 && typeof showAdMobInterstitial === 'function' && IS_NATIVE) {
+        // Native'de interstitial göster, sonra restart
+        showAdMobInterstitial().then(doRestart).catch(doRestart);
+      } else {
+        doRestart();
+      }
     });
 
     // ===== 8 SKIN TANIMI =====
@@ -3740,46 +3816,18 @@
 
     // ===== REKLAM MODALİ =====
     let adTargetTheme = null;
-    let adTimer = null;
 
     function showAdModal(themeKey) {
       adTargetTheme = themeKey;
-      document.getElementById('adModal').classList.remove('hidden');
-      document.getElementById('adClaimBtn').classList.add('hidden');
 
-      const bar      = document.getElementById('adBar');
-      const timerEl  = document.getElementById('adTimer');
-      const DURATION = 5000;
-      let elapsed    = 0;
-
-      bar.style.width = '0%';
-      timerEl.textContent = '5 saniye sonra kazanacaksın...';
-
-      clearInterval(adTimer);
-      adTimer = setInterval(() => {
-        elapsed += 100;
-        bar.style.width = Math.min(100, (elapsed / DURATION) * 100) + '%';
-        const left = Math.ceil((DURATION - elapsed) / 1000);
-        timerEl.textContent = left > 0 ? `${left} saniye sonra kazanacaksın...` : 'Tamamlandı! 🎉';
-        if (elapsed >= DURATION) {
-          clearInterval(adTimer);
-          document.getElementById('adClaimBtn').classList.remove('hidden');
-        }
-      }, 100);
+      // Gerçek rewarded sistemi kullan
+      showRewarded(() => {
+        if (!adTargetTheme) return;
+        unlockTheme(adTargetTheme);
+        selectTheme(adTargetTheme);
+        adTargetTheme = null;
+      });
     }
-
-    document.getElementById('adClaimBtn').addEventListener('click', () => {
-      if (!adTargetTheme) return;
-      unlockTheme(adTargetTheme);
-      selectTheme(adTargetTheme);
-      document.getElementById('adModal').classList.add('hidden');
-      clearInterval(adTimer);
-    });
-
-    document.getElementById('adCancelBtn').addEventListener('click', () => {
-      document.getElementById('adModal').classList.add('hidden');
-      clearInterval(adTimer);
-    });
 
     // ===== SERVICE WORKER KAYIT =====
     if ('serviceWorker' in navigator) {
@@ -3956,23 +4004,173 @@
       startRestartCountdown();
     }
 
+    // ===== ADMOB SİSTEMİ =====
+    const ADMOB_IDS = {
+      banner:        'ca-app-pub-2002882488986544/4111726313',
+      interstitial:  'ca-app-pub-2002882488986544/1812866037',
+      rewarded:      'ca-app-pub-2002882488986544/7604689683',
+      // Test ID'leri (geliştirme sırasında kullan)
+      bannerTest:       'ca-app-pub-3940256099942544/6300978111',
+      interstitialTest: 'ca-app-pub-3940256099942544/1033173712',
+      rewardedTest:     'ca-app-pub-3940256099942544/5224354917',
+    };
+
+    // Native mi yoksa web mi?
+    const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
+    // AdMob plugin
+    let AdMob = null;
+    let bannerShowing = false;
+    let interstitialReady = false;
+    let rewardedReady = false;
+
+    async function initAdMob() {
+      if (!IS_NATIVE) return; // Web'de çalışmaz
+      try {
+        const { AdMob: AM } = await import('@capacitor-community/admob');
+        AdMob = AM;
+        await AdMob.initialize({
+          requestTrackingAuthorization: true,
+          testingDevices: [],
+          initializeForTesting: false,
+        });
+        console.log('[AdMob] Initialized');
+        showBanner();
+        prepareInterstitial();
+        prepareRewarded();
+      } catch(e) {
+        console.warn('[AdMob] Init failed:', e);
+      }
+    }
+
+    // === BANNER ===
+    async function showBanner() {
+      if (!AdMob || bannerShowing) return;
+      try {
+        await AdMob.showBanner({
+          adId: ADMOB_IDS.banner,
+          adSize: 'BANNER',
+          position: 'BOTTOM_CENTER',
+          margin: 0,
+          isTesting: false,
+        });
+        bannerShowing = true;
+        console.log('[AdMob] Banner shown');
+      } catch(e) { console.warn('[AdMob] Banner error:', e); }
+    }
+
+    async function hideBanner() {
+      if (!AdMob || !bannerShowing) return;
+      try {
+        await AdMob.hideBanner();
+        bannerShowing = false;
+      } catch(e) {}
+    }
+
+    // === INTERSTITIAL ===
+    async function prepareInterstitial() {
+      if (!AdMob) return;
+      try {
+        await AdMob.prepareInterstitial({ adId: ADMOB_IDS.interstitial, isTesting: false });
+        interstitialReady = true;
+        console.log('[AdMob] Interstitial ready');
+      } catch(e) { console.warn('[AdMob] Interstitial prepare error:', e); }
+    }
+
+    async function showInterstitial() {
+      if (!IS_NATIVE) {
+        // Web simülasyonu — kısa overlay
+        return new Promise(resolve => {
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:9999;';
+          overlay.innerHTML = `<div style="color:white;text-align:center;font-family:Nunito,sans-serif;">
+            <div style="font-size:32px;margin-bottom:12px;">📺</div>
+            <div style="font-size:16px;font-weight:700;opacity:0.7;">Interstitial Reklam</div>
+            <div style="font-size:12px;opacity:0.4;margin-top:8px;">(Simülasyon)</div>
+            <div id="_iTimer" style="font-size:24px;font-weight:900;margin-top:16px;color:#a78bfa;">3</div>
+          </div>`;
+          document.body.appendChild(overlay);
+          let t = 3;
+          const iv = setInterval(() => {
+            t--;
+            const el = document.getElementById('_iTimer');
+            if (el) el.textContent = Math.max(0, t);
+            if (t <= 0) { clearInterval(iv); overlay.remove(); resolve(true); }
+          }, 1000);
+        });
+      }
+      if (!AdMob || !interstitialReady) return false;
+      try {
+        await AdMob.showInterstitial();
+        interstitialReady = false;
+        setTimeout(prepareInterstitial, 2000);
+        return true;
+      } catch(e) {
+        console.warn('[AdMob] Interstitial show error:', e);
+        return false;
+      }
+    }
+
+    // === REWARDED ===
+    async function prepareRewarded() {
+      if (!AdMob) return;
+      try {
+        await AdMob.prepareRewardVideoAd({ adId: ADMOB_IDS.rewarded, isTesting: false });
+        rewardedReady = true;
+        console.log('[AdMob] Rewarded ready');
+      } catch(e) { console.warn('[AdMob] Rewarded prepare error:', e); }
+    }
+
+    async function showRewarded(onRewarded) {
+      if (!IS_NATIVE) {
+        // Web simülasyonu
+        setTimeout(() => { if (onRewarded) onRewarded(); }, 1500);
+        return true;
+      }
+      if (!AdMob || !rewardedReady) {
+        // Hazır değilse simüle et
+        setTimeout(() => { if (onRewarded) onRewarded(); }, 500);
+        return false;
+      }
+      try {
+        AdMob.addListener('onRewardedVideoAdRewarded', () => {
+          if (onRewarded) onRewarded();
+        });
+        await AdMob.showRewardVideoAd();
+        rewardedReady = false;
+        setTimeout(prepareRewarded, 2000);
+        return true;
+      } catch(e) {
+        console.warn('[AdMob] Rewarded error:', e);
+        setTimeout(() => { if (onRewarded) onRewarded(); }, 500);
+        return false;
+      }
+    }
+
+    window.showAdMobBanner      = showBanner;
+    window.hideAdMobBanner      = hideBanner;
+    window.showAdMobInterstitial = showInterstitial;
+    window.showAdMobRewarded    = showRewarded;
+
+    // Oyun başlayınca AdMob başlat
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(initAdMob, 1000);
+    });
+
     window.continueWithAd = function() {
-      // Reklam simülasyonu — gerçek AdMob entegrasyonu yapılacak
       const L = currentLang;
       const g = (tr, en) => L === 'en' ? en : tr;
-
-      // Reklam izleniyor animasyonu
       const adBtn = document.getElementById('continueAdBtn');
       if (adBtn) {
         adBtn.style.opacity = '0.5';
         adBtn.style.pointerEvents = 'none';
         adBtn.querySelector('#continueAdText').textContent = g('Yükleniyor...', 'Loading...');
       }
-
-      setTimeout(() => {
+      // Gerçek rewarded reklam — native'de gerçek, web'de simülasyon
+      showRewarded(() => {
         window._adUsedThisGame = true;
         resumeGame();
-      }, 1500); // Gerçek reklamda bu süre reklam süresi olacak
+      });
     };
 
     window.continueWithDiamonds = function() {
@@ -4046,7 +4244,7 @@
       const _toast4 = document.createElement('div');
       _toast4.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(124,111,247,0.95);color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
       _toast4.textContent = msg;
-      document.body.appendChild(_toast4);
+      document.body.appendChild(t);
       setTimeout(() => _toast4.remove(), 2500);
     }
 
