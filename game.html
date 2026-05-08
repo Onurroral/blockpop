@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.1.9">
+  <link rel="stylesheet" href="style.css?v=1.2.0">
 
   <!-- Firebase -->
   <script type="module">
@@ -1562,7 +1562,7 @@
           </div>
         </div>
         <div class="settings-footer">
-          <p>BlockPop v1.1.9</p>
+          <p>BlockPop v1.2.0</p>
           <p>Made by Onur</p>
         </div>
       </div>
@@ -2055,7 +2055,7 @@
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
   <audio id="snd-gameover" src="assets/sounds/gameover1.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=1.1.9"></script>
+  <script src="main.js?v=1.2.0"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -2375,6 +2375,37 @@
 
     function getPlayerName() { return localStorage.getItem('bp_player_name') || ''; }
     function savePlayerName(n) { localStorage.setItem('bp_player_name', n); }
+    function isNameLocked() { return localStorage.getItem('bp_name_locked') === '1'; }
+
+    // Cihaz UUID — benzersiz ID, oyun silinse bile Firebase'de kalır
+    function getDeviceId() {
+      let id = localStorage.getItem('bp_device_id');
+      if (!id) {
+        id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('bp_device_id', id);
+      }
+      return id;
+    }
+
+    // Firebase'e cihaz kaydı — isim kilitle
+    async function registerDeviceWithName(name) {
+      try {
+        if (!window.db) return;
+        const { collection, doc, setDoc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const deviceId = getDeviceId();
+        const ref = doc(window.db, 'devices', deviceId);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+          // İlk kayıt
+          await setDoc(ref, { name, registeredAt: new Date().toISOString() });
+        }
+        // İsmi kilitle
+        localStorage.setItem('bp_name_locked', '1');
+      } catch(e) {
+        // Firebase yoksa sadece local kilitle
+        localStorage.setItem('bp_name_locked', '1');
+      }
+    }
 
     function getRankEmoji(i) {
       if (i === 0) return '🥇';
@@ -2470,14 +2501,36 @@
     function showNameModal(score, mode) {
       pendingScore = { score, mode };
       const saved = getPlayerName();
-      document.getElementById('nameInput').value = saved;
+      const locked = isNameLocked();
+      const input = document.getElementById('nameInput');
+      input.value = saved;
+
+      if (locked && saved) {
+        // İsim kilitli — sadece göster, değiştirme
+        input.readOnly = true;
+        input.style.opacity = '0.6';
+        const hint = document.getElementById('nameModalHint');
+        if (hint) hint.textContent = saved + ' olarak oynuyorsun';
+      } else {
+        input.readOnly = false;
+        input.style.opacity = '1';
+      }
       document.getElementById('nameModal').classList.remove('hidden');
     }
 
     document.getElementById('btnNameSave').addEventListener('click', async () => {
       const name = document.getElementById('nameInput').value.trim();
       if (!name) return;
+
+      // İsim zaten kilitliyse değiştirme
+      if (isNameLocked()) {
+        document.getElementById('nameModal').classList.add('hidden');
+        return;
+      }
+
       savePlayerName(name);
+      // Firebase'e cihaz kaydı yap ve ismi kilitle
+      await registerDeviceWithName(name);
       document.getElementById('nameModal').classList.add('hidden');
 
       // Mevcut streak'i Firebase'e gönder (yeni isim için)
