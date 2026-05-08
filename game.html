@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.1.7">
+  <link rel="stylesheet" href="style.css?v=1.1.9">
 
   <!-- Firebase -->
   <script type="module">
@@ -42,35 +42,48 @@
     window.fbSubmitScore = async function(name, score, mode) {
       try {
         const cleanName = name.trim().substring(0,16);
-        if (!cleanName || !score || score <= 0) return false;
+        console.log('[LB] Submit attempt:', { name: cleanName, score, mode });
+        if (!cleanName || !score || score <= 0) {
+          console.warn('[LB] Invalid data, skipping');
+          return false;
+        }
         const col = collection(db, 'scores');
         const modeVal = (mode === 'timeattack') ? 'timeattack' : 'classic';
 
         // Aynı isim ve mod için mevcut tüm kayıtları bul
         const q = query(col, where('name','==',cleanName), where('mode','==',modeVal));
         const snap = await getDocs(q);
+        console.log('[LB] Existing docs found:', snap.size);
 
         if (!snap.empty) {
           let bestScore = 0;
           snap.forEach(d => {
+            console.log('[LB] Existing score:', d.data().score);
             if (d.data().score > bestScore) bestScore = d.data().score;
           });
-          // Yeni skor daha düşükse gönderme
-          if (score <= bestScore) return 'same';
-          // Eski kayıtları sil (hepsini — duplicate temizle)
-          for (const d of snap.docs) await deleteDoc(d.ref);
+          console.log('[LB] Best existing:', bestScore, '| New score:', score);
+          if (score <= bestScore) {
+            console.log('[LB] New score not higher, skipping');
+            return 'same';
+          }
+          // Eski kayıtları sil
+          for (const d of snap.docs) {
+            await deleteDoc(d.ref);
+            console.log('[LB] Deleted old doc:', d.id);
+          }
         }
 
-        await addDoc(col, {
+        const docRef = await addDoc(col, {
           name: cleanName,
           score: Math.floor(score),
           mode: modeVal,
           ts: Timestamp.now(),
           week: getWeekStr(),
         });
+        console.log('[LB] ✅ New score saved! Doc ID:', docRef.id);
         return true;
       } catch(e) {
-        console.warn('Score gönderilemedi:', e);
+        console.error('[LB] ❌ Error:', e);
         return false;
       }
     };
@@ -1549,7 +1562,7 @@
           </div>
         </div>
         <div class="settings-footer">
-          <p>BlockPop v1.1.7</p>
+          <p>BlockPop v1.1.9</p>
           <p>Made by Onur</p>
         </div>
       </div>
@@ -2042,7 +2055,7 @@
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
   <audio id="snd-gameover" src="assets/sounds/gameover1.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=1.1.7"></script>
+  <script src="main.js?v=1.1.9"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -3980,7 +3993,7 @@
       const _toast4 = document.createElement('div');
       _toast4.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(124,111,247,0.95);color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;font-weight:800;z-index:9999;pointer-events:none;font-family:Nunito,sans-serif;white-space:nowrap;';
       _toast4.textContent = msg;
-      document.body.appendChild(t);
+      document.body.appendChild(_toast4);
       setTimeout(() => _toast4.remove(), 2500);
     }
 
