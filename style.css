@@ -209,12 +209,23 @@ body::after {
 
 /* Ghost */
 .board-cell.ghost-valid {
-  background: rgba(124,111,247,0.2) !important;
-  border: 1.5px dashed rgba(124,111,247,0.6) !important;
-  box-shadow: none !important;
+  background: var(--ghost-color, rgba(124,111,247,0.18)) !important;
+  border: 2px solid var(--ghost-border, rgba(124,111,247,0.9)) !important;
+  box-shadow:
+    0 0 8px var(--ghost-glow, rgba(124,111,247,0.4)),
+    inset 0 1px 0 rgba(255,255,255,0.25) !important;
   transition: none !important;
+  border-radius: 4px !important;
 }
 .board-cell.ghost-valid::after { display: none; }
+.board-cell.ghost-valid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+  border-radius: 3px;
+  pointer-events: none;
+}
 
 /* Predict clear */
 .predict-clear {
