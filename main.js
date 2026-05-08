@@ -1510,6 +1510,15 @@ function showGameOver(){
   const modeLabel = isTimeMode ? '⏱ Zaman Modu' : '🎮 Klasik Mod';
   scoreText.innerHTML = `<span style="font-size:12px;opacity:0.5;display:block;margin-bottom:4px;">${modeLabel}</span>Score: ${score}`;
 
+  // Skoru HEMEN gönder — animasyon callback'inden bağımsız
+  // (reklam izleyip devam edince de çalışsın)
+  window.currentScore = score;
+  setTimeout(() => {
+    if (typeof window.submitScoreToLeaderboard === 'function') {
+      window.submitScoreToLeaderboard(score, window.currentGameMode || 'normal');
+    }
+  }, 300);
+
   // Dramatik game over animasyonu
   window._gameOverCancelled = false;
 
@@ -1529,11 +1538,6 @@ function showGameOver(){
       updateAchievementStats(score, gameBlocksPlaced, gameLinesCleared, gameMaxCombo);
     if (typeof checkDailyChallenge === 'function')
       setTimeout(() => checkDailyChallenge(score, gameBlocksPlaced, gameLinesCleared, gameMaxCombo), 300);
-
-    setTimeout(() => {
-      if (typeof window.submitScoreToLeaderboard === 'function')
-        window.submitScoreToLeaderboard(score, window.currentGameMode || 'normal');
-    }, 800);
   });
 }
 
