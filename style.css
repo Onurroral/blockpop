@@ -1,0 +1,991 @@
+/* ========================================
+   BLOCKPOP — OBSIDIAN GLASS THEME
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+:root {
+  --bg-deep:    #141e2e;
+  --bg-mid:     #1a2840;
+  --bg-surface: #243450;
+  --bg-glass:   rgba(255,255,255,0.055);
+  --bg-glass2:  rgba(255,255,255,0.10);
+  --border:     rgba(255,255,255,0.10);
+  --border2:    rgba(255,255,255,0.18);
+  --text-1:     #ffffff;
+  --text-2:     rgba(255,255,255,0.7);
+  --text-3:     rgba(255,255,255,0.4);
+  --accent:     #7c6ff7;
+  --accent2:    #a78bfa;
+  --gold:       #fbbf24;
+  --radius-sm:  6px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;
+  --font:       'Nunito', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+body {
+  background: #0f1623;
+  color: var(--text-1);
+  font-family: var(--font);
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Animasyonlu arka plan orb'ları */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 15%, rgba(124,111,247,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 45% at 85% 85%, rgba(45,212,191,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(167,139,250,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 80% 20%, rgba(251,191,36,0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+  animation: bgPulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes bgPulse {
+  0%   { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+/* Grid nokta deseni */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+
+/* ========================================
+   GAME CONTAINER
+   ======================================== */
+#game-container {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  max-width: 400px;
+  padding: 0 10px;
+  padding-top: 6px;
+  box-sizing: border-box;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ========================================
+   TOP BAR
+   ======================================== */
+#game-topbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 0;
+  padding-top: 0;
+  height: 8vh;
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+.topbar-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.topbar-crown {
+  font-size: 18px;
+}
+
+#high-score {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.topbar-center {
+  width: 100%;
+  text-align: center;
+  height: 10vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+}
+
+#score {
+  font-size: clamp(36px, 8vh, 56px);
+  font-weight: 900;
+  color: var(--text-1);
+  line-height: 1;
+  letter-spacing: -2px;
+  margin-bottom: 0;
+}
+
+.topbar-btn {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-glass2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-md);
+  color: var(--text-2);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  backdrop-filter: blur(8px);
+}
+.topbar-btn:active { transform: scale(0.92); background: var(--bg-glass); }
+
+/* ========================================
+   BOARD
+   ======================================== */
+#board {
+  width: 100%;
+  height: 42vh;
+  max-width: 42vh;
+  aspect-ratio: unset;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  gap: 3px;
+  padding: 0;
+  margin-bottom: 0;
+  touch-action: none;
+  position: relative;
+  contain: layout style paint;
+  isolation: isolate;
+  
+}
+
+.board-cell {
+  background: #2e2a67;
+  border-radius: 10px;
+  box-shadow:
+    inset 0 4px 6px rgba(255,255,255,0.05),
+    inset 0 -4px 8px rgba(0,0,0,0.25);
+  transition: background 0.08s;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dolu hücre — Block Blast tarzı 3D */
+.board-cell[style*="background"] {
+  border: none;
+  
+}
+
+.board-cell[style*="background"]::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.22), transparent);
+  border-radius: 8px 8px 0 0;
+  pointer-events: none;
+}
+
+/* Ghost */
+.board-cell.ghost-valid {
+  background: var(--ghost-color, rgba(124,111,247,0.18)) !important;
+  border: 2px solid var(--ghost-border, rgba(124,111,247,0.9)) !important;
+  box-shadow:
+    0 0 8px var(--ghost-glow, rgba(124,111,247,0.4)),
+    inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  transition: none !important;
+  border-radius: 4px !important;
+}
+.board-cell.ghost-valid::after { display: none; }
+.board-cell.ghost-valid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* Predict clear */
+/* PATLAMA TAHMİNİ (Güçlendirilmiş CSS Kuralları) */
+.board-cell.predict-clear,
+.board-cell.ghost-valid.predict-clear {
+  /* Alttaki mavi/sarı blokları ve saydamlığı zorla ezer */
+  background: linear-gradient(45deg, #fff176, #ffca28, #ffa000) !important;
+  box-shadow: 0 0 20px #ffeb3b !important;
+  
+  /* Ghost'un etrafındaki kesik çizgileri kaldırır, pürüzsüz sarı yapar */
+  outline: none !important; 
+  
+  animation: predictPulse 0.35s ease-in-out infinite alternate !important;
+  z-index: 10;
+}
+@keyframes predictPulse {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+
+/* Animasyonlar */
+@keyframes cellPop {
+  0%   { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+  35%  { transform: scale(1.18) rotate(3deg); opacity: 1; }
+  60%  { transform: scale(0.94) rotate(-1deg); }
+  80%  { transform: scale(1.04); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.board-cell.placed {
+  animation: cellPop 0.28s cubic-bezier(0.2,1.5,0.3,1);
+}
+
+.board-cell.explode { }
+.board-cell.line-flash { }
+
+@keyframes popIn {
+  0%   { transform: scale(0.7); }
+  60%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.board-cell.pop { animation: popIn 0.2s cubic-bezier(0.2,1.3,0.4,1); }
+
+@keyframes colorPop {
+  0%   { }
+  100% { }
+}
+.board-cell.color-pop { animation: colorPop 0.25s ease-out; }
+
+/* Board shake */
+@keyframes boardShakeBig {
+  0%,100% { transform: translate(0,0); }
+  15%  { transform: translate(-4px,2px); }
+  30%  { transform: translate(4px,-3px); }
+  45%  { transform: translate(-3px,3px); }
+  60%  { transform: translate(3px,-2px); }
+  80%  { transform: translate(-1px,1px); }
+}
+#board.shake-big { animation: boardShakeBig 0.28s ease-out; }
+
+@keyframes boardShakeGentle {
+  0%,100% { transform: translate(0,0); }
+  33%  { transform: translate(-2px,1px); }
+  66%  { transform: translate(2px,-1px); }
+}
+#board.shake-gentle { animation: boardShakeGentle 0.25s ease-in-out; }
+
+@keyframes boardShakeElectric {
+  0%,100% { transform: translate(0,0) rotate(0deg); }
+  20%  { transform: translate(-5px,3px) rotate(-0.8deg); }
+  40%  { transform: translate(5px,-4px) rotate(0.8deg); }
+  60%  { transform: translate(-3px,3px) rotate(-0.4deg); }
+  80%  { transform: translate(3px,-2px) rotate(0.4deg); }
+}
+#board.shake-electric { animation: boardShakeElectric 0.3s ease-out; }
+
+@keyframes boardShakeHard {
+  0%,100% { transform: translate(0,0); }
+  20%  { transform: translate(-6px,0); }
+  40%  { transform: translate(6px,0); }
+  60%  { transform: translate(-4px,0); }
+  80%  { transform: translate(4px,0); }
+}
+#board.shake-hard { animation: boardShakeHard 0.22s steps(4); }
+
+@keyframes boardShakeCosmic {
+  0%,100% { transform: translate(0,0) rotate(0deg) scale(1); }
+  25%  { transform: translate(-3px,2px) rotate(-0.5deg) scale(1.01); }
+  50%  { transform: translate(3px,-3px) rotate(0.5deg) scale(0.99); }
+  75%  { transform: translate(-2px,2px) rotate(-0.3deg) scale(1); }
+}
+#board.shake-cosmic { animation: boardShakeCosmic 0.35s ease-out; }
+
+@keyframes boardShakeQuake {
+  0%,100% { transform: translate(0,0); }
+  10%  { transform: translate(-6px,4px); }
+  25%  { transform: translate(6px,-5px); }
+  40%  { transform: translate(-5px,4px); }
+  55%  { transform: translate(5px,-3px); }
+  70%  { transform: translate(-3px,2px); }
+  85%  { transform: translate(2px,-1px); }
+}
+#board.shake-quake { animation: boardShakeQuake 0.35s ease-out; }
+
+@keyframes boardShakeBounce {
+  0%,100% { transform: translate(0,0) scale(1); }
+  25%  { transform: translate(0,-6px) scale(1.02,0.98); }
+  50%  { transform: translate(0,3px) scale(0.98,1.02); }
+  75%  { transform: translate(0,-2px) scale(1.01,0.99); }
+}
+#board.shake-bounce { animation: boardShakeBounce 0.35s cubic-bezier(0.36,0.07,0.19,0.97); }
+
+@keyframes boardShakeWave {
+  0%,100% { transform: translate(0,0) skewX(0); }
+  25%  { transform: translate(-3px,0) skewX(-1deg); }
+  50%  { transform: translate(3px,0) skewX(1deg); }
+  75%  { transform: translate(-1px,0) skewX(-0.5deg); }
+}
+#board.shake-wave { animation: boardShakeWave 0.3s ease-in-out; }
+
+/* Element tipleri */
+.board-cell.type-fire { box-shadow: 0 0 10px rgba(255,100,50,0.4), inset 0 1px 0 rgba(255,255,255,0.2) !important; }
+.board-cell.type-fire::before { content: '🔥'; position: absolute; right: 1px; bottom: 0; font-size: 10px; line-height: 1; }
+.board-cell.type-water { box-shadow: 0 0 10px rgba(66,165,245,0.4), inset 0 1px 0 rgba(255,255,255,0.2) !important; }
+.board-cell.type-water::before { content: '💧'; position: absolute; right: 1px; bottom: 0; font-size: 10px; line-height: 1; }
+
+.board-cell.row-target { background: rgba(255,230,0,0.2) !important; }
+.board-cell.clearing { }
+.board-cell.pre-glow { box-shadow: 0 0 6px rgba(255,255,255,0.3) !important; }
+.board-cell.line-warning {
+  animation: lineWarn 0.18s ease-in-out infinite alternate;
+}
+@keyframes lineWarn {
+  from { 
+    opacity: 1;
+    background: rgba(255, 220, 50, 0.6) !important;
+    box-shadow: 0 0 10px rgba(255, 220, 50, 0.9);
+  }
+  to { 
+    opacity: 0.7;
+    background: rgba(255, 150, 0, 0.4) !important;
+    box-shadow: none;
+  }
+}
+.board-cell.final-pulse { animation: finalFlash 0.12s linear infinite; }
+@keyframes finalFlash {
+  from { opacity: 1; }
+  to   { opacity: 0.4; }
+}
+
+/* ========================================
+   PIECES
+   ======================================== */
+#pieces {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  height: 14vh;
+  flex-shrink: 0;
+  touch-action: none;
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 0;
+  contain: layout style;
+}
+
+.piece-slot {
+  flex: 1;
+  max-width: none;
+  flex: 1;
+  height: 13vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.piece-slot:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+
+.piece {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0;
+  touch-action: none;
+  transition: transform 0.15s;
+}
+.piece.selected { transform: scale(1.08); }
+
+.piece-row { display: flex; }
+
+.piece-cell {
+  width: 18px;
+  height: 18px;
+  margin: 1.5px;
+  border-radius: 3px;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.piece-cell.filled {
+  will-change: transform;
+  transform: translateZ(0);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.3),
+    inset 0 -1px 0 rgba(0,0,0,0.2),
+    0 2px 6px rgba(0,0,0,0.25);
+  position: relative;
+  overflow: hidden;
+}
+.piece-cell.filled::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.22), transparent);
+  border-radius: 2px 2px 0 0;
+}
+
+.drag-preview { background: transparent !important; opacity: 0.88; }
+.drag-preview .piece-cell.filled { opacity: 0.9; }
+
+/* ========================================
+   POWERUPS
+   ======================================== */
+#powerups {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  margin-top: 0;
+  height: 10vh;
+}
+
+#powerups button {
+  position: relative;
+  flex: 1;
+  height: 8vh;
+  border-radius: 14px;
+  border: 1.5px solid rgba(124,111,247,0.35);
+  background: rgba(124,111,247,0.12);
+  color: #a78bfa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 4px 2px 2px;
+}
+#pu-reroll {
+  border-color: rgba(52,211,153,0.35);
+  background: rgba(52,211,153,0.1);
+  color: #34d399;
+}
+#pu-undo {
+  border-color: rgba(251,191,36,0.35);
+  background: rgba(251,191,36,0.1);
+  color: #fbbf24;
+}
+#powerups button:active { transform: scale(0.88); }
+#powerups button.active {
+  border-color: rgba(124,111,247,0.8);
+  background: rgba(124,111,247,0.28);
+  
+}
+#powerups button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+
+.pu-label {
+  font-size: 9px;
+  font-weight: 800;
+  font-family: 'Nunito', sans-serif;
+  opacity: 0.75;
+  letter-spacing: 0.2px;
+  line-height: 1;
+}
+.pu-label.zero { opacity: 0.35; }
+.pu-label.buy { color: #ffd24d; opacity: 1; }
+
+.pu-count {
+  display: inline-block;
+  background: rgba(255,255,255,0.12);
+  border-radius: 50px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 3px;
+}
+.pu-xp-buy {
+  display: inline-block;
+  background: rgba(251,191,36,0.2);
+  color: var(--gold);
+  border-radius: 50px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 3px;
+}
+
+button.used-flash {
+  animation: usedFlash 0.2s ease-out;
+}
+@keyframes usedFlash {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ========================================
+   GAME OVER
+   ======================================== */
+#gameOverScreen {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.gameover-box {
+  background: rgba(20,20,35,0.95);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-xl);
+  padding: 36px 32px 28px;
+  text-align: center;
+  width: 280px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  animation: gameoverPop 0.4s cubic-bezier(0.2,1.3,0.4,1) both;
+}
+@keyframes gameoverPop {
+  0%   { transform: scale(0.7) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.gameover-box h1 {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gameover-box p {
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+#gameOverScreen #restartBtn {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: transform 0.1s;
+  
+}
+#gameOverScreen #restartBtn:active { transform: scale(0.97);  }
+
+/* ========================================
+   OYUN İÇİ AYARLAR PANELİ
+   ======================================== */
+#inGameSettingsPanel {
+  position: fixed;
+  top: 60px;
+  right: 12px;
+  background: rgba(18,18,30,0.97);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 6px 0;
+  z-index: 500;
+  min-width: 210px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  animation: slideDown 0.18s ease both;
+}
+#inGameSettingsPanel.hidden { display: none; }
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.igs-action-row {
+  padding: 12px 16px;
+  color: var(--text-1);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.igs-action-row:hover { background: var(--bg-glass2); }
+.igs-action-row.danger-row { color: #f87171; }
+
+.igs-divider { height: 1px; background: var(--border2); margin: 4px 0; }
+
+.igs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  border-bottom: 1px solid var(--border);
+}
+.igs-row:last-child { border-bottom: none; }
+
+.toggle {
+  width: 44px; height: 24px;
+  background: var(--accent);
+  border-radius: 50px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle.off { background: rgba(255,255,255,0.15); }
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform 0.2s;
+  
+}
+.toggle:not(.off)::after { transform: translateX(20px); }
+
+/* ========================================
+   RESET ONAY
+   ======================================== */
+#confirmReset {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 600;
+}
+#confirmReset.hidden { display: none; }
+
+.confirm-box {
+  background: rgba(20,20,35,0.97);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px 22px;
+  text-align: center;
+  width: 260px;
+}
+.confirm-box h3 { color: var(--text-1); font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+.confirm-box p  { color: var(--text-2); font-size: 13px; margin-bottom: 20px; }
+.confirm-btns   { display: flex; gap: 10px; }
+.confirm-btns button {
+  flex: 1; padding: 13px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-size: 14px; font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.confirm-btns button:active { transform: scale(0.96); }
+.btn-cancel-confirm { background: var(--bg-glass2); color: var(--text-1); border: 1px solid var(--border2) !important; }
+.btn-yes-reset { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+
+/* ========================================
+   FLASH OVERLAY
+   ======================================== */
+#flash-overlay {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 998;
+  opacity: 0;
+}
+@keyframes flashFade { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+#flash-overlay.flash-white        { background: rgba(255,255,255,0.15); animation: flashFade 0.18s ease-out forwards; }
+#flash-overlay.flash-combo        { background: rgba(251,191,36,0.18);  animation: flashFade 0.25s ease-out forwards; }
+#flash-overlay.flash-gameover     { background: rgba(239,68,68,0.25);   animation: flashFade 0.4s ease-out forwards; }
+#flash-overlay.flash-pastel       { background: rgba(244,143,177,0.15); animation: flashFade 0.22s ease-out forwards; }
+#flash-overlay.flash-pastel-combo { background: rgba(206,147,216,0.2);  animation: flashFade 0.28s ease-out forwards; }
+#flash-overlay.flash-pastel-gameover { background: rgba(244,143,177,0.3); animation: flashFade 0.4s ease-out forwards; }
+#flash-overlay.flash-ocean        { background: rgba(0,180,216,0.15);   animation: flashFade 0.2s ease-out forwards; }
+#flash-overlay.flash-ocean-combo  { background: rgba(0,119,182,0.22);   animation: flashFade 0.28s ease-out forwards; }
+#flash-overlay.flash-ocean-gameover { background: rgba(0,96,199,0.3);   animation: flashFade 0.4s ease-out forwards; }
+#flash-overlay.flash-neon         { background: rgba(0,255,136,0.18);   animation: neonFlash 0.22s ease-out forwards; }
+#flash-overlay.flash-neon-combo   { background: rgba(0,207,255,0.25);   animation: neonFlash 0.28s ease-out forwards; }
+#flash-overlay.flash-neon-gameover { background: rgba(255,0,60,0.3);    animation: neonFlash 0.4s ease-out forwards; }
+@keyframes neonFlash { 0%{opacity:1} 30%{opacity:0.5} 60%{opacity:0.9} 100%{opacity:0} }
+#flash-overlay.flash-retro        { background: rgba(212,172,13,0.22);  animation: retroFlash 0.18s steps(2) forwards; }
+#flash-overlay.flash-retro-combo  { background: rgba(212,172,13,0.35);  animation: retroFlash 0.22s steps(2) forwards; }
+#flash-overlay.flash-retro-gameover { background: rgba(192,57,43,0.4);  animation: retroFlash 0.3s steps(2) forwards; }
+@keyframes retroFlash { 0%{opacity:1} 50%{opacity:0} 60%{opacity:0.7} 100%{opacity:0} }
+#flash-overlay.flash-galaxy        { background: rgba(156,39,176,0.2);  animation: flashFade 0.25s ease-out forwards; }
+#flash-overlay.flash-galaxy-combo  { background: rgba(63,81,181,0.25);  animation: flashFade 0.3s ease-out forwards; }
+#flash-overlay.flash-galaxy-gameover { background: rgba(123,47,247,0.35); animation: flashFade 0.4s ease-out forwards; }
+#flash-overlay.flash-lava          { background: rgba(255,109,0,0.22);  animation: flashFade 0.22s ease-out forwards; }
+#flash-overlay.flash-lava-combo    { background: rgba(255,23,68,0.3);   animation: flashFade 0.28s ease-out forwards; }
+#flash-overlay.flash-lava-gameover { background: rgba(221,44,0,0.4);    animation: flashFade 0.4s ease-out forwards; }
+#flash-overlay.flash-candy         { background: rgba(244,143,177,0.2); animation: flashFade 0.22s ease-out forwards; }
+#flash-overlay.flash-candy-combo   { background: rgba(206,147,216,0.28);animation: flashFade 0.28s ease-out forwards; }
+#flash-overlay.flash-candy-gameover { background: rgba(255,204,128,0.35);animation: flashFade 0.4s ease-out forwards; }
+
+/* ========================================
+   COMBO & SCORE POPUP
+   ======================================== */
+.combo-popup {
+  position: fixed;
+  left: 50%; top: 50%;
+  transform: translate(-50%,-50%) scale(0.3);
+  font-size: 18px;
+  font-weight: 800;
+  font-family: var(--font);
+  color: rgba(255,255,255,0.6);
+  pointer-events: none;
+  animation: comboBigPop 0.7s ease forwards;
+  z-index: 9996;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+@keyframes comboBigPop {
+  0%   { transform: translate(-50%,-50%) scale(0.2) rotate(-5deg); opacity: 0; }
+  40%  { transform: translate(-50%,-50%) scale(1.3) rotate(2deg);  opacity: 1; }
+  70%  { transform: translate(-50%,-50%) scale(1.05) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(1.2) rotate(0deg);  opacity: 0; }
+}
+
+.score-popup {
+  position: fixed;
+  left: 50%; top: 45%;
+  font-size: 26px !important;
+  font-weight: 800 !important;
+  font-family: var(--font);
+  pointer-events: none;
+  z-index: 9998;
+  animation: scoreFloat 0.9s ease-out forwards !important;
+}
+@keyframes scoreFloat {
+  0%   { transform: translateX(-50%) translateY(0) scale(0.6); opacity: 0; }
+  20%  { transform: translateX(-50%) translateY(-8px) scale(1.15); opacity: 1; }
+  70%  { transform: translateX(-50%) translateY(-30px) scale(1); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-50px) scale(0.85); opacity: 0; }
+}
+
+/* Score bounce */
+@keyframes scoreBounce {
+  0%,100% { transform: scale(1); }
+  40%      { transform: scale(1.35); }
+  70%      { transform: scale(0.95); }
+}
+#score.score-bounce { animation: scoreBounce 0.3s cubic-bezier(0.2,1.4,0.4,1); }
+
+/* New record */
+@keyframes newHSGlow {
+  0%,100% { color: var(--gold); }
+  50%      { color: #fff; text-shadow: 0 0 12px var(--gold); }
+}
+#high-score.new-record { animation: newHSGlow 0.5s ease-in-out 3; }
+
+/* ========================================
+   PARÇACIKLAR
+   ======================================== */
+@keyframes particleBurst {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--px),var(--py)) scale(0); opacity: 0; }
+}
+.burst-particle {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 999;
+  animation: particleBurst var(--dur,0.45s) ease-out forwards;
+}
+.combo-particle {
+  position: absolute;
+  width: 6px; height: 6px;
+  background: var(--gold);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: comboParticle 0.65s forwards;
+}
+@keyframes comboParticle {
+  to { transform: translate(var(--x),var(--y)); opacity: 0; }
+}
+
+/* ========================================
+   BG BLOKLAR
+   ======================================== */
+@keyframes bgBlockFloat {
+  0%,100% { transform: translateY(0) rotate(var(--r)); }
+  50%      { transform: translateY(-12px) rotate(calc(var(--r) + 2deg)); }
+}
+.bg-block {
+  position: fixed;
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--op, 0.06);
+  transform: rotate(var(--r));
+  /* Float animasyonu kaldırıldı - sürekli GPU kullanımı azaltır */
+}
+
+/* ========================================
+   NEON TEMA
+   ======================================== */
+body.theme-glow .board-cell[style] {
+  
+}
+body.theme-glow .piece-cell.filled {
+  will-change: transform;
+  transform: translateZ(0);
+  
+}
+body[data-theme="retro"] .board-cell,
+body[data-theme="retro"] .piece-cell { border-radius: 2px !important; }
+body[data-theme="retro"] .combo-popup { font-family: monospace !important; letter-spacing: 3px; }
+body[data-theme="neon"] .combo-popup { animation: comboBigPop 0.7s ease forwards, neonPulse 0.15s ease 3 !important; }
+@keyframes neonPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+body[data-theme="candy"] .combo-popup { animation: comboBigPop 0.7s ease forwards, rainbowText 0.4s linear infinite !important; }
+@keyframes rainbowText {
+  0%{color:#f48fb1} 25%{color:#80deea} 50%{color:#a5d6a7} 75%{color:#fff59d} 100%{color:#ce93d8}
+}
+
+/* ========================================
+   GENEL
+   ======================================== */
+* { -webkit-tap-highlight-color: transparent; }
+.piece, .piece * { outline: none !important; user-select: none; -webkit-user-select: none; }
+.snap-slow * { transition: transform 0.08s ease-out !important; }
+
+@keyframes xpToastAnim {
+  0%   { opacity:0; transform:translateX(-50%) translateY(10px); }
+  15%  { opacity:1; transform:translateX(-50%) translateY(0); }
+  75%  { opacity:1; }
+  100% { opacity:0; transform:translateX(-50%) translateY(-20px); }
+}
+
+/* === YENİ EFEKT ANİMASYONLARI === */
+@keyframes placeRing {
+  0%   { transform: scale(1); opacity: 1; }
+  60%  { transform: scale(1.5); opacity: 0.6; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes lineFlash {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Blok yerleşince - eski popIn animasyonunu koru, sadece brightness ekle */
+@keyframes cellPlacePop {
+  0%   { }
+  100% { }
+}
+
+/* Satır uyarı efekti */
+/* line-warning ikinci tanım kaldırıldı */
+@keyframes lineWarnDuplicate {
+  0%,100% { }
+  50%     { box-shadow: 0 0 12px rgba(255,255,255,0.8); }
+}
+
+/* === PERFORMANS OPTİMİZASYONLARI === */
+#board {
+  will-change: transform;
+  transform: translateZ(0);
+}
+.board-cell {
+  will-change: transform, opacity;
+}
+.drag-preview {
+  will-change: transform, left, top;
+  transform: translateZ(0);
+}
+.piece {
+  will-change: opacity;
+}
+
+/* ===== MAĞAZA ===== */
+.shop-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.shop-item:active { transform: scale(0.97); }
+.shop-popular {
+  border-color: rgba(245,158,11,0.4);
+  background: rgba(245,158,11,0.08);
+}
+.shop-premium {
+  border-color: rgba(251,191,36,0.4);
+  background: rgba(251,191,36,0.08);
+}
+
+/* ===== COMBO YAZILARI ===== */
+@keyframes comboLabelPop {
+  0%   { opacity: 0; transform: translateX(-50%) scale(0.3) rotate(-5deg); }
+  15%  { opacity: 1; transform: translateX(-50%) scale(1.15) rotate(2deg); }
+  30%  { transform: translateX(-50%) scale(0.95) rotate(-1deg); }
+  45%  { transform: translateX(-50%) scale(1.05) rotate(0deg); }
+  60%  { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
+  85%  { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) scale(0.9) translateY(-24px); }
+}
+@keyframes comboShake {
+  0%,100% { transform: translateX(-50%) translateX(0) scale(1); }
+  20%     { transform: translateX(-50%) translateX(-6px) scale(1.05); }
+  40%     { transform: translateX(-50%) translateX(6px) scale(1.05); }
+  60%     { transform: translateX(-50%) translateX(-4px); }
+  80%     { transform: translateX(-50%) translateX(4px); }
+} 
