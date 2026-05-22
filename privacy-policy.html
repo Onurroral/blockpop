@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlockPop – Gizlilik Politikası / Privacy Policy</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+    :root {
+      --bg: #0d0b1a;
+      --surface: #16132a;
+      --accent: #7c6ff7;
+      --accent2: #34d399;
+      --text: #e2dff5;
+      --muted: #7b78a0;
+      --border: rgba(124,111,247,0.15);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.8;
+      min-height: 100vh;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,111,247,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,111,247,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 60px 24px 100px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 22px;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      display: block;
+      text-align: left;
+      font-weight: 400;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(28px, 5vw, 42px);
+      letter-spacing: -1px;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .updated {
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+
+    /* Lang toggle */
+    .lang-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 32px 0 48px;
+    }
+
+    .lang-btn {
+      padding: 8px 24px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+    }
+
+    .lang-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Content sections */
+    .content { display: none; }
+    .content.active { display: block; }
+
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+
+    .section:hover {
+      border-color: rgba(124,111,247,0.3);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-num {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+
+    p {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    p + p { margin-top: 12px; }
+
+    ul {
+      list-style: none;
+      margin-top: 12px;
+    }
+
+    ul li {
+      color: var(--muted);
+      font-size: 15px;
+      padding: 4px 0 4px 20px;
+      position: relative;
+    }
+
+    ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 12px;
+      top: 6px;
+    }
+
+    a {
+      color: var(--accent2);
+      text-decoration: none;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    /* Contact card */
+    .contact-card {
+      background: linear-gradient(135deg, rgba(124,111,247,0.1), rgba(52,211,153,0.05));
+      border: 1px solid rgba(124,111,247,0.25);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      margin-top: 32px;
+    }
+
+    .contact-card p {
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .contact-email {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 10px 24px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      color: var(--accent2) !important;
+      font-size: 15px;
+      text-decoration: none !important;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 64px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎮</div>
+      <div>
+        <div class="logo-text">BlockPop</div>
+        <span class="logo-sub">by Nope Games</span>
+      </div>
+    </div>
+    <h1>Gizlilik <span>Politikası</span><br>Privacy Policy</h1>
+    <p class="updated">Son güncelleme / Last updated: May 2026</p>
+  </header>
+
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('tr')">Türkçe</button>
+    <button class="lang-btn" onclick="setLang('en')">English</button>
+  </div>
+
+  <!-- TURKISH -->
+  <div class="content active" id="content-tr">
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <h2>Genel Bilgi</h2>
+      </div>
+      <p>Bu gizlilik politikası, Nope Games tarafından geliştirilen <strong>BlockPop</strong> mobil uygulaması için geçerlidir. Uygulamayı kullanarak bu politikayı kabul etmiş olursunuz.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <h2>Toplanan Veriler</h2>
+      </div>
+      <p>BlockPop, kişisel veri toplamamaktadır. Uygulama yalnızca şu verileri cihazınızda yerel olarak saklar:</p>
+      <ul>
+        <li>En yüksek skor (High Score)</li>
+        <li>Oyun ayarları (ses, animasyon tercihleri)</li>
+        <li>Tema seçimleri</li>
+      </ul>
+      <p>Bu veriler yalnızca cihazınızda saklanır, sunucularımıza aktarılmaz.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <h2>Reklamlar (Google AdMob)</h2>
+      </div>
+      <p>Uygulamamız, Google AdMob reklam hizmetini kullanmaktadır. AdMob, reklam kişiselleştirme amacıyla aşağıdaki verileri toplayabilir:</p>
+      <ul>
+        <li>Reklam tanımlayıcıları (IDFA / GAID)</li>
+        <li>Yaklaşık konum bilgisi</li>
+        <li>Cihaz bilgileri</li>
+        <li>Uygulama içi etkileşim verileri</li>
+      </ul>
+      <p>Google'ın gizlilik politikasına ulaşmak için: <a href="https://policies.google.com/privacy" target="_blank">policies.google.com/privacy</a></p>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <h2>Üçüncü Taraf Hizmetler</h2>
+      </div>
+      <p>Uygulama aşağıdaki üçüncü taraf hizmetleri kullanmaktadır:</p>
+      <ul>
+        <li><strong>Google AdMob</strong> — Reklam gösterimi</li>
+        <li><strong>Firebase</strong> — Analitik ve performans izleme</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <h2>Çocukların Gizliliği</h2>
+      </div>
+      <p>BlockPop, 13 yaş altı çocuklara yönelik değildir. 13 yaş altı kullanıcılardan bilerek kişisel veri toplamıyoruz. Ebeveynler bu konuda endişe duyuyorsa bizimle iletişime geçebilir.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <h2>Politika Değişiklikleri</h2>
+      </div>
+      <p>Bu gizlilik politikasını zaman zaman güncelleyebiliriz. Değişiklikler bu sayfada yayınlanacaktır. Uygulamayı kullanmaya devam etmeniz, güncel politikayı kabul ettiğiniz anlamına gelir.</p>
+    </div>
+
+    <div class="contact-card">
+      <p>Sorularınız için bizimle iletişime geçin:</p>
+      <a href="mailto:contact.nopegames@gmail.com" class="contact-email">contact.nopegames@gmail.com</a>
+    </div>
+
+  </div>
+
+  <!-- ENGLISH -->
+  <div class="content" id="content-en">
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <h2>Overview</h2>
+      </div>
+      <p>This privacy policy applies to the <strong>BlockPop</strong> mobile application developed by Nope Games. By using the app, you agree to this policy.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <h2>Data We Collect</h2>
+      </div>
+      <p>BlockPop does not collect personal data. The app only stores the following data locally on your device:</p>
+      <ul>
+        <li>High score</li>
+        <li>Game settings (sound, animation preferences)</li>
+        <li>Theme selections</li>
+      </ul>
+      <p>This data is stored only on your device and is never transmitted to our servers.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <h2>Advertising (Google AdMob)</h2>
+      </div>
+      <p>Our app uses Google AdMob advertising services. AdMob may collect the following data for ad personalization:</p>
+      <ul>
+        <li>Advertising identifiers (IDFA / GAID)</li>
+        <li>Approximate location</li>
+        <li>Device information</li>
+        <li>In-app interaction data</li>
+      </ul>
+      <p>For Google's privacy policy, visit: <a href="https://policies.google.com/privacy" target="_blank">policies.google.com/privacy</a></p>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <h2>Third-Party Services</h2>
+      </div>
+      <p>The app uses the following third-party services:</p>
+      <ul>
+        <li><strong>Google AdMob</strong> — Ad serving</li>
+        <li><strong>Firebase</strong> — Analytics and performance monitoring</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <h2>Children's Privacy</h2>
+      </div>
+      <p>BlockPop is not directed at children under the age of 13. We do not knowingly collect personal data from children under 13. If you are a parent with concerns, please contact us.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <h2>Policy Changes</h2>
+      </div>
+      <p>We may update this privacy policy from time to time. Changes will be posted on this page. Continued use of the app signifies your acceptance of the updated policy.</p>
+    </div>
+
+    <div class="contact-card">
+      <p>For any questions, please contact us:</p>
+      <a href="mailto:contact.nopegames@gmail.com" class="contact-email">contact.nopegames@gmail.com</a>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>© 2026 Nope Games · BlockPop · All rights reserved</p>
+  </footer>
+
+</div>
+
+<script>
+  function setLang(lang) {
+    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('content-' + lang).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>
