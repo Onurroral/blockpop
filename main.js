@@ -1,10 +1,15 @@
 // Board cell cache - querySelectorAll'u cachelemek için
 let _cellCache = null;
+let _boardElCache = null;
 function getCells() {
   if (!_cellCache || _cellCache.length !== BOARD_SIZE * BOARD_SIZE) {
     _cellCache = document.querySelectorAll('.board-cell');
   }
   return _cellCache;
+}
+function getBoardEl() {
+  if (!_boardElCache) _boardElCache = document.getElementById('board');
+  return _boardElCache;
 }
 function invalidateCellCache() { _cellCache = null; }
 
@@ -90,10 +95,10 @@ function applyTheme(themeKey) {
   localStorage.setItem('bp_theme', themeKey);
   const t = THEMES[themeKey];
 
-  // Board arka plan ve hücre rengi
+  // Board arka planı şeffaf kalsın - CSS'te tanımlı
   const boardEl = document.getElementById('board');
   if (boardEl) {
-    boardEl.style.background = t.boardBg;
+    boardEl.style.background = 'transparent';
   }
 
   // Glow efekti CSS class
@@ -144,7 +149,8 @@ function hexToRgb(hex) {
 
 // Power-up: Satır Sil
 let clearRowCharges = 1;
-let clearRowMode = false;
+let clearLineMode = false;
+let clearLineType = null; // "row" veya "col"
 
 // Power-up: Parça Yenile
 let rerollCharges = 1;
@@ -336,23 +342,62 @@ function spendDiamonds(amount) {
 function buyPowerupWithXP(type) {
   const cost = POWERUP_XP_COST[type];
   const diamonds = getDiamonds();
+  const L = window.currentLang || 'tr';
+  const names = { clearRow: L==='en'?'Clear Row':'Satır Sil', reroll: L==='en'?'Reroll':'Yenile', undo: L==='en'?'Undo':'Geri Al' };
 
-  if (diamonds < cost) {
-    showXPShortageToast(cost - diamonds);
-    return false;
-  }
+  // Seçim modal — elmas veya reklam
+  const modal = document.createElement('div');
+  modal.id = '_puModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9999;';
+  modal.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1e2a3a,#243447);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:24px 20px;text-align:center;width:min(290px,88vw);">
+      <div style="font-size:12px;font-weight:800;color:rgba(255,255,255,0.4);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">${L==='en'?'GET POWERUP':'POWERUP AL'}</div>
+      <div style="font-size:22px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin-bottom:20px;">${names[type]} +1</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button id="_puAdBtn" style="padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#7c6ff7,#a78bfa);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">
+          📺 ${L==='en'?'Watch Ad (Free)':'Reklam İzle (Ücretsiz)'}
+        </button>
+        <button id="_puDiaBtn" style="padding:14px;border:1px solid rgba(96,165,250,${diamonds>=cost?'0.4':'0.2'});border-radius:14px;background:rgba(96,165,250,0.08);color:${diamonds>=cost?'#60a5fa':'rgba(255,255,255,0.3)'};font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">
+          💎 ${cost} ${L==='en'?'Diamonds':'Elmas'} ${diamonds < cost ? `(${L==='en'?'Need':'Gereken'}: ${cost-diamonds})` : ''}
+        </button>
+        <button id="_puCancelBtn" style="padding:12px;border:none;border-radius:14px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.35);font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">
+          ${L==='en'?'Cancel':'İptal'}
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
 
-  if (!spendDiamonds(cost)) return false;
+  document.getElementById('_puCancelBtn').onclick = () => modal.remove();
 
-  if (type === 'clearRow') { clearRowCharges++; }
-  else if (type === 'reroll') { rerollCharges++; }
-  else if (type === 'undo') { undoCharges++; }
-  localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
+  // Reklam ile al
+  document.getElementById('_puAdBtn').onclick = () => {
+    modal.remove();
+    const giveReward = () => {
+      if (type === 'clearRow') { clearRowCharges++; clearLineMode = true; renderBoard(); }
+      else if (type === 'reroll') { rerollCharges++; }
+      else if (type === 'undo') { undoCharges++; }
+      localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
+      updatePowerupUI();
+      if (typeof playSndPowerup === 'function') playSndPowerup();
+      vibrate(40);
+    };
+    if (typeof window.showRewarded === 'function') window.showRewarded(giveReward);
+    else giveReward();
+  };
 
-  updatePowerupUI();
-  vibrate(40);
-  showXPSpentToast(cost, type);
-  return true;
+  // Elmas ile al
+  document.getElementById('_puDiaBtn').onclick = () => {
+    if (diamonds < cost) { showXPShortageToast(cost - diamonds); modal.remove(); return; }
+    modal.remove();
+    if (!spendDiamonds(cost)) return;
+    if (type === 'clearRow') { clearRowCharges++; }
+    else if (type === 'reroll') { rerollCharges++; }
+    else if (type === 'undo') { undoCharges++; }
+    localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
+    updatePowerupUI();
+    vibrate(40);
+    showXPSpentToast(cost, type);
+  };
 }
 
 function showXPShortageToast(needed) {
@@ -418,9 +463,10 @@ function getSkinFX() { return SKIN_FX[activeTheme] || SKIN_FX.classic; }
 function flashScreen(type) {
   const overlay = document.getElementById('flash-overlay');
   if (!overlay) return;
-  overlay.className = '';
-  void overlay.offsetWidth;
-  overlay.classList.add('flash-' + type);
+  // reflow yok: animasyonu adı değiştirerek sıfırla
+  overlay.style.animation = 'none';
+  overlay.className = 'flash-' + type;
+  requestAnimationFrame(() => { overlay.style.animation = ''; });
 }
 function flashClear()    { flashScreen(getSkinFX().flashClear); }
 function flashCombo()    { flashScreen(getSkinFX().flashCombo); }
@@ -442,51 +488,74 @@ function makeParticle(shape, color) {
   return p;
 }
 
-function spawnBurstParticles(cellEl, color, count = 8) {
-  const fx = getSkinFX();
+function spawnBurstParticles(cellEl, color, count = 6) {
+  // DOM yerine canvas kullan - kasma yok
   const rect = cellEl.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
-  const n = fx.particleCount || count;
-  const dist = fx.particleDist || 55;
+  const n = Math.min(count, 5);
+  _initDustCanvas();
   for (let i = 0; i < n; i++) {
-    const p = makeParticle(fx.particleShape, color);
-    const angle = (Math.PI * 2 * i) / n + Math.random() * 0.5;
-    const d = dist * (0.6 + Math.random() * 0.8);
-    p.style.cssText += `position:fixed;left:${cx}px;top:${cy}px;pointer-events:none;z-index:999;--px:${Math.cos(angle)*d}px;--py:${Math.sin(angle)*d}px;--dur:${0.3+Math.random()*0.3}s;`;
-    if (activeTheme === 'neon' || activeTheme === 'galaxy') p.style.boxShadow = `0 0 6px ${color}`;
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 700);
+    const angle = (Math.PI * 2 * i / n) + Math.random() * 0.5;
+    const speed = 3 + Math.random() * 3;
+    _dustParticles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 2,
+      r: 2 + Math.random() * 3,
+      color: color || '#fff',
+      life: 60 + Math.random() * 20,
+    });
   }
+  if (!_dustAnimId) _dustAnimId = requestAnimationFrame(_dustLoop);
 }
 
 function triggerScoreBounce() {
   const el = document.getElementById('score');
   if (!el) return;
-  el.classList.remove('score-bounce');
-  void el.offsetWidth;
-  el.classList.add('score-bounce');
-  setTimeout(() => el.classList.remove('score-bounce'), 400);
+  el.style.animation = 'none';
+  requestAnimationFrame(() => {
+    el.style.animation = '';
+    el.classList.add('score-bounce');
+    setTimeout(() => el.classList.remove('score-bounce'), 400);
+  });
 }
 
 function triggerNewRecord() {
   const el = document.getElementById('high-score');
   if (!el) return;
-  el.classList.remove('new-record');
-  void el.offsetWidth;
-  el.classList.add('new-record');
-  setTimeout(() => el.classList.remove('new-record'), 2000);
+  el.style.animation = 'none';
+  requestAnimationFrame(() => {
+    el.style.animation = '';
+    el.classList.add('new-record');
+    setTimeout(() => el.classList.remove('new-record'), 2000);
+  });
 }
 
 function shakeBoardBig() {
+  // Shake kaldırıldı - layout reflow ve kasma kaynağı
+  // Yerine canvas flash - GPU'da, layout etkilenmiyor
+  _initDustCanvas();
+  if (!_dustCtx) return;
   const boardEl = document.getElementById('board');
   if (!boardEl) return;
-  const fx = getSkinFX();
-  const shakeClass = fx.shakeStyle || 'shake-big';
-  boardEl.classList.remove('shake-big','shake-gentle','shake-wave','shake-electric','shake-hard','shake-cosmic','shake-quake','shake-bounce');
-  void boardEl.offsetWidth;
-  boardEl.classList.add(shakeClass);
-  setTimeout(() => boardEl.classList.remove(shakeClass), 400);
+  const r = boardEl.getBoundingClientRect();
+  const colors = getCurrentThemeColors();
+  // 4 köşeden parçacık
+  [[r.left, r.top],[r.right, r.top],[r.left, r.bottom],[r.right, r.bottom]].forEach(([x,y]) => {
+    for (let i = 0; i < 3; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      _dustParticles.push({
+        x, y,
+        vx: Math.cos(angle) * (3 + Math.random() * 3),
+        vy: Math.sin(angle) * (3 + Math.random() * 3) - 2,
+        r: 2 + Math.random() * 3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 50 + Math.random() * 20,
+      });
+    }
+  });
+  if (!_dustAnimId) _dustAnimId = requestAnimationFrame(_dustLoop);
 }
 
 function spawnBgBlocks() {
@@ -814,6 +883,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
   setupPowerups();
   updateScore();
+
+  // Board rect cache'ini güncelle — resize/orientation değişince pozisyon kayar
+  const _refreshBoardCache = () => {
+    const el = getBoardEl();
+    if (el) _cachedBoardRect = el.getBoundingClientRect();
+  };
+  window.addEventListener('resize', _refreshBoardCache, { passive: true });
+  window.addEventListener('orientationchange', () => setTimeout(_refreshBoardCache, 200), { passive: true });
 
   setTimeout(() => {
     if (typeof window.processDailyLogin === 'function' && typeof window.addDiamonds === 'function') {
@@ -1297,6 +1374,15 @@ function _isMusicOn() {
   return val !== 'off';
 }
 
+// Combo elementlerini preload et - oyun başlamadan önce hazırla
+(function() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(_initComboElements, 500));
+  } else {
+    setTimeout(_initComboElements, 500);
+  }
+})();
+
 function startBgMusic() {
   if (!_bgMusic) _bgMusic = document.getElementById('snd-bg');
   if (!_bgMusic) return;
@@ -1327,6 +1413,61 @@ document.addEventListener('pointerdown', () => {
 }, { once: true });
 
 // === TAHTA OLUŞTUR ===
+
+// ===== TAM OYUN SIFIRLAMA - Tekrar Oyna için =====
+window.fullResetGame = function(mode, extra) {
+  // 1. Tüm timer'ları durdur
+  if (typeof stopTimer === 'function') stopTimer();
+  if (typeof stopBgMusic === 'function') try { stopBgMusic(); } catch(e) {}
+
+  // 2. Global state sıfırla
+  score = 0;
+  clearStreak = 0;
+  isGameOver = false;
+  clearLineMode = false;
+  clearLineType = null;
+  selectedPiece = null;
+  selectedShape = null;
+  selectedPieceColor = null;
+  isDragging = false;
+  lastGhostCell = null;
+  _lastGhostX = -1;
+  _lastGhostY = -1;
+  undoStack = [];
+  if (typeof scorePopupActive !== 'undefined') scorePopupActive = false;
+
+  // 3. Board sıfırla
+  if (typeof initBoard === 'function') initBoard();
+
+  // 4. Powerup'ları yükle
+  const saved = JSON.parse(localStorage.getItem('bp_powerups') || '{}');
+  if (typeof clearRowCharges !== 'undefined') {
+    clearRowCharges = saved.clearRowCharges ?? 1;
+    rerollCharges   = saved.rerollCharges   ?? 1;
+    undoCharges     = saved.undoCharges     ?? 1;
+  }
+
+  // 5. Skor güncelle
+  if (typeof updateScore === 'function') updateScore();
+
+  // 6. Board'u yeniden çiz
+  if (typeof renderBoard === 'function') renderBoard();
+
+  // 7. Tema yükle
+  if (typeof loadTheme === 'function') loadTheme();
+
+  // 8. Yeni parçalar üret
+  if (typeof generatePieces === 'function') generatePieces();
+
+  // 9. Powerup UI güncelle
+  if (typeof setupPowerups === 'function') setupPowerups();
+
+  // 10. startGame ile mode ayarla (UI göster, timer başlat vs)
+  if (typeof window.startGame === 'function') {
+    window.startGame(mode || 'normal', extra);
+  }
+};
+
 function initBoard() {
   board = [];
   for (let y = 0; y < BOARD_SIZE; y++) {
@@ -1362,16 +1503,22 @@ function initBoardDOM() {
 
       // Event listener'ları bir kez ekle
       cellEl.addEventListener('mouseenter', () => {
-        if (clearRowMode && clearRowCharges > 0) highlightRow(y, true);
+        if (clearLineMode && clearRowCharges > 0) {
+          highlightLine(y, x, true);
+        }
       });
       cellEl.addEventListener('mouseleave', () => {
-        if (clearRowMode && clearRowCharges > 0) highlightRow(y, false);
+        if (clearLineMode && clearRowCharges > 0) {
+          highlightLine(y, x, false);
+        }
       });
       cellEl.addEventListener('click', () => {
         if (isGameOver) return;
-        if (clearRowMode && clearRowCharges > 0) {
+        if (clearLineMode && clearRowCharges > 0) {
           saveState();
-          clearRowAt(y);
+          // clearLineType: null iken tıklanan hücre satır mı sütun mu seçiliyor
+          // İlk tıkta seçim göster, ikinci tıkta ya da tooltip ile sil
+          showLinePicker(y, x);
           return;
         }
         if (!selectedShape) return;
@@ -1398,8 +1545,6 @@ function renderBoard() {
         const color = cell.color || getColorForType(type);
         cellEl.style.background = color;
         cellEl.dataset.type = type;
-
-        // Eski type class'larını temizle, yenisini ekle
         cellEl.className = `board-cell type-${type}`;
 
         if (cell.justPlaced) {
@@ -1410,6 +1555,8 @@ function renderBoard() {
       } else {
         // Boş hücre
         cellEl.style.background = '';
+        cellEl.style.opacity = '';
+        cellEl.style.transform = '';
         cellEl.className = 'board-cell';
         cellEl.dataset.type = '';
       }
@@ -1660,7 +1807,7 @@ function saveState() {
     board: cloneBoard(board),
     score,
     clearRowCharges,
-    clearRowMode: false,
+    clearLineMode: false,
     rerollCharges,
     undoCharges,
     piecesData,
@@ -1674,7 +1821,7 @@ function restoreState() {
   board = cloneBoard(lastState.board);
   score = lastState.score;
   clearRowCharges = lastState.clearRowCharges;
-  clearRowMode = lastState.clearRowMode;
+  clearLineMode = lastState.clearLineMode ?? false;
   rerollCharges = lastState.rerollCharges;
   undoCharges = lastState.undoCharges;
   clearStreak = lastState.clearStreak;
@@ -1746,8 +1893,9 @@ function setupPowerups() {
         buyPowerupWithXP('clearRow'); return;
       }
       if (clearRowCharges <= 0) return;
-      clearRowMode = !clearRowMode;
-      if (clearRowMode && selectedPiece) {
+      clearLineMode = !clearLineMode;
+      clearLineType = null;
+      if (clearLineMode && selectedPiece) {
         selectedPiece.classList.remove('selected');
         selectedPiece = null; selectedShape = null;
       }
@@ -1811,32 +1959,38 @@ function updatePowerupUI() {
 
   function setupPUBtn(btn, charges, mode, label, xpKey, xpCost) {
     if (!btn) return;
+    const badge = btn.querySelector('.pu-badge');
+    const lbl = btn.querySelector('.pu-label');
     if (isHard || isTimeMode) {
       btn.disabled = true;
-      btn.innerHTML = `${label} <span class="pu-count" style="opacity:0.4">—</span>`;
+      btn.classList.remove('active');
+      if (badge) { badge.textContent = '—'; badge.classList.remove('hidden','buy-mode'); }
+      if (lbl) { lbl.textContent = '—'; lbl.className = 'pu-label zero'; }
       return;
     }
     if (charges > 0 && !isGameOver) {
       btn.disabled = false;
-      btn.innerHTML = mode
-        ? `${label} (Satırı Seç)`
-        : `${label} <span class="pu-count">${charges}</span>`;
       btn.classList.toggle('active', !!mode);
       btn.dataset.xpMode = 'false';
+      if (badge) { badge.textContent = charges; badge.classList.remove('hidden','buy-mode'); }
+      if (lbl) { lbl.textContent = '×' + charges; lbl.className = 'pu-label'; }
     } else if (!isGameOver) {
       btn.disabled = false;
-      btn.innerHTML = `${label} <span class="pu-xp-buy">💎 ${xpCost}</span>`;
+      btn.classList.remove('active');
       btn.dataset.xpMode = 'true';
       btn.dataset.xpKey  = xpKey;
-      btn.classList.remove('active');
+      if (badge) { badge.classList.add('hidden'); }
+      if (lbl) { lbl.textContent = '💎 · 📺'; lbl.className = 'pu-label buy'; }
     } else {
       btn.disabled = true;
-      btn.innerHTML = `${label} <span class="pu-count">0</span>`;
+      btn.classList.remove('active');
+      if (badge) { badge.classList.add('hidden'); }
+      if (lbl) { lbl.textContent = '×0'; lbl.className = 'pu-label zero'; }
       btn.dataset.xpMode = 'false';
     }
   }
 
-  setupPUBtn(btnClearRow, clearRowCharges, clearRowMode, 'Satır Sil', 'clearRow', POWERUP_XP_COST.clearRow);
+  setupPUBtn(btnClearRow, clearRowCharges, clearLineMode, null, 'clearRow', POWERUP_XP_COST.clearRow);
   setupPUBtn(btnReroll,   rerollCharges,   false,         'Yenile',    'reroll',   POWERUP_XP_COST.reroll);
   setupPUBtn(btnUndo,     undoCharges,     false,         'Geri Al',   'undo',     POWERUP_XP_COST.undo);
 }
@@ -1874,7 +2028,7 @@ function createPieceElement(shapeIndex) {
 
   // Tek event listener — slotEl'e bağlı, bubble ile piece-cell'den de gelir
   slotEl.addEventListener('pointerdown', (e) => {
-    if (isGameOver || clearRowMode) return;
+    if (isGameOver || clearLineMode) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
     startDragPiece(pieceEl, shape, e);
@@ -1936,13 +2090,27 @@ function bestHelpScoreForShape(shape) {
 
           const rowFilled = countFilledInRow(gy);
           const colFilled = countFilledInCol(gx);
+          const mode = window.currentGameMode || 'normal';
+          const isEasy = mode === 'easy';
 
-          // 7/8 dolu satır/kolon en değerli
-          if (rowFilled === BOARD_SIZE - 1) score += 40;
-          else if (rowFilled === BOARD_SIZE - 2) score += 15;
+          // Kolay modda satır/sütun tamamlama çok daha değerli
+          if (rowFilled === BOARD_SIZE - 1) score += isEasy ? 120 : 40;
+          else if (rowFilled === BOARD_SIZE - 2) score += isEasy ? 50 : 15;
+          else if (rowFilled === BOARD_SIZE - 3) score += isEasy ? 20 : 5;
 
-          if (colFilled === BOARD_SIZE - 1) score += 40;
-          else if (colFilled === BOARD_SIZE - 2) score += 15;
+          if (colFilled === BOARD_SIZE - 1) score += isEasy ? 120 : 40;
+          else if (colFilled === BOARD_SIZE - 2) score += isEasy ? 50 : 15;
+          else if (colFilled === BOARD_SIZE - 3) score += isEasy ? 20 : 5;
+
+          // Kolay modda köşe/kenar bloklara yakın koyma bonusu
+          if (isEasy) {
+            const nearFilled =
+              (board[gy]?.[gx-1] ? 1 : 0) +
+              (board[gy]?.[gx+1] ? 1 : 0) +
+              (board[gy-1]?.[gx] ? 1 : 0) +
+              (board[gy+1]?.[gx] ? 1 : 0);
+            score += nearFilled * 8; // komşu bloklara yapışma bonusu
+          }
 
           // boşluk kapatma ufak bonus
           score += 1;
@@ -2177,7 +2345,9 @@ function tryPlacePieceAt(startX, startY) {
   selectedShape = null;
   selectedPieceColor = null;
 
-  renderBoard();
+  // clearCompletedLines kendi timeout'unda renderBoard çağırıyor.
+  // Patlama yoksa (bonus=0) burada renderBoard çağır.
+  if (!bonus) renderBoard();
 
   const remainingPieces = document.querySelectorAll('.piece-slot .piece');
   if (remainingPieces.length === 0) generatePieces();
@@ -2206,21 +2376,37 @@ function tryPlacePiece(boardX, boardY) {
 
 // === SATIR SİLME ===
 function clearRowAt(rowY) {
+  clearLineAt('row', rowY, 0);
+}
+
+function clearLineAt(type, rowY, colX) {
   const cells = getCells();
   let cleared = 0;
 
-  for (let x = 0; x < BOARD_SIZE; x++) {
-    if (board[rowY][x] !== null) {
-      const cell = cells[rowY * BOARD_SIZE + x];
-      if (cell) cell.classList.add('clearing');
+  if (type === 'row') {
+    for (let x = 0; x < BOARD_SIZE; x++) {
+      if (board[rowY][x] !== null) {
+        const cell = cells[rowY * BOARD_SIZE + x];
+        if (cell) cell.classList.add('clearing');
+      }
+    }
+  } else {
+    for (let y = 0; y < BOARD_SIZE; y++) {
+      if (board[y][colX] !== null) {
+        const cell = cells[y * BOARD_SIZE + colX];
+        if (cell) cell.classList.add('clearing');
+      }
     }
   }
 
   setTimeout(() => {
-    for (let x = 0; x < BOARD_SIZE; x++) {
-      if (board[rowY][x] !== null) {
-        board[rowY][x] = null;
-        cleared++;
+    if (type === 'row') {
+      for (let x = 0; x < BOARD_SIZE; x++) {
+        if (board[rowY][x] !== null) { board[rowY][x] = null; cleared++; }
+      }
+    } else {
+      for (let y = 0; y < BOARD_SIZE; y++) {
+        if (board[y][colX] !== null) { board[y][colX] = null; cleared++; }
       }
     }
 
@@ -2233,7 +2419,8 @@ function clearRowAt(rowY) {
     clearRowCharges--;
     localStorage.setItem('bp_powerups', JSON.stringify({ clearRowCharges, rerollCharges, undoCharges }));
     playSndPowerup();
-    clearRowMode = false;
+    clearLineMode = false;
+    clearLineType = null;
 
     updatePowerupUI();
     renderBoard();
@@ -2345,34 +2532,9 @@ function clearCompletedLines() {
   let extraFromElements = 0;
 
     // === Patlayacak satır/sütun ön uyarı efekti ===
-    fullRows.forEach(rowY => {
-  for (let x = 0; x < BOARD_SIZE; x++) {
-    const cell = cells[rowY * BOARD_SIZE + x];
-    if (cell) cell.classList.add("line-warning");
-   }
-  });
-
-    fullCols.forEach(colX => {
-   for (let y = 0; y < BOARD_SIZE; y++) {
-    const cell = cells[y * BOARD_SIZE + colX];
-    if (cell) cell.classList.add("line-warning");
-    }
-  });
-
-
-    // 🔔 Patlamadan önce uyarı glow (animasyon açıksa)
-  const animOn = localStorage.getItem('tgl-anim') !== 'off';
-  if (animOn) {
-    for (let y = 0; y < BOARD_SIZE; y++) {
-      for (let x = 0; x < BOARD_SIZE; x++) {
-        if (toClear[y][x] && board[y][x] !== null) {
-          const cell = cells[y * BOARD_SIZE + x];
-          if (cell) cell.classList.add("pre-glow");
-        }
-      }
-    }
-  }
-
+    // NOT: predict-clear sistemi drag sırasında zaten sarı gösteriyor.
+    // clearLines içinde line-warning eklemiyoruz — hemen patlama başlıyor,
+    // kaldırma zamanlaması zor, kullanıcıda kalıntı bırakıyor.
 
   for (let y = 0; y < BOARD_SIZE; y++) {
     for (let x = 0; x < BOARD_SIZE; x++) {
@@ -2471,61 +2633,27 @@ function clearCompletedLines() {
       }
     }
 
-    // Görsel animasyon için timeout
-    setTimeout(() => {
-      const burstCells = [];
-
-      // Satır/sütun hücrelerini sıralı flash et (dalga efekti)
-      const clearList = [];
-      for (let y = 0; y < BOARD_SIZE; y++)
-        for (let x = 0; x < BOARD_SIZE; x++)
-          if (toClear[y][x]) clearList.push({ y, x, cell: cells[y * BOARD_SIZE + x] });
-
-      // Soldan sağa, yukarıdan aşağıya sırala
-      clearList.sort((a, b) => a.x - b.x || a.y - b.y);
-
-      clearList.forEach(({ cell, y, x }, i) => {
-        if (!cell) return;
-        setTimeout(() => {
-          cell.classList.add('line-flash');
-          cell.classList.add('explode');
-        }, i * 12);
-      });
-
-      const animEnabled = localStorage.getItem('tgl-anim') !== 'off';
-      const waveDuration = clearList.length * 12 + 50;
-
-      if (animEnabled) {
-        setTimeout(() => {
-          const sample = clearList.filter((_, i) => i % Math.ceil(clearList.length / 5) === 0).slice(0, 5);
-          sample.forEach(({ cell }) => spawnBurstParticles(cell, '#fff', 4));
-          if (clearList.length >= 9) {
-            const dustCells = clearList.map(({ y, x }) => ({ row: y, col: x }));
-            spawnDustEffect(dustCells);
-          }
-        }, waveDuration);
+    // line-warning temizle
+    {
+      const _wc = getCells();
+      for (let i = 0; i < _wc.length; i++) {
+        if (_wc[i]) _wc[i].classList.remove('line-warning', 'pre-glow', 'line-flash', 'explode', 'clearing');
       }
+    }
 
-      // renderBoard dalga bittikten SONRA çalışsın + animasyonları temizle
-      setTimeout(() => {
-        clearList.forEach(({ cell }) => {
-          if (!cell) return;
-          cell.classList.remove('line-flash', 'explode', 'line-warning', 'pre-glow', 'clearing');
-          cell.style.animation = '';
-          cell.style.opacity = '';
-          cell.style.transform = '';
-        });
-        renderBoard();
-        boardEl.classList.remove("shake");
-      }, waveDuration + 80);
+    // Canvas efekti — DOM'a dokunmadan patlama görselliği
+    const clearList = [];
+    for (let y = 0; y < BOARD_SIZE; y++)
+      for (let x = 0; x < BOARD_SIZE; x++)
+        if (toClear[y][x]) clearList.push({ y, x });
 
-    }, 50);
+    spawnLineClearFlash(clearList, fullRows.length + fullCols.length);
 
-    setTimeout(() => {
-    document.querySelectorAll('.line-warning').forEach(el => {
-      el.classList.add("final-pulse");
-    });
-    }, 150);
+    // Grid'i hemen güncelle — gecikme yok, boşluk yok
+    renderBoard();
+    boardEl.classList.remove("shake");
+
+    // final-pulse kaldırıldı
 
     console.log(
     `Satır: ${fullRows.length}, Sütun: ${fullCols.length}, ` +
@@ -2545,6 +2673,118 @@ function clearCompletedLines() {
     if (active) cell.classList.add('row-target');
     else cell.classList.remove('row-target');
   }
+}
+
+function highlightLine(rowY, colX, active) {
+  const cells = getCells();
+  // Satır highlight
+  for (let x = 0; x < BOARD_SIZE; x++) {
+    const cell = cells[rowY * BOARD_SIZE + x];
+    if (!cell) continue;
+    if (active) cell.classList.add('line-hover-row');
+    else cell.classList.remove('line-hover-row');
+  }
+  // Sütun highlight
+  for (let y = 0; y < BOARD_SIZE; y++) {
+    const cell = cells[y * BOARD_SIZE + colX];
+    if (!cell) continue;
+    if (active) cell.classList.add('line-hover-col');
+    else cell.classList.remove('line-hover-col');
+  }
+}
+
+function clearAllLineHighlights() {
+  const cells = getCells();
+  cells.forEach(c => {
+    if (c) {
+      c.classList.remove('line-hover-row','line-hover-col','row-target','col-target','line-warning');
+    }
+  });
+}
+
+function showLinePicker(rowY, colX) {
+  // Mevcut picker varsa kaldır
+  const existing = document.getElementById('line-picker');
+  if (existing) existing.remove();
+
+  clearAllLineHighlights();
+
+  // Satır + sütun highlight göster
+  highlightLine(rowY, colX, true);
+
+  // Mini picker UI oluştur
+  const picker = document.createElement('div');
+  picker.id = 'line-picker';
+  // powerups'ın tam altına, ekran genişliğine göre ortala
+  const puEl = document.getElementById('powerups');
+  const puBottom = puEl ? puEl.getBoundingClientRect().bottom : window.innerHeight - 160;
+
+  picker.style.cssText = `
+    position:fixed;
+    top:${puBottom + 10}px;
+    left:0;
+    right:0;
+    margin:0 auto;
+    width:fit-content;
+    background:rgba(20,20,40,0.97);
+    border:1px solid rgba(167,139,250,0.3);
+    border-radius:16px; padding:8px 12px;
+    display:flex; gap:8px; z-index:9999;
+    white-space:nowrap;
+    max-width:calc(100vw - 32px);
+    box-sizing:border-box;
+    animation:gameoverPop 0.2s cubic-bezier(0.2,1.3,0.4,1) both;
+  `;
+
+  const btnRow = document.createElement('button');
+  btnRow.style.cssText = `
+    padding:10px 20px; border-radius:10px; border:none;
+    background:rgba(124,111,247,0.2); color:#a78bfa;
+    font-size:13px; font-weight:800; cursor:pointer;
+    font-family:'Nunito',sans-serif; border:1px solid rgba(124,111,247,0.4);
+  `;
+  const L = window.currentLang || 'tr';
+  btnRow.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-right:5px;vertical-align:middle"><rect x="0" y="5.5" width="14" height="3" rx="1.5" fill="currentColor"/></svg>${L==='en'?'Row':'Satır'}`;
+
+  const btnCol = document.createElement('button');
+  btnCol.style.cssText = `
+    padding:10px 20px; border-radius:10px; border:none;
+    background:rgba(124,111,247,0.2); color:#a78bfa;
+    font-size:13px; font-weight:800; cursor:pointer;
+    font-family:'Nunito',sans-serif; border:1px solid rgba(124,111,247,0.4);
+  `;
+  btnCol.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-right:5px;vertical-align:middle"><rect x="5.5" y="0" width="3" height="14" rx="1.5" fill="currentColor"/></svg>${L==='en'?'Col':'Sütun'}`;
+
+  const btnCancel = document.createElement('button');
+  btnCancel.style.cssText = `
+    padding:10px 14px; border-radius:10px; border:none;
+    background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.4);
+    font-size:13px; font-weight:800; cursor:pointer;
+    font-family:'Nunito',sans-serif;
+  `;
+  btnCancel.textContent = '✕';
+
+  btnRow.onclick = () => {
+    picker.remove();
+    clearAllLineHighlights();
+    clearLineAt('row', rowY, colX);
+  };
+  btnCol.onclick = () => {
+    picker.remove();
+    clearAllLineHighlights();
+    clearLineAt('col', rowY, colX);
+  };
+  btnCancel.onclick = () => {
+    picker.remove();
+    clearAllLineHighlights();
+    clearLineMode = false;
+    updatePowerupUI();
+  };
+
+  picker.appendChild(btnRow);
+  picker.appendChild(btnCol);
+  picker.appendChild(btnCancel);
+  document.body.appendChild(picker);
 }
 
 function triggerComboEffect() {
@@ -2709,7 +2949,7 @@ function resetGame() {
   clearRowCharges = _pu.clearRowCharges ?? 0;
   rerollCharges   = _pu.rerollCharges   ?? 0;
   undoCharges     = _pu.undoCharges     ?? 0;
-  clearRowMode = false;
+  clearLineMode = false; clearLineType = null;
   lastState = null;
   selectedPiece = null;
   selectedShape = null;
@@ -2726,9 +2966,10 @@ function resetGame() {
 function createGridSizedPreview(shape, colorName) {
   const boardEl = document.getElementById('board');
   const boardRect = boardEl.getBoundingClientRect();
-  // Board CSS sabit değerleri: padding=6px, gap=3px
-  const pad = 6;
-  const gap = 3;
+  // CSS'ten gerçek değerleri oku
+  const boardStyle = getComputedStyle(boardEl);
+  const pad = parseFloat(boardStyle.paddingLeft) || 2;
+  const gap = parseFloat(boardStyle.gap) || 2;
   const innerW = boardRect.width - pad * 2;
   const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
 
@@ -2755,6 +2996,9 @@ function createGridSizedPreview(shape, colorName) {
     grid-template-rows: repeat(${h}, ${previewCell}px);
     gap: ${previewGap}px;
     will-change: transform;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
   `;
 
   // Her hücreyi ekle
@@ -2791,13 +3035,19 @@ function startDragPiece(pieceEl, shape, event) {
   dragPieceEl = pieceEl;
   dragPointerId = event.pointerId || null;
 
-  // Lift: 2.5 hücre yukarı — parmak parçayı kapatmasın
+  // Lift: şeklin yüksekliğine göre dinamik — parmak şeklin alt merkezinde olsun
   const boardEl = document.getElementById('board');
   const bRect = boardEl.getBoundingClientRect();
   const _inner = bRect.width - 6 * 2;
   const _cell = (_inner - 3 * (BOARD_SIZE - 1)) / BOARD_SIZE;
   const _step = _cell + 3;
-  dragLiftY = (event.pointerType === 'touch') ? Math.round(_step * 3.5) : 0;
+  if (event.pointerType === 'touch') {
+    const shapeH = shape.length;
+    // 3.5 hücre sabit lift - parmak parçayı kapatmasın
+    dragLiftY = Math.round(_step * 3.5);
+  } else {
+    dragLiftY = 0;
+  }
 
   document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
   pieceEl.classList.add('selected');
@@ -2806,14 +3056,23 @@ function startDragPiece(pieceEl, shape, event) {
   selectedPieceColor = pieceEl.dataset.pieceColor || null;
 
   // Drag preview: slot klonu değil, GRID boyutunda gerçek şekil
+  // Board metriklerini şimdi hesapla ve cache'le
+  _cacheBoardMetrics();
+
   dragPreviewEl = createGridSizedPreview(shape, selectedPieceColor);
   document.body.appendChild(dragPreviewEl);
 
   // Orijinal parçayı gizle
   pieceEl.style.opacity = '0';
 
+  _latestClientX = event.clientX;
+  _latestClientY = event.clientY;
   updateDragPosition(event);
   updateGhostFromEvent(event);
+
+  // RAF drag loop başlat
+  if (_dragRafId) cancelAnimationFrame(_dragRafId);
+  _dragRafId = requestAnimationFrame(_dragRafLoop);
 
   window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
@@ -2823,32 +3082,42 @@ function startDragPiece(pieceEl, shape, event) {
 let _rafPending = false;
 let _lastE = null;
 
+// Ghost only update - preview transform ayrıca yapılıyor
+function _updateGhostOnly(e) {
+  _updateAll(e, true);
+}
+
 // Tek birleşik update — önce grid pozisyonu hesapla, sonra preview ve ghost ikisini de ona göre yerleştir
-function _updateAll(e) {
+function _updateAll(e, ghostOnly = false) {
   if (!isDragging || !selectedShape || !dragPreviewEl) return;
 
   const boardEl = document.getElementById('board');
   const rect = boardEl.getBoundingClientRect();
-  const pad = 6, gap = 3;
-  const innerW = rect.width - pad * 2;
-  const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
-  const step = cellSize + gap;
+  // CSS'teki gerçek değerleri kullan: padding:2px, gap:2px
+  const pad = _cachedBoardPad;
+  const gap = _cachedBoardGap;
+  const cellSize = _cachedCellSize || (rect.width - pad*2 - gap*(BOARD_SIZE-1)) / BOARD_SIZE;
+  const step = _cachedStep || (cellSize + gap);
   const gridLeft = rect.left + pad;
   const gridTop  = rect.top  + pad;
-
-  const fingerX = e.clientX;
-  const fingerY = e.clientY - dragLiftY;
 
   const h = selectedShape.length;
   const w = selectedShape[0].length;
 
-  // 1. Parmağın grid'deki float pozisyonu
+  // Parmak şeklin tam merkezini göstersin
+  const fingerX = e.clientX;
+  const fingerY = e.clientY - dragLiftY;
+
+  // 1. Şeklin merkezi parmak konumunda — sol-üst köşeyi hesapla
+  const shapeCenterX = (w - 1) / 2;
+  const shapeCenterY = (h - 1) / 2;
+  
   const fx = (fingerX - gridLeft) / step;
   const fy = (fingerY - gridTop)  / step;
 
-  // 2. Şeklin sol-üst köşesi (en yakın hücreye yuvarla)
-  let startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(fx - (w - 1) / 2)));
-  let startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(fy - (h - 1) / 2)));
+  // 2. Sol-üst köşe: merkez - yarı boyut, en yakın hücreye yuvarla
+  let startX = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(fx - shapeCenterX)));
+  let startY = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(fy - shapeCenterY)));
 
   // 3. Board üzerinde mi?
   const overBoard = fingerX >= rect.left - cellSize && fingerX <= rect.right + cellSize &&
@@ -2861,29 +3130,44 @@ function _updateAll(e) {
     const fracX = fx - (w - 1) / 2 - Math.round(fx - (w - 1) / 2);
     const fracY = fy - (h - 1) / 2 - Math.round(fy - (h - 1) / 2);
 
-    // Önce tam pozisyon, sonra parmak yönüne göre sıralı komşular
-    const candidates = Math.abs(fracX) >= Math.abs(fracY)
-      ? [[0,0], [fracX >= 0 ? 1 : -1, 0], [0, fracY >= 0 ? 1 : -1]]
-      : [[0,0], [0, fracY >= 0 ? 1 : -1], [fracX >= 0 ? 1 : -1, 0]];
-
-    for (const [dx, dy] of candidates) {
-      const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX + dx));
-      const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY + dy));
+    // Önce tam pozisyonu dene - kayma olmasın
+    {
       let ok = true;
       for (let y = 0; y < h && ok; y++)
         for (let x = 0; x < w && ok; x++)
-          if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) ok = false;
-      if (ok) { startX = sx; startY = sy; fits = true; break; }
+          if (selectedShape[y][x] === 1 && board[startY+y][startX+x] !== null) ok = false;
+      if (ok) { fits = true; }
+    }
+    
+    // Tam pozisyon doluysa sadece 1 hücre komşulara bak (parmak yönünde)
+    if (!fits) {
+      const fracX = fx - shapeCenterX - Math.round(fx - shapeCenterX);
+      const fracY = fy - shapeCenterY - Math.round(fy - shapeCenterY);
+      const candidates = Math.abs(fracX) >= Math.abs(fracY)
+        ? [[fracX >= 0 ? 1 : -1, 0], [0, fracY >= 0 ? 1 : -1]]
+        : [[0, fracY >= 0 ? 1 : -1], [fracX >= 0 ? 1 : -1, 0]];
+      
+      for (const [dx, dy] of candidates) {
+        const sx = Math.max(0, Math.min(BOARD_SIZE - w, startX + dx));
+        const sy = Math.max(0, Math.min(BOARD_SIZE - h, startY + dy));
+        let ok = true;
+        for (let y = 0; y < h && ok; y++)
+          for (let x = 0; x < w && ok; x++)
+            if (selectedShape[y][x] === 1 && board[sy+y][sx+x] !== null) ok = false;
+        if (ok) { startX = sx; startY = sy; fits = true; break; }
+      }
     }
   }
 
-  // 5. PREVIEW: parmağı serbest takip et (uçsun)
-  const previewW = (w * cellSize + (w-1) * gap);
-  const previewH = (h * cellSize + (h-1) * gap);
-  const tx = Math.round(fingerX - previewW / 2);
-  const ty = Math.round(fingerY - previewH / 2);
-  dragPreviewEl.style.transform = `translate3d(${tx}px,${ty}px,0)`;
-  dragPreviewEl.style.opacity = '0.9';
+  // 5. PREVIEW: ghostOnly modunda skip (zaten onPointerMove'da yapıldı)
+  if (!ghostOnly) {
+    const previewW = (w * cellSize + (w-1) * gap);
+    const previewH = (h * cellSize + (h-1) * gap);
+    const tx = Math.round(fingerX - previewW / 2);
+    const ty = Math.round(fingerY - previewH / 2);
+    dragPreviewEl.style.transform = `translate3d(${tx}px,${ty}px,0)`;
+    dragPreviewEl.style.opacity = '0.9';
+  }
 
   // 6. GHOST: preview ile aynı hücre — ikisi zaten örtüşüyor
   if (fits) {
@@ -2920,17 +3204,132 @@ function _updateAll(e) {
   }
 }
 
+// Son pointer koordinatları - RAF'ta kullanılacak
+let _latestClientX = 0, _latestClientY = 0;
+let _dragRafId = null;
+
+function _dragRafLoop() {
+  if (!isDragging) { _dragRafId = null; return; }
+
+  // 1. Preview transform - RAF'ta yap, screen refresh ile sync
+  if (dragPreviewEl && selectedShape) {
+    const cellSize = _cachedCellSize;
+    const gap = _cachedBoardGap;
+    const h = selectedShape.length;
+    const w = selectedShape[0].length;
+    const previewW = w * cellSize + (w-1) * gap;
+    const previewH = h * cellSize + (h-1) * gap;
+    const tx = Math.round(_latestClientX - previewW / 2);
+    const ty = Math.round(_latestClientY - dragLiftY - previewH / 2);
+    dragPreviewEl.style.transform = `translate3d(${tx}px,${ty}px,0)`;
+
+    // 2. Ghost: cached board rect kullan - getBoundingClientRect yok, reflow yok
+    if (_cachedCellSize > 0 && _cachedBoardRect && selectedShape) {
+      const bRect = _cachedBoardRect;
+      const step = _cachedStep;
+      const pad = _cachedBoardPad;
+      // Preview sol-üst köşesi transform'dan hesaplanır
+      const pLeft = tx;
+      const pTop  = ty;
+      const previewCellSize = previewW / w;
+
+      let totalOffsetX = 0, totalOffsetY = 0, count = 0;
+      for (let py = 0; py < h; py++) {
+        for (let px = 0; px < w; px++) {
+          if (selectedShape[py][px] !== 1) continue;
+          const cellCX = pLeft + (px + 0.5) * previewCellSize;
+          const cellCY = pTop  + (py + 0.5) * previewCellSize;
+          // Board grid koordinatı
+          const gx = (cellCX - bRect.left - pad) / step - 0.5;
+          const gy = (cellCY - bRect.top  - pad) / step - 0.5;
+          // Bu hücrenin beklenen board hücresi: (px, py) offsetini çıkar
+          totalOffsetX += gx - px;
+          totalOffsetY += gy - py;
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        const avgOX = totalOffsetX / count;
+        const avgOY = totalOffsetY / count;
+        const sx = Math.max(0, Math.min(BOARD_SIZE - w, Math.round(avgOX)));
+        const sy = Math.max(0, Math.min(BOARD_SIZE - h, Math.round(avgOY)));
+
+        // Manyetizma: snap noktasına uzaklık yarım hücreden fazlaysa ghost gösterme
+        const MAGNET_THRESHOLD = 0.65; // hücre cinsinden
+        const distX = Math.abs(avgOX - sx);
+        const distY = Math.abs(avgOY - sy);
+        if (distX > MAGNET_THRESHOLD || distY > MAGNET_THRESHOLD) {
+          // Çok uzak - ghost gizle
+          if (_lastGhostX !== -1 || _lastGhostY !== -1) {
+            clearGhostPreview();
+            if (typeof clearPrediction === 'function') clearPrediction();
+            _lastGhostX = -1; _lastGhostY = -1;
+            lastGhostCell = null;
+          }
+        } else if (sx !== _lastGhostX || sy !== _lastGhostY) {
+          clearGhostPreview();
+          if (typeof clearPrediction === 'function') clearPrediction();
+
+          let fits = true;
+          for (let y = 0; y < h && fits; y++)
+            for (let x = 0; x < w && fits; x++)
+              if (selectedShape[y][x] === 1) {
+                const by = sy+y, bx = sx+x;
+                if (by < 0 || by >= BOARD_SIZE || bx < 0 || bx >= BOARD_SIZE || board[by][bx] !== null)
+                  fits = false;
+              }
+
+          if (fits) {
+            _lastGhostX = sx; _lastGhostY = sy;
+            lastGhostCell = [sx, sy];
+            const ghostHex = selectedPieceColor ? (colorToHex(selectedPieceColor) || '#7c6ff7') : '#7c6ff7';
+            const ghostRgb = hexToRgb(ghostHex);
+            const cells = getCells();
+            for (let y = 0; y < h; y++)
+              for (let x = 0; x < w; x++)
+                if (selectedShape[y][x] === 1) {
+                  const cellEl = cells[(sy+y)*BOARD_SIZE+(sx+x)];
+                  if (cellEl) {
+                    cellEl.classList.add('ghost-valid');
+                    cellEl.style.setProperty('--ghost-color','rgba('+ghostRgb+',0.22)');
+                    cellEl.style.setProperty('--ghost-border','rgba('+ghostRgb+',0.95)');
+                    cellEl.style.setProperty('--ghost-glow','rgba('+ghostRgb+',0.5)');
+                    _activeGhostCells.push(cellEl);
+                  }
+                }
+            // Prediction - ghost konumuna göre hangi satır/sütun dolacak göster
+            const tempBoard = board.map(r => r.slice());
+            for (let y = 0; y < h; y++)
+              for (let x = 0; x < w; x++)
+                if (selectedShape[y][x] === 1)
+                  tempBoard[sy+y][sx+x] = 'ghost';
+            showClearPrediction(tempBoard);
+          } else {
+            _lastGhostX = -1; _lastGhostY = -1;
+            lastGhostCell = null;
+          }
+        }
+      }
+    }
+  }
+
+  _lastE = null;
+  _dragRafId = requestAnimationFrame(_dragRafLoop);
+}
+
 function onPointerMove(e) {
   if (!isDragging) return;
   if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
+
+  // Koordinatları kaydet - RAF loop çizecek
+  _latestClientX = e.clientX;
+  _latestClientY = e.clientY;
   _lastE = e;
-  if (!_rafPending) {
-    _rafPending = true;
-    requestAnimationFrame(() => {
-      _rafPending = false;
-      if (!isDragging || !_lastE) return;
-      _updateAll(_lastE);
-    });
+
+  // RAF loop başlat (sadece bir tane çalışsın)
+  if (!_dragRafId) {
+    _dragRafId = requestAnimationFrame(_dragRafLoop);
   }
 }
 
@@ -2981,14 +3380,34 @@ function onPointerUp(e) {
   clearPrediction();
 }
 
+// Board değerlerini cache'le - her drag move'da getComputedStyle çağırma
+let _cachedBoardPad = 2, _cachedBoardGap = 2, _cachedCellSize = 0, _cachedStep = 0;
+let _cachedBoardRect = null;
+function _cacheBoardMetrics() {
+  const boardEl = document.getElementById('board');
+  if (!boardEl) return;
+  const boardRect = boardEl.getBoundingClientRect();
+  const boardStyle = getComputedStyle(boardEl);
+  _cachedBoardPad = parseFloat(boardStyle.paddingLeft) || 2;
+  // gap shorthand bazen "2px 2px" şeklinde gelir, ilk değeri al
+  const rawGap = boardStyle.gap || boardStyle.columnGap || '2px';
+  _cachedBoardGap = parseFloat(rawGap.split(' ')[0]) || 2;
+  const innerW = boardRect.width - _cachedBoardPad * 2;
+  // cellSize float - tutarlı hesaplama için sakla, yuvarlama
+  _cachedCellSize = (innerW - _cachedBoardGap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+  // Step: hücre + gap (tam sayı değil, float kalsın - snap hesabında önemli)
+  _cachedStep = _cachedCellSize + _cachedBoardGap;
+  _cachedBoardRect = boardRect;
+  console.log('[Board] pad:', _cachedBoardPad, 'gap:', _cachedBoardGap, 'cell:', _cachedCellSize.toFixed(2), 'step:', _cachedStep.toFixed(2));
+}
+
 function updateDragPosition(e) {
   if (!dragPreviewEl || !selectedShape) return;
   const boardEl = document.getElementById('board');
   const boardRect = boardEl.getBoundingClientRect();
-  const pad = 6;
-  const gap = 3;
-  const innerW = boardRect.width - pad * 2;
-  const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+  const pad = _cachedBoardPad;
+  const gap = _cachedBoardGap;
+  const cellSize = _cachedCellSize || (boardRect.width - pad * 2 - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
 
   const h = selectedShape.length;
   const w = selectedShape[0].length;
@@ -3050,11 +3469,11 @@ function trySnapToValid(clientX, clientY) {
   const h = selectedShape.length;
   const w = selectedShape[0].length;
 
-  const pad  = 6;
-  const gap  = 3;
-  const innerW = rect.width - pad * 2;
-  const cellSize = (innerW - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
-  const step = cellSize + gap;
+  // Cache'lenmiş değerleri kullan - tutarlı hesaplama
+  const pad = _cachedBoardPad;
+  const gap = _cachedBoardGap;
+  const cellSize = _cachedCellSize || (rect.width - pad*2 - gap*(BOARD_SIZE-1)) / BOARD_SIZE;
+  const step = _cachedStep || (cellSize + gap);
 
   const gridLeft = rect.left + pad;
   const gridTop  = rect.top  + pad;
@@ -3184,15 +3603,18 @@ function updateGhostPreview(clientX, clientY) {
   showClearPrediction(tempBoard);
 }
 
+// Predict-clear class'larını temizle
 function clearPrediction() {
   document.querySelectorAll(".predict-clear").forEach(c => {
     c.classList.remove("predict-clear");
   });
 }
 
+// Yeni parlamaları zorla ekrana basar
 function showClearPrediction(testBoard) {
-  const cells = getCells();
+  const cells = document.querySelectorAll('.board-cell');
 
+  // SATIR KONTROLÜ
   for (let y = 0; y < BOARD_SIZE; y++) {
     let full = true;
     for (let x = 0; x < BOARD_SIZE; x++) {
@@ -3206,6 +3628,7 @@ function showClearPrediction(testBoard) {
     }
   }
 
+  // SÜTUN KONTROLÜ
   for (let x = 0; x < BOARD_SIZE; x++) {
     let full = true;
     for (let y = 0; y < BOARD_SIZE; y++) {
@@ -3226,25 +3649,76 @@ const MULTILINE_LABELS = [
   { tr: 'TRIPLE!',    en: 'TRIPLE!',      color: '#34d399', size: '38px', shake: false },
   { tr: 'ULTRA!',     en: 'ULTRA!',       color: '#f59e0b', size: '44px', shake: true  },
   { tr: 'PERFECT!',   en: 'PERFECT!',     color: '#f97316', size: '48px', shake: true  },
-  { tr: 'PERFECT!',   en: 'PERFECT!',     color: '#a78bfa', size: '52px', shake: true  },
+  { tr: 'WONDERFUL!',   en: 'WONDERFUL!',     color: '#a78bfa', size: '52px', shake: true  },
 ];
 
 // Combo yazı seviyeleri (streak bazlı)
 const COMBO_LABELS = [
   null,
   null,
-  { tr: 'GÜZELDİ!',       en: 'NICE!',          color: '#60a5fa', size: '30px', shake: false },
-  { tr: 'HARİKA!',         en: 'GREAT!',         color: '#34d399', size: '36px', shake: false },
-  { tr: 'ATEŞTE!',         en: 'ON FIRE!',        color: '#f59e0b', size: '42px', shake: true  },
-  { tr: 'DURDURULAMAZ!',   en: 'UNSTOPPABLE!',   color: '#f97316', size: '44px', shake: true  },
-  { tr: 'TANRISAL!',       en: 'GODLIKE!',       color: '#a78bfa', size: '50px', shake: true  },
-  { tr: 'EFSANE!',         en: 'LEGENDARY!',     color: '#ff4ecd', size: '54px', shake: true  },
-  { tr: 'EFSANE!',         en: 'LEGENDARY!',     color: '#ff4ecd', size: '54px', shake: true  },
+  { tr: 'GÜZEL!',       en: 'NICE!',          color: '#60a5fa', size: '26px', shake: false },
+  { tr: 'HARİKA!',         en: 'GREAT!',         color: '#34d399', size: '30px', shake: false },
+  { tr: 'ATEŞTE!',         en: 'ON FIRE!',        color: '#f59e0b', size: '34px', shake: true  },
+  { tr: 'MUHTEŞEM!',       en: 'WONDERFUL!',       color: '#a78bfa', size: '36px', shake: true  },
+  { tr: 'DURDURULAMAZ!',   en: 'UNSTOPPABLE!',   color: '#f97316', size: '30px', shake: true  },
+  { tr: 'EFSANE!',         en: 'LEGENDARY!',     color: '#ff4ecd', size: '38px', shake: true  },
+  { tr: 'EFSANE!',         en: 'LEGENDARY!',     color: '#ff4ecd', size: '38px', shake: true  },
 ];
 
-// clearStreak: streak sayısı (null ise streak yok)
-// lineCount: aynı hamlede kaç satır/sütun (null ise çoklu değil)
+// ===== PRELOADED COMBO ELEMENTS =====
+// DOM createElement yerine önceden hazır elementleri reuse et
+let _comboEl = null;
+let _comboSubEl = null;
+let _comboHideTimer = null;
+let _comboSubHideTimer = null;
+
+function _initComboElements() {
+  if (_comboEl) return;
+
+  _comboEl = document.createElement('div');
+  _comboEl.id = '_combo_label';
+  _comboEl.style.cssText = `
+    position:fixed;
+    top:32%;
+    left:50%;
+    transform:translateX(-50%) scale(0.5);
+    font-weight:900;
+    font-family:'Nunito',sans-serif;
+    z-index:9998;
+    pointer-events:none;
+    white-space:nowrap;
+    max-width:90vw;
+    text-align:center;
+    letter-spacing:-1px;
+    display:none;
+    will-change:transform,opacity;
+  `;
+  document.body.appendChild(_comboEl);
+
+  _comboSubEl = document.createElement('div');
+  _comboSubEl.id = '_combo_sub';
+  _comboSubEl.style.cssText = `
+    position:fixed;
+    top:42%;
+    left:50%;
+    transform:translateX(-50%) translateY(10px);
+    font-size:15px;
+    font-weight:800;
+    font-family:'Nunito',sans-serif;
+    color:rgba(255,255,255,0.5);
+    z-index:9996;
+    pointer-events:none;
+    white-space:nowrap;
+    letter-spacing:1px;
+    display:none;
+    will-change:transform,opacity;
+  `;
+  document.body.appendChild(_comboSubEl);
+}
+
 function showComboLabel(clearStreak, lineCount) {
+  _initComboElements();
+
   const fx = getSkinFX();
   const lang = window.currentLang || 'tr';
 
@@ -3252,12 +3726,10 @@ function showComboLabel(clearStreak, lineCount) {
   let subText = null;
 
   if (clearStreak !== null && clearStreak >= 2) {
-    // Streak bazlı
     const idx = Math.min(clearStreak, COMBO_LABELS.length - 1);
     label = COMBO_LABELS[idx];
     subText = fx.comboPrefix + ' x' + clearStreak;
   } else if (lineCount !== null && lineCount >= 3) {
-    // Çoklu satır bazlı
     const idx = Math.min(lineCount, MULTILINE_LABELS.length - 1);
     label = MULTILINE_LABELS[idx];
     subText = lineCount + (lang === 'en' ? ' LINES!' : ' SATIR!');
@@ -3265,55 +3737,47 @@ function showComboLabel(clearStreak, lineCount) {
 
   if (!label) return;
 
-  // Büyük yazı (üstte)
-  const lbl = document.createElement('div');
-  lbl.style.cssText = `
-    position:fixed;
-    top:32%;
-    left:50%;
-    transform:translateX(-50%) scale(0.5);
-    font-size:${label.size};
-    font-weight:900;
-    font-family:'Nunito',sans-serif;
-    color:${label.color};
-    text-shadow:
-      0 0 30px ${label.color},
-      0 0 60px ${label.color}66,
-      0 3px 12px rgba(0,0,0,0.8),
-      -1px -1px 0 rgba(0,0,0,0.5),
-      1px 1px 0 rgba(0,0,0,0.5);
-    z-index:9998;
-    pointer-events:none;
-    white-space:nowrap;
-    letter-spacing:-1px;
-    animation:comboLabelPop 0.85s cubic-bezier(0.2,1.4,0.3,1) forwards;
-  `;
-  lbl.textContent = lang === 'en' ? label.en : label.tr;
-  document.body.appendChild(lbl);
-  if (label.shake) setTimeout(() => { lbl.style.animation += ',comboShake 0.3s 0.15s ease'; }, 0);
-  setTimeout(() => lbl.remove(), 950);
+  // Önceki timer'ları temizle
+  if (_comboHideTimer) clearTimeout(_comboHideTimer);
+  if (_comboSubHideTimer) clearTimeout(_comboSubHideTimer);
 
-  // Küçük alt yazı (combo x sayısı veya satır sayısı)
+  // Büyük yazı - sadece içerik ve stil güncelle, yeni element yaratma
+  _comboEl.textContent = lang === 'en' ? label.en : label.tr;
+  _comboEl.style.fontSize = label.size;
+  _comboEl.style.color = label.color;
+  _comboEl.style.textShadow = `
+    0 0 30px ${label.color},
+    0 0 60px ${label.color}66,
+    0 3px 12px rgba(0,0,0,0.8),
+    -1px -1px 0 rgba(0,0,0,0.5),
+    1px 1px 0 rgba(0,0,0,0.5)`;
+  _comboEl.style.display = 'block';
+
+  // Animasyonu resetle - reflow yok
+  _comboEl.style.animation = 'none';
+  const _comboAnim = label.shake
+    ? 'comboLabelPop 0.85s cubic-bezier(0.2,1.4,0.3,1) forwards, comboShake 0.3s 0.15s ease'
+    : 'comboLabelPop 0.85s cubic-bezier(0.2,1.4,0.3,1) forwards';
+  requestAnimationFrame(() => { _comboEl.style.animation = _comboAnim; });
+
+  _comboHideTimer = setTimeout(() => {
+    _comboEl.style.display = 'none';
+    _comboEl.style.animation = 'none';
+  }, 950);
+
+  // Alt yazı
   if (subText) {
-    const sub = document.createElement('div');
-    sub.style.cssText = `
-      position:fixed;
-      top:calc(35% + ${parseInt(label.size) + 6}px);
-      left:50%;
-      transform:translateX(-50%) translateY(10px);
-      font-size:15px;
-      font-weight:800;
-      font-family:'Nunito',sans-serif;
-      color:rgba(255,255,255,0.5);
-      z-index:9996;
-      pointer-events:none;
-      white-space:nowrap;
-      letter-spacing:1px;
-      animation:comboLabelPop 0.9s cubic-bezier(0.2,1.3,0.4,1) 0.05s forwards;
-    `;
-    sub.textContent = subText;
-    document.body.appendChild(sub);
-    setTimeout(() => sub.remove(), 1000);
+    _comboSubEl.textContent = subText;
+    _comboSubEl.style.display = 'block';
+    _comboSubEl.style.animation = 'none';
+    requestAnimationFrame(() => { _comboSubEl.style.animation = 'comboLabelPop 0.9s cubic-bezier(0.2,1.3,0.4,1) 0.05s forwards'; });
+
+    _comboSubHideTimer = setTimeout(() => {
+      _comboSubEl.style.display = 'none';
+      _comboSubEl.style.animation = 'none';
+    }, 1000);
+  } else {
+    _comboSubEl.style.display = 'none';
   }
 }
 
@@ -3360,6 +3824,144 @@ function _dustLoop() {
   _dustAnimId = requestAnimationFrame(_dustLoop);
 }
 
+// Satır/sütun patlama efekti — ekran titremesi + canvas flash + parçacıklar
+let _flashAnimId = null;
+let _flashCanvas = null;
+let _flashCtx = null;
+let _shakeRafId = null;
+
+function _initFlashCanvas() {
+  if (_flashCanvas) return;
+  _flashCanvas = document.createElement('canvas');
+  _flashCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9998;';
+  _flashCanvas.width = window.innerWidth;
+  _flashCanvas.height = window.innerHeight;
+  document.body.appendChild(_flashCanvas);
+  _flashCtx = _flashCanvas.getContext('2d');
+}
+
+// Ekran titreme — sadece transform, layout reflow yok
+function _shakeScreen(intensity, lineCount) {
+  if (_shakeRafId) cancelAnimationFrame(_shakeRafId);
+  const el = getBoardEl();
+  if (!el) return;
+  const mag = lineCount >= 2 ? Math.min(intensity + 2, 8) : Math.min(intensity, 5);
+  el.style.willChange = 'transform'; // shake sırasında GPU'ya taşı
+  const FRAMES = [
+    [ mag,   0      ],
+    [-mag,   mag*0.6],
+    [ mag*0.7, -mag*0.7],
+    [-mag*0.5,  mag*0.4],
+    [ mag*0.2, -mag*0.3],
+    [ 0,   0      ]
+  ];
+  let i = 0;
+  function step() {
+    if (i >= FRAMES.length) {
+      el.style.transform = '';
+      el.style.willChange = ''; // GPU katmanını serbest bırak
+      _shakeRafId = null;
+      return;
+    }
+    el.style.transform = `translate(${FRAMES[i][0]}px,${FRAMES[i][1]}px)`;
+    i++;
+    _shakeRafId = requestAnimationFrame(step);
+  }
+  _shakeRafId = requestAnimationFrame(step);
+}
+
+function spawnLineClearFlash(clearList, lineCount) {
+  const _animOn = localStorage.getItem('tgl-anim') !== 'off';
+  if (!_animOn || !clearList.length) return;
+
+  _initFlashCanvas();
+
+  // Ekran titret
+  _shakeScreen(5, lineCount || 1);
+
+  // Hücre rect'lerini al — sadece burada bir kez (RAF loop dışı)
+  const rects = [];
+  for (const { y, x } of clearList) {
+    const cellEl = _boardCells && _boardCells[y] && _boardCells[y][x];
+    if (!cellEl) continue;
+    const r = cellEl.getBoundingClientRect();
+    rects.push({ left: r.left, top: r.top, cx: r.left + r.width/2, cy: r.top + r.height/2, w: r.width, h: r.height });
+  }
+  if (!rects.length) return;
+
+  // Patlayan alanın tüm merkezi
+  const allCx = rects.reduce((s,r)=>s+r.cx,0)/rects.length;
+  const allCy = rects.reduce((s,r)=>s+r.cy,0)/rects.length;
+
+  // Canvas parçacıkları — her hücreden fırlasın
+  _initDustCanvas();
+  const colors = getCurrentThemeColors();
+  for (const r of rects) {
+    for (let i = 0; i < 4; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd = 3 + Math.random() * 5;
+      _dustParticles.push({
+        x: r.cx, y: r.cy,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd - 2,
+        r: 2 + Math.random() * 3,
+        color: colors[Math.floor(Math.random() * colors.length)] || '#fff',
+        life: 55 + Math.random() * 25,
+      });
+    }
+  }
+  if (!_dustAnimId) _dustAnimId = requestAnimationFrame(_dustLoop);
+
+  // Flash animasyonu: hızlı parlak → yavaş söner
+  const DURATION = 300;
+  const startTime = performance.now();
+
+  function flashLoop(now) {
+    const t = Math.min((now - startTime) / DURATION, 1);
+    const eased = 1 - t * t; // quad ease-out
+
+    _flashCtx.clearRect(0, 0, _flashCanvas.width, _flashCanvas.height);
+
+    // 1. Tüm patlayan alanı kaplayan büyük bir radial glow
+    const spread = rects.length >= 8 ? 120 : 70;
+    const grd = _flashCtx.createRadialGradient(allCx, allCy, 0, allCx, allCy, spread);
+    grd.addColorStop(0, `rgba(255,255,180,${0.55 * eased})`);
+    grd.addColorStop(0.4, `rgba(255,210,50,${0.3 * eased})`);
+    grd.addColorStop(1, `rgba(255,160,0,0)`);
+    _flashCtx.fillStyle = grd;
+    _flashCtx.fillRect(allCx - spread, allCy - spread, spread*2, spread*2);
+
+    // 2. Her hücre üzerine beyaz flash
+    _flashCtx.fillStyle = `rgba(255,255,255,${0.75 * eased})`;
+    for (const r of rects) {
+      _flashCtx.fillRect(r.left, r.top, r.w, r.h);
+    }
+
+    // 3. İnce scan line — satır/sütun boyunca süpürme hissi
+    if (rects.length >= 4) {
+      const minX = Math.min(...rects.map(r=>r.left));
+      const maxX = Math.max(...rects.map(r=>r.left+r.w));
+      const minY = Math.min(...rects.map(r=>r.top));
+      const maxY = Math.max(...rects.map(r=>r.top+r.h));
+      const scanAlpha = Math.max(0, (0.5 - t) * 2) * 0.4; // sadece ilk yarıda görünür
+      _flashCtx.fillStyle = `rgba(255,255,255,${scanAlpha})`;
+      _flashCtx.fillRect(minX, minY, maxX-minX, maxY-minY);
+    }
+
+    _flashCtx.globalAlpha = 1;
+
+    if (t < 1) {
+      _flashAnimId = requestAnimationFrame(flashLoop);
+    } else {
+      _flashCtx.clearRect(0, 0, _flashCanvas.width, _flashCanvas.height);
+      _flashAnimId = null;
+    }
+  }
+
+  if (_flashAnimId) cancelAnimationFrame(_flashAnimId);
+  _flashAnimId = requestAnimationFrame(flashLoop);
+}
+
 function spawnDustEffect(cells) {
   const _animOn = localStorage.getItem('tgl-anim') !== 'off';
   if (!_animOn) return;
@@ -3403,31 +4005,41 @@ function getCurrentThemeColors() {
   return def ? def.colors : ['#ff4d4d','#4d7cff','#42d67a','#ffd24d'];
 }
 
-function spawnFloatingScore(value) {
+// Preloaded score popup
+let _scorePopupEl = null;
+let _scoreHideTimer = null;
 
+function _initScorePopup() {
+  if (_scorePopupEl) return;
+  _scorePopupEl = document.createElement('div');
+  _scorePopupEl.className = 'score-popup';
+  _scorePopupEl.style.cssText = `
+    position:fixed;
+    left:50%;
+    top:45%;
+    display:none;
+    will-change:transform,opacity;
+  `;
+  document.body.appendChild(_scorePopupEl);
+}
+
+function spawnFloatingScore(value) {
   if (scorePopupActive) return;
   scorePopupActive = true;
+  _initScorePopup();
 
-  const popup = document.createElement("div");
-  popup.className = "score-popup";
-  popup.textContent = "+" + value;
+  if (_scoreHideTimer) clearTimeout(_scoreHideTimer);
 
-  // büyük puan renklensin
-  if (value >= 500) {
-    popup.style.color = "#ff3d00";
-  } 
-  else if (value >= 200) {
-    popup.style.color = "#ff9800";
-  }
+  _scorePopupEl.textContent = '+' + value;
+  _scorePopupEl.style.color = value >= 500 ? '#ff3d00' : value >= 200 ? '#ff9800' : '';
+  _scorePopupEl.style.display = 'block';
 
-  popup.style.left = "50%";
-  popup.style.top = "45%";
-  popup.style.position = "fixed";
+  // Animasyonu resetle - reflow yok
+  _scorePopupEl.style.animation = 'none';
+  requestAnimationFrame(() => { _scorePopupEl.style.animation = ''; _scorePopupEl.className = 'score-popup'; });
 
-  document.body.appendChild(popup);
-
-  setTimeout(() => {
-    popup.remove();
+  _scoreHideTimer = setTimeout(() => {
+    _scorePopupEl.style.display = 'none';
     scorePopupActive = false;
   }, 900);
 }
@@ -3463,6 +4075,4 @@ function spawnComboParticles() {
 
 const SNAP_PULL = 0.92;
 
-document.getElementById("restartBtn").onclick = () => {
- location.reload();
-};
+// restartBtn - game.html'deki addEventListener ile yönetiliyor
