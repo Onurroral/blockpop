@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.2.6">
+  <link rel="stylesheet" href="style.css?v=1.5.5">
 
   <!-- Firebase -->
   <script type="module">
@@ -295,7 +295,7 @@
       padding: 48px 20px 100px;
       display: flex; flex-direction: column;
       align-items: center;
-      overflow-y: auto;
+      overflow-y: hidden;
       flex: 1;
     }
 
@@ -684,22 +684,23 @@
     /* Zorluk Seçim Modalı */
     #difficultyModal, #timeLevelModal {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(12px);
+      background: rgba(0,0,0,0.82);
+      backdrop-filter: blur(16px);
       display: flex; align-items: center; justify-content: center;
       z-index: 1100;
     }
     #difficultyModal.hidden, #timeLevelModal.hidden { display: none; }
 
     .diff-box {
-      background: rgba(15,15,25,0.97);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 24px;
+      background: linear-gradient(160deg, #141e2e, #1a2840);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 28px;
       padding: 28px 20px 20px;
-      width: 300px;
+      width: min(320px, 90vw);
       max-height: 90vh;
       overflow-y: auto;
-      animation: menuFadeIn 0.25s ease both;
+      animation: menuFadeIn 0.2s ease both;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
     }
     .diff-title {
       font-family: 'Nunito', sans-serif;
@@ -707,38 +708,86 @@
       color: #fff; text-align: center; margin-bottom: 4px;
     }
     .diff-sub {
-      font-size: 13px; color: rgba(255,255,255,0.4);
+      font-size: 12px; color: rgba(255,255,255,0.35);
       text-align: center; margin-bottom: 20px;
+      letter-spacing: 0.5px;
     }
     .diff-btn {
       display: flex; align-items: center; gap: 14px;
-      width: 100%; padding: 14px 16px;
-      border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04);
+      width: 100%; padding: 16px;
+      border-radius: 16px; border: 1.5px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
       color: #fff; cursor: pointer;
       margin-bottom: 10px;
       transition: all 0.15s; font-family: 'Nunito', sans-serif;
       text-align: left;
+      position: relative; overflow: hidden;
+    }
+    .diff-btn::before {
+      content: ''; position: absolute;
+      inset: 0; opacity: 0;
+      transition: opacity 0.15s;
     }
     .diff-btn:active { transform: scale(0.97); }
-    .diff-easy  { border-color: rgba(52,211,153,0.3); }
-    .diff-easy:hover  { background: rgba(52,211,153,0.08); }
-    .diff-normal { border-color: rgba(251,191,36,0.3); }
-    .diff-normal:hover { background: rgba(251,191,36,0.08); }
-    .diff-hard  { border-color: rgba(239,68,68,0.3); }
-    .diff-hard:hover  { background: rgba(239,68,68,0.08); }
-    .diff-icon  { font-size: 24px; flex-shrink: 0; }
-    .diff-name  { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
-    .diff-desc  { font-size: 12px; color: rgba(255,255,255,0.45); font-weight: 600; }
+
+    /* Kolay — yeşil */
+    .diff-easy { border-color: rgba(52,211,153,0.35); }
+    .diff-easy::before { background: linear-gradient(135deg, rgba(52,211,153,0.12), transparent); }
+    .diff-easy:hover::before, .diff-easy:active::before { opacity: 1; }
+    .diff-easy .diff-icon-wrap {
+      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+      background: linear-gradient(135deg, #34d399, #059669);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; box-shadow: 0 4px 12px rgba(52,211,153,0.4);
+    }
+
+    /* Normal — sarı */
+    .diff-normal { border-color: rgba(251,191,36,0.35); }
+    .diff-normal::before { background: linear-gradient(135deg, rgba(251,191,36,0.1), transparent); }
+    .diff-normal:hover::before, .diff-normal:active::before { opacity: 1; }
+    .diff-normal .diff-icon-wrap {
+      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+      background: linear-gradient(135deg, #fbbf24, #d97706);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; box-shadow: 0 4px 12px rgba(251,191,36,0.4);
+    }
+
+    /* Zor — kırmızı */
+    .diff-hard { border-color: rgba(239,68,68,0.35); }
+    .diff-hard::before { background: linear-gradient(135deg, rgba(239,68,68,0.1), transparent); }
+    .diff-hard:hover::before, .diff-hard:active::before { opacity: 1; }
+    .diff-hard .diff-icon-wrap {
+      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; box-shadow: 0 4px 12px rgba(239,68,68,0.4);
+    }
+
+    /* Seviye 3 — turuncu */
+    .diff-level3 { border-color: rgba(251,146,60,0.35); }
+    .diff-level3::before { background: linear-gradient(135deg, rgba(251,146,60,0.1), transparent); }
+    .diff-level3:hover::before, .diff-level3:active::before { opacity: 1; }
+
+    /* Tüm icon-wrap'lerin base stili */
+    .diff-icon-wrap {
+      width: 42px; height: 42px;
+      border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .diff-name  { font-size: 16px; font-weight: 900; margin-bottom: 3px; letter-spacing: -0.3px; }
+    .diff-desc  { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 600; line-height: 1.4; }
     .diff-cancel {
-      display: block; width: 100%; padding: 12px;
-      border-radius: 12px; border: none;
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.4);
+      display: block; width: 100%; padding: 13px;
+      border-radius: 14px; border: none;
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.35);
       font-size: 14px; font-weight: 700;
       font-family: 'Nunito', sans-serif;
-      cursor: pointer; margin-top: 4px;
+      cursor: pointer; margin-top: 6px;
+      transition: background 0.15s;
     }
+    .diff-cancel:hover { background: rgba(255,255,255,0.08); }
     .btn-settings-menu {
       background: rgba(255,255,255,0.06);
       color: rgba(255,255,255,0.75);
@@ -1127,9 +1176,10 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 10px 12px 0;
+      padding: 0 12px;
       width: 100%;
-      gap: 2px;
+      gap: 0;
+      margin-bottom: 2px;
     }
     .topbar-top-row {
       display: flex;
@@ -1153,7 +1203,7 @@
       width: 100%; text-align: center;
     }
     #score {
-      font-size: 52px; font-weight: 900;
+      font-size: 48px; font-weight: 900;
       color: #fff; line-height: 1;
       font-family: 'Nunito', sans-serif;
       letter-spacing: -2px;
@@ -1164,7 +1214,7 @@
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 12px;
       color: #fff; font-size: 18px;
-      width: 40px; height: 40px;
+      width: 36px; height: 36px;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; transition: all 0.15s;
       margin-left: auto;
@@ -1174,8 +1224,7 @@
     /* ===== OYUN İÇİ SETTINGS MODAL ===== */
     #inGameSettingsPanel {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.65);
-      backdrop-filter: blur(8px);
+      background: rgba(0,0,0,0.72);
       display: flex; align-items: center; justify-content: center;
       z-index: 500;
     }
@@ -1281,20 +1330,7 @@
     }
 
     /* ===== OYUN İÇİ AYARLAR PANELİ (dropdown) ===== */
-    #inGameSettingsPanel {
-      position: fixed;
-      top: 54px;
-      right: 12px;
-      background: #1e2a45;
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 16px;
-      padding: 8px 0;
-      z-index: 500;
-      min-width: 220px;
-      animation: slideDown 0.2s ease both;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    }
-    #inGameSettingsPanel.hidden { display: none; }
+    #inGameSettingsPanel-dropdown-removed { display: none; }
 
     .igs-row {
       display: flex;
@@ -1391,6 +1427,7 @@
     }
     #tab-home {
       padding: 0 0 100px;
+      overflow-y: auto;
     }
     .tab-title {
       font-size: 22px;
@@ -1412,9 +1449,133 @@
       document.write('<style id="restart-hide">#menuScreen{display:none!important}</style>');
     }
   </script>
+  <style>
+    #game-container {
+      padding-top: 70px !important;
+    }
+    #game-topbar {
+      margin-bottom: 35px !important;
+    }
+    #board {
+      background: rgba(0,0,0,0.5) !important;
+      border-radius: 12px !important;
+      gap: 2px !important;
+      padding: 2px !important;
+    }
+
+    .topbar-top-row {
+      margin-bottom: 30px !important;
+    }
+  </style>
 </head>
 
 <body>
+<body>
+
+<!-- ===== SPLASH SCREEN ===== -->
+<div id="splashScreen" style="
+  position:fixed; inset:0; z-index:99999;
+  background: linear-gradient(135deg, #0d0d1a 0%, #1a1a3e 50%, #0d0d1a 100%);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  transition: opacity 0.5s ease;
+">
+  <div style="text-align:center;">
+    <!-- İkon -->
+    <div id="splashIcon" style="
+      width:110px; height:110px; border-radius:28px;
+      background: linear-gradient(135deg, #1a1a3e, #2d2d5e);
+      border: 2px solid rgba(167,139,250,0.3);
+      display:flex; align-items:center; justify-content:center;
+      margin: 0 auto 24px;
+      box-shadow: 0 0 40px rgba(124,111,247,0.3);
+      animation: splashIconPop 0.6s cubic-bezier(0.2,1.3,0.4,1) 0.2s both;
+    ">
+      <img src="assets/icons/icon-512.png" style="width:90px;height:90px;border-radius:20px;" onerror="this.style.display='none'"/>
+    </div>
+
+    <!-- Logo yazısı -->
+    <div id="splashTitle" style="
+      font-family:'Nunito',sans-serif;
+      font-size:38px; font-weight:900;
+      color:#fff; letter-spacing:-1px;
+      animation: splashFadeUp 0.5s ease 0.5s both;
+    ">Block<span style="color:#a78bfa">Pop</span></div>
+
+    <div style="
+      font-family:'Nunito',sans-serif;
+      font-size:13px; font-weight:600;
+      color:rgba(255,255,255,0.35);
+      letter-spacing:2px; text-transform:uppercase;
+      margin-top:4px;
+      animation: splashFadeUp 0.5s ease 0.65s both;
+    ">BLOCK PUZZLE GAME</div>
+
+    <!-- Blok animasyonu - düz çizgi, soldan sağa kayıyor -->
+    <div style="
+      margin-top:40px;
+      animation: splashFadeUp 0.5s ease 0.8s both;
+      overflow:hidden;
+      width:160px;
+      height:30px;
+      position:relative;
+    ">
+      <div class="sb-train">
+        <div class="sb" style="--c:#FF4757"></div>
+        <div class="sb" style="--c:#FFA502"></div>
+        <div class="sb" style="--c:#5352ED"></div>
+        <div class="sb" style="--c:#2ED573"></div>
+        <div class="sb" style="--c:#FFDD59"></div>
+        <div class="sb" style="--c:#FF6348"></div>
+        <div class="sb" style="--c:#FF4757"></div>
+        <div class="sb" style="--c:#FFA502"></div>
+        <div class="sb" style="--c:#5352ED"></div>
+        <div class="sb" style="--c:#2ED573"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes splashIconPop {
+    from { transform: scale(0.3) rotate(-15deg); opacity:0; }
+    to   { transform: scale(1) rotate(0deg); opacity:1; }
+  }
+  @keyframes splashFadeUp {
+    from { transform: translateY(16px); opacity:0; }
+    to   { transform: translateY(0); opacity:1; }
+  }
+  .sb-train {
+    display:flex; gap:6px;
+    position:absolute; left:0; top:0;
+    animation: sbSlide 1.8s linear infinite;
+  }
+  .sb {
+    width:20px; height:20px; border-radius:5px;
+    flex-shrink:0;
+    background: var(--c, #a78bfa);
+    box-shadow: 0 0 8px var(--c, #a78bfa);
+  }
+  @keyframes sbSlide {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-130px); }
+  }
+</style>
+
+<script>
+  // Splash: 1.8 saniye göster, sonra fade out
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const splash = document.getElementById('splashScreen');
+      if (!splash) return;
+      splash.style.opacity = '0';
+      setTimeout(() => {
+        splash.style.display = 'none';
+      }, 500);
+    }, 1800);
+  });
+</script>
+
 
   <!-- ===== İLK AÇILIŞ - İSİM EKRANI ===== -->
   <div id="welcomeScreen" class="hidden">
@@ -1562,7 +1723,7 @@
           </div>
         </div>
         <div class="settings-footer">
-          <p>BlockPop v1.2.6</p>
+          <p>BlockPop v1.0.0</p>
           <p>Made by Onur</p>
         </div>
       </div>
@@ -1688,27 +1849,30 @@
       <div class="diff-sub">Bir zorluk seviyesi seç</div>
 
       <button class="diff-btn diff-easy" id="btnEasy">
-        <div class="diff-icon">🟢</div>
+        <div class="diff-icon-wrap">🌿</div>
         <div class="diff-info">
           <div class="diff-name">Kolay</div>
-          <div class="diff-desc">Tam yardımcı bloklar, powerup var</div>
+          <div class="diff-desc">Akıllı bloklar, birbirini tamamlar</div>
         </div>
+        <div style="margin-left:auto;font-size:10px;color:rgba(52,211,153,0.7);font-weight:700;">→</div>
       </button>
 
       <button class="diff-btn diff-normal" id="btnNormal">
-        <div class="diff-icon">🟡</div>
+        <div class="diff-icon-wrap">⚡</div>
         <div class="diff-info">
           <div class="diff-name">Normal</div>
-          <div class="diff-desc">%80 yardımcı, powerup var</div>
+          <div class="diff-desc">Dengeli zorluk, powerup var</div>
         </div>
+        <div style="margin-left:auto;font-size:10px;color:rgba(251,191,36,0.7);font-weight:700;">→</div>
       </button>
 
       <button class="diff-btn diff-hard" id="btnHard">
-        <div class="diff-icon">🔴</div>
+        <div class="diff-icon-wrap">💀</div>
         <div class="diff-info">
           <div class="diff-name">Zor</div>
           <div class="diff-desc">Tamamen rastgele, powerup yok</div>
         </div>
+        <div style="margin-left:auto;font-size:10px;color:rgba(239,68,68,0.7);font-weight:700;">→</div>
       </button>
 
       <button class="diff-cancel" id="btnDiffCancel">İptal</button>
@@ -1722,49 +1886,53 @@
       <div class="diff-sub">Seviye seç</div>
 
       <button class="diff-btn diff-easy" id="btnTimeL1">
-        <div class="diff-icon">1️⃣</div>
+        <div class="diff-icon-wrap" style="background:linear-gradient(135deg,#34d399,#059669);font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">1</div>
         <div class="diff-info">
           <div class="diff-name">Seviye 1</div>
-          <div class="diff-desc">60 saniye</div>
+          <div class="diff-desc">60 saniye — Rahat</div>
         </div>
+        <div style="margin-left:auto;font-size:10px;color:rgba(52,211,153,0.7);font-weight:700;">→</div>
       </button>
 
       <button class="diff-btn diff-normal" id="btnTimeL2">
-        <div class="diff-icon">2️⃣</div>
+        <div class="diff-icon-wrap" style="background:linear-gradient(135deg,#fbbf24,#d97706);font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">2</div>
         <div class="diff-info">
           <div class="diff-name">Seviye 2</div>
           <div class="diff-desc">50 saniye</div>
         </div>
+        <div style="margin-left:auto;font-size:10px;color:rgba(251,191,36,0.7);font-weight:700;">→</div>
       </button>
 
-      <button class="diff-btn diff-normal" id="btnTimeL3">
-        <div class="diff-icon">3️⃣</div>
+      <button class="diff-btn diff-level3" id="btnTimeL3">
+        <div class="diff-icon-wrap" style="background:linear-gradient(135deg,#fb923c,#ea580c);font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;flex-shrink:0;">3</div>
         <div class="diff-info">
           <div class="diff-name">Seviye 3</div>
           <div class="diff-desc">40 saniye</div>
         </div>
+        <div style="margin-left:auto;font-size:10px;color:rgba(251,146,60,0.7);font-weight:700;">→</div>
       </button>
 
       <button class="diff-btn diff-hard" id="btnTimeL4">
-        <div class="diff-icon">4️⃣</div>
+        <div class="diff-icon-wrap" style="background:linear-gradient(135deg,#ef4444,#b91c1c);font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">4</div>
         <div class="diff-info">
           <div class="diff-name">Seviye 4</div>
-          <div class="diff-desc">30 saniye</div>
+          <div class="diff-desc">30 saniye — Zor</div>
         </div>
+        <div style="margin-left:auto;font-size:10px;color:rgba(239,68,68,0.7);font-weight:700;">→</div>
       </button>
 
       <button class="diff-btn diff-hard" id="btnTimeL5">
-        <div class="diff-icon">5️⃣</div>
+        <div class="diff-icon-wrap" style="background:linear-gradient(135deg,#a855f7,#7c3aed);font-size:16px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;">5</div>
         <div class="diff-info">
           <div class="diff-name">Seviye 5</div>
           <div class="diff-desc">20 saniye — Kaos!</div>
         </div>
+        <div style="margin-left:auto;font-size:10px;color:rgba(168,85,247,0.7);font-weight:700;">→</div>
       </button>
 
       <button class="diff-cancel" id="btnTimeLevelCancel">İptal</button>
     </div>
   </div>
-
   <!-- ===== TEMA EKRANI ===== -->
   <!-- themesScreen tab sistemiyle değiştirildi -->
   <div id="themesScreen" class="hidden">
@@ -1975,7 +2143,7 @@
           <button class="topbar-btn" id="btnInGameSettings">⚙️</button>
         </div>
       </div>
-      <!-- Alt satır: büyük skor ortada -->
+      <!-- Anlık skor - best score altında, grid üstünde -->
       <div class="topbar-center">
         <div id="score">0</div>
       </div>
@@ -2036,12 +2204,42 @@
     </div>
 
     <div id="board"></div>
+
+
     <div id="pieces"></div>
 
     <div id="powerups">
-      <button id="pu-clear-row">Satır Sil (1)</button>
-      <button id="pu-reroll">Parça Yenile (1)</button>
-      <button id="pu-undo">Geri Al (1)</button>
+      <button id="pu-clear-row">
+        <span class="pu-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20.707 5.826l-2.534-2.533a1 1 0 0 0-1.414 0L3.29 16.76a1 1 0 0 0 0 1.415l2.533 2.533a1 1 0 0 0 1.415 0L20.707 7.24a1 1 0 0 0 0-1.414z" fill="currentColor" opacity="0.85"/>
+            <path d="M13.6 6.4l4 4" stroke="rgba(0,0,0,0.25)" stroke-width="2" stroke-linecap="round"/>
+            <line x1="4" y1="22" x2="20" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+          </svg>
+        </span>
+        <span class="pu-label" id="pu-clear-label">×0</span>
+        <span class="pu-badge"></span>
+      </button>
+      <button id="pu-reroll">
+        <span class="pu-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 11C4 7.13 7.13 4 11 4c2.21 0 4.18.96 5.54 2.5L14 9h6V3l-2.1 2.1C16.12 3.2 13.69 2 11 2 6.03 2 2 6.03 2 11h2z" fill="currentColor"/>
+            <path d="M18 11c0 3.87-3.13 7-7 7-2.21 0-4.18-.96-5.54-2.5L8 13H2v6l2.1-2.1C5.88 18.8 8.31 20 11 20c4.97 0 9-4.03 9-9h-2z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="pu-label" id="pu-reroll-label">×0</span>
+        <span class="pu-badge"></span>
+      </button>
+      <button id="pu-undo">
+        <span class="pu-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 10L2 6l4-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 6h10c4.42 0 8 3.58 8 8v0c0 4.42-3.58 8-8 8H6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="pu-label" id="pu-undo-label">×0</span>
+        <span class="pu-badge"></span>
+      </button>
     </div>
 
   </div>
@@ -2055,7 +2253,7 @@
   <audio id="snd-combo" src="assets/sounds/combo.mp3" preload="auto"></audio>
   <audio id="snd-gameover" src="assets/sounds/gameover1.mp3" preload="auto"></audio>
 
-  <script src="main.js?v=1.2.6"></script>
+  <script src="main.js?v=1.5.5"></script>
 
   <script>
     // ===== YARDIMCI =====
@@ -2083,10 +2281,11 @@
 
     function goToMenu() {
       if (typeof switchTab === 'function') switchTab('tab-home');
-      // Restart hide CSS varsa kaldır
       const restartStyle = document.getElementById('restart-hide');
       if (restartStyle) restartStyle.remove();
       stopTimer();
+      // Banner reklamı gizle — menüde banner yok
+      if (typeof hideAdMobBanner === 'function') hideAdMobBanner();
       const gc = document.getElementById('game-container');
       gc.style.visibility = 'hidden';
       gc.style.position = 'absolute';
@@ -2254,16 +2453,59 @@
       setTimeout(() => { if (typeof showGameOver === 'function') showGameOver(); }, 300);
     }
 
+    // Ana menüye dönüş - Android geri butonu için
+    window.goToMainMenu = function() {
+      const gameContainer = document.getElementById('game-container');
+      const gameOverScreen = document.getElementById('gameOverScreen');
+      const menuScreen = document.getElementById('menuScreen');
+
+      // Oyunu durdur
+      if (typeof stopBgMusic === 'function') try { stopBgMusic(); } catch(e) {}
+      if (typeof window.hideAdMobBanner === 'function') window.hideAdMobBanner();
+
+      // Picker kapat
+      const picker = document.getElementById('line-picker');
+      if (picker) picker.remove();
+
+      // Game over ekranı kapat
+      if (gameOverScreen) {
+        gameOverScreen.style.visibility = 'hidden';
+        gameOverScreen.style.pointerEvents = 'none';
+        gameOverScreen.classList.remove('active');
+      }
+
+      // Game container gizle
+      if (gameContainer) {
+        gameContainer.style.visibility = 'hidden';
+        gameContainer.style.pointerEvents = 'none';
+      }
+
+      // Menüyü göster
+      if (menuScreen) {
+        menuScreen.classList.remove('hidden');
+        if (typeof refreshMenuHS === 'function') refreshMenuHS();
+        setTimeout(() => { if (typeof loadLbPreview === 'function') loadLbPreview(); }, 300);
+      }
+    };
+
     function startGame(mode, extra) {
+      // İlk kez oynuyorsa tutorial göster
+      setTimeout(() => {
+        if (typeof window._checkAndShowTutorial === 'function') {
+          window._checkAndShowTutorial();
+        }
+      }, 800);
       currentGameMode = mode;
       window.currentGameMode = mode;
       document.getElementById('menuScreen').classList.add('hidden');
       const gc = document.getElementById('game-container');
       gc.style.visibility = 'visible';
-      gc.style.position = 'relative';
+      gc.style.position = '';
       gc.style.pointerEvents = '';
       // Müziği başlat
       if (typeof startBgMusic === 'function') setTimeout(startBgMusic, 200);
+      // Banner reklamı göster — sadece oyun ekranında
+      if (typeof showAdMobBanner === 'function') setTimeout(showAdMobBanner, 500);
       const timerBar = document.getElementById('timerBar');
       if (mode === 'timeattack') {
         currentTimeLevel = extra || 1;
@@ -3034,24 +3276,7 @@
       });
 
       // Powerup butonları
-      const puClear = document.getElementById('pu-clear-row');
-      if (puClear && !puClear.disabled) {
-        const cnt = puClear.querySelector('.pu-count, .pu-xp-buy');
-        const cntHtml = cnt ? cnt.outerHTML : '';
-        puClear.innerHTML = (L === 'en' ? 'Clear Row' : 'Satır Sil') + ' ' + cntHtml;
-      }
-      const puReroll = document.getElementById('pu-reroll');
-      if (puReroll && !puReroll.disabled) {
-        const cnt = puReroll.querySelector('.pu-count, .pu-xp-buy');
-        const cntHtml = cnt ? cnt.outerHTML : '';
-        puReroll.innerHTML = (L === 'en' ? 'Refresh' : 'Yenile') + ' ' + cntHtml;
-      }
-      const puUndo = document.getElementById('pu-undo');
-      if (puUndo && !puUndo.disabled) {
-        const cnt = puUndo.querySelector('.pu-count, .pu-xp-buy');
-        const cntHtml = cnt ? cnt.outerHTML : '';
-        puUndo.innerHTML = (L === 'en' ? 'Undo' : 'Geri Al') + ' ' + cntHtml;
-      }
+      // Powerup butonları artık SVG ikonlu - dil değişiminde innerHTML güncelleme gerekmez
 
       // Oyun içi settings modal
       const igsTitle = document.querySelector('.igs-modal-title');
@@ -3171,8 +3396,8 @@
     window.watchAdForDiamonds = function() {
       const todayKey = 'bp_ad_watched_' + new Date().toDateString();
 
-      // Günde 1 kez
-      if (localStorage.getItem(todayKey)) {
+      // Günde 2 kez
+      if (localStorage.getItem(todayKey) >= 2) {
         const toast = document.createElement('div');
         toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 22px;border-radius:50px;font-size:14px;font-weight:700;z-index:9999;pointer-events:none;animation:xpToastAnim 2.5s ease forwards;font-family:Nunito,sans-serif;text-align:center;';
         toast.textContent = currentLang === 'en' ? '📅 Come back tomorrow!' : '📅 Yarın tekrar gel!';
@@ -3198,14 +3423,19 @@
 
       const giveReward = () => {
         overlay.remove();
-        localStorage.setItem(todayKey, '1');
+        localStorage.setItem(todayKey, (parseInt(localStorage.getItem(todayKey)||'0') + 1).toString());
         addDiamondsAmount(50);
         // Butonu güncelle
+        const watchCount = parseInt(localStorage.getItem(todayKey)||'0');
         const btn = document.querySelector('.menu-ad-btn');
         if (btn) {
-          btn.textContent = currentLang === 'en' ? '✅ Watched today' : '✅ Bugün izlendi';
-          btn.style.opacity = '0.5';
-          btn.style.pointerEvents = 'none';
+          if (watchCount >= 2) {
+            btn.textContent = currentLang === 'en' ? '✅ Watched today (2/2)' : '✅ Bugün izlendi (2/2)';
+            btn.style.opacity = '0.5';
+            btn.style.pointerEvents = 'none';
+          } else {
+            btn.textContent = currentLang === 'en' ? '📺 Watch Again → +50 💎 (1/2)' : '📺 Tekrar İzle → +50 💎 (1/2)';
+          }
         }
         const toast = document.createElement('div');
         toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(99,179,237,0.95);color:#0d0d14;padding:12px 24px;border-radius:50px;font-size:15px;font-weight:800;z-index:9999;pointer-events:none;animation:xpToastAnim 2s ease forwards;font-family:Nunito,sans-serif;';
@@ -3214,10 +3444,19 @@
         setTimeout(() => toast.remove(), 2000);
       };
 
-      if (IS_NATIVE && AdMob) {
-        // Native — gerçek reklam, overlay kapat
+      if (IS_NATIVE) {
+        // Native — overlay kapat, gerçek reklam göster
         overlay.remove();
-        showRewarded(giveReward);
+        showRewarded(giveReward).then(result => {
+          if (!result) {
+            // Reklam yüklenemedi
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(30,30,50,0.97);color:#fff;padding:12px 24px;border-radius:20px;font-size:13px;font-weight:700;z-index:9999;white-space:nowrap;font-family:Nunito,sans-serif;border:1px solid rgba(255,100,100,0.3);';
+            toast.textContent = '⚠️ Reklam şu an mevcut değil, tekrar dene';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+          }
+        }).catch(() => {});
       } else {
         // Web simülasyonu — 5 saniye sayaç
         let t = 5;
@@ -3553,10 +3792,25 @@
       const doRestart = () => {
         const mode = window.currentGameMode || 'normal';
         const level = window.currentTimeLevel || 1;
-        localStorage.setItem('bp_restart_mode', mode);
-        localStorage.setItem('bp_restart_level', level);
         localStorage.removeItem('bp_game_save');
-        location.reload();
+
+        // Game over ekranını kapat
+        const goScreen = document.getElementById('gameOverScreen');
+        if (goScreen) {
+          goScreen.classList.remove('active');
+          goScreen.style.visibility = 'hidden';
+          goScreen.style.pointerEvents = 'none';
+        }
+
+        // Tüm state'i sıfırla
+        if (typeof window.fullResetGame === 'function') {
+          window.fullResetGame(mode, mode === 'timeattack' ? level : undefined);
+        } else {
+          // Fallback
+          localStorage.setItem('bp_restart_mode', mode);
+          localStorage.setItem('bp_restart_level', level);
+          location.reload();
+        }
       };
 
       if (restartCount % 2 === 0 && typeof showAdMobInterstitial === 'function' && IS_NATIVE) {
@@ -3934,7 +4188,7 @@
 
       const L = currentLang === 'en' ? 'en' : 'tr';
       const pus = [
-        { id:'go-pu-clearrow', charges: typeof clearRowCharges !== 'undefined' ? clearRowCharges : 0, icon:'🗑️', label: L==='en'?'Clear Row':'Satır Sil', color:'rgba(124,111,247,0.2)', border:'rgba(124,111,247,0.4)', textColor:'#a78bfa', action:'clearRow' },
+        { id:'go-pu-clearrow', charges: typeof clearRowCharges !== 'undefined' ? clearRowCharges : 0, icon:'✕', label: L==='en'?'Clear Line':'Çizgi Sil', color:'rgba(124,111,247,0.2)', border:'rgba(124,111,247,0.4)', textColor:'#a78bfa', action:'clearRow' },
         { id:'go-pu-reroll',   charges: typeof rerollCharges !== 'undefined' ? rerollCharges : 0,     icon:'🔄', label: L==='en'?'Reroll':'Yenile',     color:'rgba(52,211,153,0.15)', border:'rgba(52,211,153,0.35)',   textColor:'#34d399', action:'reroll' },
         { id:'go-pu-undo',     charges: typeof undoCharges !== 'undefined' ? undoCharges : 0,         icon:'↩️', label: L==='en'?'Undo':'Geri Al',       color:'rgba(251,191,36,0.15)',  border:'rgba(251,191,36,0.35)',   textColor:'#fbbf24', action:'undo' },
       ];
@@ -4009,11 +4263,14 @@
       banner:        'ca-app-pub-2002882488986544/4111726313',
       interstitial:  'ca-app-pub-2002882488986544/1812866037',
       rewarded:      'ca-app-pub-2002882488986544/7604689683',
-      // Test ID'leri (geliştirme sırasında kullan)
+      // Test ID'leri
       bannerTest:       'ca-app-pub-3940256099942544/6300978111',
       interstitialTest: 'ca-app-pub-3940256099942544/1033173712',
       rewardedTest:     'ca-app-pub-3940256099942544/5224354917',
     };
+
+    // Test modu — gerçek reklamlar aktif
+    const ADMOB_TESTING = false;
 
     // Native mi yoksa web mi?
     const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
@@ -4025,19 +4282,22 @@
     let rewardedReady = false;
 
     async function initAdMob() {
-      if (!IS_NATIVE) return; // Web'de çalışmaz
+      if (!IS_NATIVE) return;
       try {
-        const { AdMob: AM } = await import('@capacitor-community/admob');
-        AdMob = AM;
+        AdMob = window.Capacitor.Plugins.AdMob;
+        if (!AdMob) { console.warn('[AdMob] Plugin not found'); return; }
+
         await AdMob.initialize({
-          requestTrackingAuthorization: true,
+          requestTrackingAuthorization: false,
           testingDevices: [],
-          initializeForTesting: false,
+          initializeForTesting: ADMOB_TESTING,
         });
-        console.log('[AdMob] Initialized');
-        showBanner();
+        console.log('[AdMob] Initialized ✅');
+
+        // Sırayla hazırla
+        await prepareRewarded();
         prepareInterstitial();
-        prepareRewarded();
+        // Banner: oyun başladığında showAdMobBanner ile gösterilir
       } catch(e) {
         console.warn('[AdMob] Init failed:', e);
       }
@@ -4048,15 +4308,18 @@
       if (!AdMob || bannerShowing) return;
       try {
         await AdMob.showBanner({
-          adId: ADMOB_IDS.banner,
+          adId: ADMOB_TESTING ? ADMOB_IDS.bannerTest : ADMOB_IDS.banner,
           adSize: 'BANNER',
           position: 'BOTTOM_CENTER',
           margin: 0,
-          isTesting: false,
+          isTesting: ADMOB_TESTING,
         });
         bannerShowing = true;
-        console.log('[AdMob] Banner shown');
-      } catch(e) { console.warn('[AdMob] Banner error:', e); }
+        console.log('[AdMob] Banner shown ✅');
+      } catch(e) {
+        console.warn('[AdMob] Banner error:', e);
+        bannerShowing = false;
+      }
     }
 
     async function hideBanner() {
@@ -4071,7 +4334,7 @@
     async function prepareInterstitial() {
       if (!AdMob) return;
       try {
-        await AdMob.prepareInterstitial({ adId: ADMOB_IDS.interstitial, isTesting: false });
+        await AdMob.prepareInterstitial({ adId: ADMOB_TESTING ? ADMOB_IDS.interstitialTest : ADMOB_IDS.interstitial, isTesting: ADMOB_TESTING });
         interstitialReady = true;
         console.log('[AdMob] Interstitial ready');
       } catch(e) { console.warn('[AdMob] Interstitial prepare error:', e); }
@@ -4115,34 +4378,81 @@
     async function prepareRewarded() {
       if (!AdMob) return;
       try {
-        await AdMob.prepareRewardVideoAd({ adId: ADMOB_IDS.rewarded, isTesting: false });
+        await AdMob.prepareRewardVideoAd({
+          adId: ADMOB_TESTING ? ADMOB_IDS.rewardedTest : ADMOB_IDS.rewarded,
+          isTesting: ADMOB_TESTING,
+        });
         rewardedReady = true;
-        console.log('[AdMob] Rewarded ready');
+        console.log('[AdMob] Rewarded ready ✅');
       } catch(e) { console.warn('[AdMob] Rewarded prepare error:', e); }
     }
 
     async function showRewarded(onRewarded) {
       if (!IS_NATIVE) {
         // Web simülasyonu
-        setTimeout(() => { if (onRewarded) onRewarded(); }, 1500);
-        return true;
+        return new Promise(resolve => {
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;z-index:99999;';
+          overlay.innerHTML = `
+            <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(124,111,247,0.3);border-radius:24px;padding:32px 28px;text-align:center;width:min(300px,85vw);">
+              <div style="font-size:48px;margin-bottom:12px;">📺</div>
+              <div style="font-size:18px;font-weight:900;color:#fff;font-family:'Nunito',sans-serif;margin-bottom:6px;">${currentLang==='en'?'Watching Ad...':'Reklam İzleniyor...'}</div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:20px;">(Simülasyon)</div>
+              <div style="background:rgba(255,255,255,0.08);border-radius:50px;height:8px;overflow:hidden;margin-bottom:12px;">
+                <div id="_rwFill" style="height:100%;width:0%;background:linear-gradient(90deg,#7c6ff7,#a78bfa);border-radius:50px;transition:width 0.1s;"></div>
+              </div>
+              <div id="_rwTimer" style="font-size:24px;font-weight:900;color:#a78bfa;font-family:'Nunito',sans-serif;">5</div>
+            </div>`;
+          document.body.appendChild(overlay);
+          let t = 5;
+          const iv = setInterval(() => {
+            t -= 0.1;
+            const fill = document.getElementById('_rwFill');
+            const timer = document.getElementById('_rwTimer');
+            if (fill) fill.style.width = ((5-t)/5*100) + '%';
+            if (timer) timer.textContent = Math.ceil(Math.max(0,t));
+            if (t <= 0) {
+              clearInterval(iv);
+              overlay.remove();
+              if (onRewarded) onRewarded();
+              resolve(true);
+            }
+          }, 100);
+        });
       }
-      if (!AdMob || !rewardedReady) {
-        // Hazır değilse simüle et
-        setTimeout(() => { if (onRewarded) onRewarded(); }, 500);
+
+      // Native
+      if (!AdMob) {
+        console.warn('[AdMob] AdMob yok, ödül verildi (fallback)');
+        if (onRewarded) onRewarded();
         return false;
       }
+
       try {
-        AdMob.addListener('onRewardedVideoAdRewarded', () => {
-          if (onRewarded) onRewarded();
-        });
-        await AdMob.showRewardVideoAd();
+        // Hazır değilse hazırla ve bekle
+        if (!rewardedReady) {
+          console.log('[AdMob] Rewarded hazır değil, hazırlanıyor...');
+          await prepareRewarded();
+          if (!rewardedReady) {
+            console.warn('[AdMob] Rewarded hazırlanamadı - fill rate düşük olabilir');
+            return false;
+          }
+        }
+
+        console.log('[AdMob] Showing rewarded...');
+        const result = await AdMob.showRewardVideoAd();
+        console.log('[AdMob] Result:', JSON.stringify(result));
+
+        // Sonuç geldi — ödül ver
         rewardedReady = false;
-        setTimeout(prepareRewarded, 2000);
+        setTimeout(prepareRewarded, 1000);
+        if (onRewarded) onRewarded();
+
+        // Yeni reklam hazırla
+        setTimeout(() => prepareRewarded(), 1000);
         return true;
       } catch(e) {
         console.warn('[AdMob] Rewarded error:', e);
-        setTimeout(() => { if (onRewarded) onRewarded(); }, 500);
         return false;
       }
     }
@@ -4150,26 +4460,149 @@
     window.showAdMobBanner      = showBanner;
     window.hideAdMobBanner      = hideBanner;
     window.showAdMobInterstitial = showInterstitial;
-    window.showAdMobRewarded    = showRewarded;
+    window.showAdMobRewarded = showRewarded;
+    window.showRewarded      = showRewarded; // main.js'den erişim için
 
     // Oyun başlayınca AdMob başlat
     document.addEventListener('DOMContentLoaded', () => {
       setTimeout(initAdMob, 1000);
+
+      // Android geri butonu - Capacitor App plugin
+      function setupBackButton() {
+        try {
+          const AppPlugin = window.Capacitor &&
+            window.Capacitor.Plugins &&
+            window.Capacitor.Plugins.App;
+
+          let _lastBackTime = 0;
+          let _exitToast = null;
+
+          window.showExitToast = function showExitToast() {
+            if (_exitToast) return;
+            _exitToast = document.createElement('div');
+            _exitToast.textContent = '⬅️ Çıkmak için tekrar basın';
+            _exitToast.style.cssText = `
+              position:fixed; bottom:80px; left:50%;
+              transform:translateX(-50%);
+              background:rgba(30,30,50,0.95);
+              color:#fff; font-size:14px; font-weight:700;
+              font-family:'Nunito',sans-serif;
+              padding:12px 24px; border-radius:24px;
+              z-index:99999; white-space:nowrap;
+              border:1px solid rgba(255,255,255,0.15);
+              animation:gameoverPop 0.3s cubic-bezier(0.2,1.3,0.4,1) both;
+            `;
+            document.body.appendChild(_exitToast);
+            setTimeout(() => {
+              if (_exitToast) { _exitToast.remove(); _exitToast = null; }
+            }, 2000);
+          }
+
+          function handleBack() {
+            const menuScreen = document.getElementById('menuScreen');
+            const isMenuVisible = menuScreen && !menuScreen.classList.contains('hidden');
+
+            if (isMenuVisible) {
+              // Ana menüdeyken → çift tıklama ile çık
+              const now = Date.now();
+              if (now - _lastBackTime < 2000) {
+                // 2 saniye içinde ikinci basış → çık
+                if (_exitToast) { _exitToast.remove(); _exitToast = null; }
+                try { AppPlugin && AppPlugin.exitApp(); } catch(e) {}
+              } else {
+                _lastBackTime = now;
+                showExitToast();
+              }
+            } else {
+              // Her yerde (oyun, tema, navbar) → ana menüye dön
+              if (typeof window.goToMainMenu === 'function') {
+                window.goToMainMenu();
+              }
+            }
+          }
+
+          // Yöntem 1: Capacitor App plugin
+          if (AppPlugin && typeof AppPlugin.addListener === 'function') {
+            AppPlugin.addListener('backButton', handleBack);
+            console.log('[Back] ✅ Capacitor listener aktif');
+          }
+
+          // Yöntem 2: history pushState ile Android geri tuşunu yakala
+          // Her sayfa açılışında history'e state ekle
+          history.pushState({ page: 'game' }, '');
+          window.addEventListener('popstate', function(e) {
+            handleBack();
+            // Tekrar geri gelebilmek için state'i geri ekle
+            history.pushState({ page: 'game' }, '');
+          });
+
+          console.log('[Back] ✅ History listener aktif');
+        } catch(e) {
+          console.warn('[Back] Hata:', e);
+        }
+      }
+      setTimeout(setupBackButton, 1000);
     });
 
     window.continueWithAd = function() {
       const L = currentLang;
       const g = (tr, en) => L === 'en' ? en : tr;
+
       const adBtn = document.getElementById('continueAdBtn');
+      const countdown = document.getElementById('continueCountdown');
+      const opts = document.getElementById('continueOptions');
+      const restartBtn = document.getElementById('goRestartBtn') || document.getElementById('btnGoRestart');
+      const homeBtn = document.getElementById('goHomeBtn');
+
+      function resetAdBtn() {
+        if (adBtn) {
+          adBtn.style.opacity = '';
+          adBtn.style.pointerEvents = '';
+          const txt = adBtn.querySelector('#continueAdText');
+          if (txt) txt.textContent = g('📺 Reklam İzle & Devam Et', '📺 Watch Ad & Continue');
+        }
+        // Sayacı devam ettir
+        if (!_restartCountdownTimer && countdown) {
+          let secs = parseInt(countdown.textContent) || 3;
+          _restartCountdownTimer = setInterval(() => {
+            secs--;
+            if (secs <= 0) {
+              clearInterval(_restartCountdownTimer);
+              _restartCountdownTimer = null;
+              if (opts) opts.style.display = 'none';
+              if (restartBtn) restartBtn.style.display = 'block';
+              if (homeBtn) homeBtn.style.display = 'block';
+            } else {
+              if (countdown) countdown.textContent = secs + 's';
+            }
+          }, 1000);
+        }
+      }
+
+      // Butonu yükleniyor yap ama sayacı DURDURMA - sadece reklam gelince dursun
       if (adBtn) {
         adBtn.style.opacity = '0.5';
         adBtn.style.pointerEvents = 'none';
-        adBtn.querySelector('#continueAdText').textContent = g('Yükleniyor...', 'Loading...');
+        const txt = adBtn.querySelector('#continueAdText');
+        if (txt) txt.textContent = g('Yükleniyor...', 'Loading...');
       }
-      // Gerçek rewarded reklam — native'de gerçek, web'de simülasyon
+
+      // Reklam gelince sayacı durdur
       showRewarded(() => {
+        // Reklam başarılı - sayacı durdur, oyuna devam et
+        if (_restartCountdownTimer) {
+          clearInterval(_restartCountdownTimer);
+          _restartCountdownTimer = null;
+        }
         window._adUsedThisGame = true;
         resumeGame();
+      }).then(result => {
+        if (!result) {
+          // Reklam gelmedi - butonu resetle, sayaç devam etsin
+          resetAdBtn();
+        }
+      }).catch(() => {
+        resetAdBtn();
       });
     };
 
@@ -4262,17 +4695,42 @@
       const isInGame = gc && gc.style.visibility === 'visible';
 
       // Açık modal/ekran varsa önce onu kapat
+      // Açık modal/ekran varsa kapat - hepsini kapat, direkt ana menüye dön
       const modals = [
         'leaderboardScreen', 'dailyModal', 'nameModal',
-        'difficultyModal', 'timeLevelModal', 'confirmReset', 'adModal'
+        'difficultyModal', 'timeLevelModal', 'confirmReset', 'adModal',
+        'settingsScreen', 'shopModal'
       ];
+      let closedAny = false;
       for (const id of modals) {
         const el = document.getElementById(id);
-        if (el && !el.classList.contains('hidden') && el.style.display !== 'none') {
+        if (!el) continue;
+        const isVisible = !el.classList.contains('hidden') && 
+                          el.style.display !== 'none' && 
+                          el.style.visibility !== 'hidden';
+        if (isVisible) {
+          // Kapat
           el.classList.add('hidden');
-          history.pushState({ page: 'game' }, '');
-          return;
+          el.style.display = 'none';
+          closedAny = true;
         }
+      }
+      // Modal kapandıysa ana menüyü göster
+      if (closedAny) {
+        const menuScreen = document.getElementById('menuScreen');
+        if (menuScreen) menuScreen.classList.remove('hidden');
+        // Home tab'a geç
+        const homeTab = document.getElementById('tab-home');
+        const allPanels = document.querySelectorAll('.menu-tab-panel');
+        const allNavBtns = document.querySelectorAll('.nav-btn');
+        if (homeTab) {
+          allPanels.forEach(p => p.classList.remove('tab-active'));
+          homeTab.classList.add('tab-active');
+          allNavBtns.forEach(b => b.classList.remove('active'));
+          const homeBtn = document.getElementById('navHome');
+          if (homeBtn) homeBtn.classList.add('active');
+        }
+        return;
       }
 
       // Oyun içindeyse → ana menüye git
@@ -4313,6 +4771,299 @@
       history.pushState({ page: 'game' }, '');
     });
   </script>
+
+
+<!-- ===== TUTORIAL OVERLAY ===== -->
+<div id="tutorialOverlay" class="tut-hidden">
+  <div id="tutorialHighlight"></div>
+  <div id="tutorialCard">
+    <div id="tutorialStep"></div>
+    <div id="tutorialDots"></div>
+    <button id="tutorialNext">Devam →</button>
+    <button id="tutorialSkip">Atla</button>
+  </div>
+</div>
+
+<style>
+  #tutorialOverlay {
+    position: fixed; inset: 0; z-index: 8000;
+    background: transparent;
+    transition: opacity 0.3s;
+  }
+  #tutorialOverlay.tut-hidden { display: none; }
+
+  #tutorialHighlight {
+    position: fixed;
+    border: 2.5px solid #a78bfa;
+    border-radius: 14px;
+    box-shadow: 0 0 0 4000px rgba(0,0,0,0.78), 0 0 20px rgba(167,139,250,0.5);
+    transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+    pointer-events: none;
+    z-index: 8001;
+    background: transparent;
+  }
+
+  #tutorialCard {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100vw - 40px);
+    max-width: 340px;
+    max-height: 55vh;
+    overflow-y: auto;
+    background: rgba(15,12,30,0.97);
+    border: 1px solid rgba(167,139,250,0.3);
+    border-radius: 20px;
+    padding: 16px 18px 14px;
+    z-index: 8002;
+    animation: tutCardPop 0.3s cubic-bezier(0.2,1.3,0.4,1) both;
+    box-sizing: border-box;
+  }
+  @keyframes tutCardPop {
+    from { transform: translateX(-50%) scale(0.9); opacity:0; }
+    to   { transform: translateX(-50%) scale(1); opacity:1; }
+  }
+
+  #tutorialStep {
+    font-family: 'Nunito', sans-serif;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.45;
+    margin-bottom: 12px;
+  }
+  #tutorialStep .tut-title {
+    font-size: 17px;
+    font-weight: 900;
+    color: #a78bfa;
+    display: block;
+    margin-bottom: 6px;
+  }
+  #tutorialStep .tut-emoji {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  #tutorialDots {
+    display: flex; gap: 6px; justify-content: center;
+    margin-bottom: 14px;
+  }
+  .tut-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: background 0.2s;
+  }
+  .tut-dot.active { background: #a78bfa; }
+
+  #tutorialNext {
+    width: 100%;
+    padding: 11px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #7c6ff7, #a78bfa);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    margin-bottom: 8px;
+  }
+  #tutorialSkip {
+    width: 100%;
+    padding: 10px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.3);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+  }
+</style>
+
+<script>
+(function() {
+  const LANG = () => window.currentLang || localStorage.getItem('bp_lang') || 'tr';
+
+  const STEPS_TR = [
+    { emoji: "\uD83C\uDFAE", title: "BlockPop'a Ho\u015f Geldin!", text: "Bloklar\u0131 tahtaya yerle\u015ftirerek sat\u0131r ve s\u00fctunlar\u0131 doldur. Haz\u0131r m\u0131s\u0131n?", target: null },
+    { emoji: "\uD83D\uDCE6", title: "Blok Se\u00e7", text: "Alttaki 3 bloktan birini se\u00e7mek i\u00e7in \u00fczerine dokun.", target: "#pieces" },
+    { emoji: "\uD83C\uDFAF", title: "Tahtaya Yerle\u015ftir", text: "Se\u00e7ti\u011fin blo\u011fu tahtadaki istedi\u011fin yere s\u00fcr\u00fckle veya dokun.", target: "#board" },
+    { emoji: "\u2728", title: "Sat\u0131r & S\u00fctun Temizle", text: "Bir sat\u0131r veya s\u00fctun tamamen doldu\u011funda otomatik patlar ve puan kazan\u0131rs\u0131n!", target: "#board" },
+    { emoji: "\u26A1", title: "Poweruplar", text: "Zor durumda m\u0131 kald\u0131n? Silgi ile bir sat\u0131r/s\u00fctun sil, yenile ile yeni bloklar getir, geri al ile son hamleyi geri al!", target: "#powerups" },
+    { emoji: "\uD83C\uDFC6", title: "Haz\u0131rs\u0131n!", text: "Y\u00fcksek skor yap ve liderboard'a gir. \u0130yi oyunlar! \uD83C\uDF89", target: null },
+  ];
+  const STEPS_EN = [
+    { emoji: "\uD83C\uDFAE", title: "Welcome to BlockPop!", text: "Place blocks on the board to fill rows and columns. Ready?", target: null },
+    { emoji: "\uD83D\uDCE6", title: "Pick a Block", text: "Tap one of the 3 blocks at the bottom to select it.", target: "#pieces" },
+    { emoji: "\uD83C\uDFAF", title: "Place on Board", text: "Drag or tap the board to place the selected block.", target: "#board" },
+    { emoji: "\u2728", title: "Clear Lines", text: "When a full row or column is filled, it explodes and you earn points!", target: "#board" },
+    { emoji: "\u26A1", title: "Powerups", text: "Stuck? Use the eraser to clear a line, refresh for new blocks, or undo your last move!", target: "#powerups" },
+    { emoji: "\uD83C\uDFC6", title: "You're Ready!", text: "Beat the high score and climb the leaderboard. Good luck! \uD83C\uDF89", target: null },
+  ];
+  let currentStep = 0;
+  let steps = [];
+
+  function getSteps() {
+    return LANG() === 'en' ? STEPS_EN : STEPS_TR;
+  }
+
+  function highlightTarget(selector) {
+    const hl = document.getElementById('tutorialHighlight');
+    const overlay = document.getElementById('tutorialOverlay');
+
+    if (!selector) {
+      // Hedef yok - hafif overlay, highlight gizle
+      hl.style.display = 'none';
+      overlay.style.background = 'rgba(0,0,0,0.55)';
+      return;
+    }
+    const el = document.querySelector(selector);
+    if (!el) {
+      hl.style.display = 'none';
+      overlay.style.background = 'rgba(0,0,0,0.55)';
+      return;
+    }
+
+    // Overlay şeffaf - karartmayı sadece highlight box-shadow yapacak
+    overlay.style.background = 'transparent';
+
+    const r = el.getBoundingClientRect();
+    const pad = 10;
+    hl.style.display = 'block';
+    hl.style.left   = (r.left - pad) + 'px';
+    hl.style.top    = (r.top - pad) + 'px';
+    hl.style.width  = (r.width + pad*2) + 'px';
+    hl.style.height = (r.height + pad*2) + 'px';
+  }
+
+  function positionCard(selector) {
+    const card = document.getElementById('tutorialCard');
+    card.style.bottom = 'auto';
+    card.style.transform = 'translateX(-50%)';
+    const vh = window.innerHeight;
+    const margin = 12;
+
+    if (!selector) {
+      card.style.top = '50%';
+      card.style.transform = 'translateX(-50%) translateY(-50%)';
+      return;
+    }
+
+    const el = document.querySelector(selector);
+    if (!el) {
+      card.style.top = (vh * 0.1) + 'px';
+      return;
+    }
+
+    const r = el.getBoundingClientRect();
+    const cardH = card.offsetHeight || 210;
+
+    // Elementin altında boş alan var mı?
+    const spaceBelow = vh - r.bottom - margin;
+    // Elementin üstünde boş alan var mı?
+    const spaceAbove = r.top - margin;
+
+    let top;
+    if (spaceBelow >= cardH + margin) {
+      // Alta sığıyor - elementin hemen altına koy
+      top = r.bottom + margin;
+    } else if (spaceAbove >= cardH + margin) {
+      // Üste sığıyor - elementin hemen üstüne koy
+      top = r.top - cardH - margin;
+    } else {
+      // İkisine de sığmıyor - daha geniş olan tarafa koy, taşmayı clamp ile engelle
+      if (spaceAbove > spaceBelow) {
+        top = Math.max(margin, r.top - cardH - margin);
+      } else {
+        top = r.bottom + margin;
+      }
+      // Ekranın dışına taşmasın
+      top = Math.min(top, vh - cardH - margin);
+      top = Math.max(top, margin);
+    }
+
+    card.style.top = top + 'px';
+  }
+
+  function renderStep(i) {
+    steps = getSteps();
+    const step = steps[i];
+    const stepEl = document.getElementById('tutorialStep');
+    const dotsEl = document.getElementById('tutorialDots');
+    const nextBtn = document.getElementById('tutorialNext');
+    const isLast = i === steps.length - 1;
+    const L = LANG();
+
+    stepEl.innerHTML = `
+      <span class="tut-emoji">${step.emoji}</span>
+      <span class="tut-title">${step.title}</span>
+      ${step.text}
+    `;
+
+    dotsEl.innerHTML = steps.map((_, idx) =>
+      `<div class="tut-dot ${idx === i ? 'active' : ''}"></div>`
+    ).join('');
+
+    nextBtn.textContent = isLast
+      ? (L === 'en' ? 'Start Playing! 🚀' : 'Oynamaya Başla! 🚀')
+      : (L === 'en' ? 'Next →' : 'Devam →');
+
+    // Animasyon
+    const card = document.getElementById('tutorialCard');
+    card.style.animation = 'none';
+    void card.offsetWidth;
+    card.style.animation = 'tutCardPop 0.3s cubic-bezier(0.2,1.3,0.4,1) both';
+
+    highlightTarget(step.target);
+    // İki frame bekle - kart DOM'a render olsun, offsetHeight doğru gelsin
+    requestAnimationFrame(() => requestAnimationFrame(() => positionCard(step.target)));
+  }
+
+  function nextStep() {
+    steps = getSteps();
+    if (currentStep < steps.length - 1) {
+      currentStep++;
+      renderStep(currentStep);
+    } else {
+      closeTutorial();
+    }
+  }
+
+  function closeTutorial() {
+    document.getElementById('tutorialOverlay').classList.add('tut-hidden');
+    localStorage.setItem('bp_tutorial_done', '1');
+  }
+
+  window.startTutorial = function() {
+    steps = getSteps();
+    currentStep = 0;
+    document.getElementById('tutorialOverlay').classList.remove('tut-hidden');
+    renderStep(0);
+  };
+
+  window.resetTutorial = function() {
+    localStorage.removeItem('bp_tutorial_done');
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('tutorialNext').addEventListener('click', nextStep);
+    document.getElementById('tutorialSkip').addEventListener('click', closeTutorial);
+
+    // Oyun başladıktan sonra tutorial göster (ilk kez)
+    const origStartGame = window.startTutorialAfterGame;
+  });
+ 
+  // startGame çağrıldıktan sonra tutorial'ı tetikle
+  window._checkAndShowTutorial = function() {
+    if (!localStorage.getItem('bp_tutorial_done')) {
+      setTimeout(window.startTutorial, 600);
+    }
+  };
+})();
+</script>
 
 </body>
 </html>
