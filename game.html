@@ -2489,12 +2489,12 @@
     };
 
     function startGame(mode, extra) {
-      // İlk kez oynuyorsa tutorial göster
+      // İlk kez oynuyorsa tutorial göster — hemen göster
       setTimeout(() => {
         if (typeof window._checkAndShowTutorial === 'function') {
           window._checkAndShowTutorial();
         }
-      }, 800);
+      }, 50);
       currentGameMode = mode;
       window.currentGameMode = mode;
       document.getElementById('menuScreen').classList.add('hidden');
