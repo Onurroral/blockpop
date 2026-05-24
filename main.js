@@ -2197,13 +2197,13 @@ function generatePieces() {
   const mode = window.currentGameMode || 'classic';
   let smartChance;
   if (mode === 'easy')            smartChance = 1.00; // %100 — her zaman en uygun
-  else if (mode === 'normal')     smartChance = 0.90; // %90 — çok yardımcı
+  else if (mode === 'normal')     smartChance = 0.80; // %80
   else if (mode === 'hard')       smartChance = 0.00; // %0 — tamamen rastgele
   else if (mode === 'timeattack') smartChance = 0.75;
   else                            smartChance = 0.85;
 
-  // helpScore multiplier — easy çok yüksek, normal orta
-  const helpMultiplier = mode === 'easy' ? 0.60 : mode === 'normal' ? 0.30 : 0.12;
+  // helpScore multiplier — easy'de satır/sütun tamamlamaya çok ağırlık ver
+  const helpMultiplier = mode === 'easy' ? 1.80 : mode === 'normal' ? 0.40 : 0.12;
 
   for (let k = 0; k < 3; k++) {
     let shapeIndex;
