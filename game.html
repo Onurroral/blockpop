@@ -2211,31 +2211,21 @@
     <div id="powerups">
       <button id="pu-clear-row">
         <span class="pu-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20.707 5.826l-2.534-2.533a1 1 0 0 0-1.414 0L3.29 16.76a1 1 0 0 0 0 1.415l2.533 2.533a1 1 0 0 0 1.415 0L20.707 7.24a1 1 0 0 0 0-1.414z" fill="currentColor" opacity="0.85"/>
-            <path d="M13.6 6.4l4 4" stroke="rgba(0,0,0,0.25)" stroke-width="2" stroke-linecap="round"/>
-            <line x1="4" y1="22" x2="20" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
-          </svg>
+          <img src="assets/icons/powerup_eraser.png">
         </span>
         <span class="pu-label" id="pu-clear-label">×0</span>
         <span class="pu-badge"></span>
       </button>
       <button id="pu-reroll">
         <span class="pu-icon">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 11C4 7.13 7.13 4 11 4c2.21 0 4.18.96 5.54 2.5L14 9h6V3l-2.1 2.1C16.12 3.2 13.69 2 11 2 6.03 2 2 6.03 2 11h2z" fill="currentColor"/>
-            <path d="M18 11c0 3.87-3.13 7-7 7-2.21 0-4.18-.96-5.54-2.5L8 13H2v6l2.1-2.1C5.88 18.8 8.31 20 11 20c4.97 0 9-4.03 9-9h-2z" fill="currentColor"/>
-          </svg>
+          <img src="assets/icons/powerup_refresh.png">
         </span>
         <span class="pu-label" id="pu-reroll-label">×0</span>
         <span class="pu-badge"></span>
       </button>
       <button id="pu-undo">
         <span class="pu-icon">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 10L2 6l4-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 6h10c4.42 0 8 3.58 8 8v0c0 4.42-3.58 8-8 8H6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-          </svg>
+          <img src="assets/icons/powerup_undo.png">
         </span>
         <span class="pu-label" id="pu-undo-label">×0</span>
         <span class="pu-badge"></span>
@@ -2489,12 +2479,12 @@
     };
 
     function startGame(mode, extra) {
-      // İlk kez oynuyorsa tutorial göster — hemen göster
+      // İlk kez oynuyorsa tutorial göster
       setTimeout(() => {
         if (typeof window._checkAndShowTutorial === 'function') {
           window._checkAndShowTutorial();
         }
-      }, 50);
+      }, 800);
       currentGameMode = mode;
       window.currentGameMode = mode;
       document.getElementById('menuScreen').classList.add('hidden');
@@ -3918,9 +3908,14 @@
 
     // Oyun bitince XP ver — main.js'deki showGameOver'dan sonra çağrılır
     window.onGameEnd = function(finalScore) {
-      // Elmas: her 500 puan = 1 elmas, min 1, max 10
-      const diamondsFromScore = Math.min(10, Math.max(1, Math.floor(finalScore / 500)));
-      addDiamondsAmount(diamondsFromScore);
+      let endDiamonds = 0;
+      if      (finalScore >= 100000) endDiamonds = 30;
+      else if (finalScore >= 80000)  endDiamonds = 25;
+      else if (finalScore >= 60000)  endDiamonds = 20;
+      else if (finalScore >= 40000)  endDiamonds = 15;
+      else if (finalScore >= 20000)  endDiamonds = 10;
+      else if (finalScore >= 10000)  endDiamonds = 5;
+      if (endDiamonds > 0) addDiamondsAmount(endDiamonds);
       autoUnlockXPThemes();
     };
 
@@ -4482,15 +4477,22 @@
             _exitToast = document.createElement('div');
             _exitToast.textContent = '⬅️ Çıkmak için tekrar basın';
             _exitToast.style.cssText = `
-              position:fixed; bottom:80px; left:50%;
+              position:fixed;
+              bottom:60px;
+              left:50%;
               transform:translateX(-50%);
-              background:rgba(30,30,50,0.95);
-              color:#fff; font-size:14px; font-weight:700;
+              background:rgba(20,15,40,0.96);
+              color:#fff;
+              font-size:14px;
+              font-weight:700;
               font-family:'Nunito',sans-serif;
-              padding:12px 24px; border-radius:24px;
-              z-index:99999; white-space:nowrap;
-              border:1px solid rgba(255,255,255,0.15);
-              animation:gameoverPop 0.3s cubic-bezier(0.2,1.3,0.4,1) both;
+              padding:14px 28px;
+              border-radius:30px;
+              z-index:99999;
+              white-space:nowrap;
+              border:1px solid rgba(124,111,247,0.4);
+              box-shadow:0 4px 24px rgba(0,0,0,0.5);
+              pointer-events:none;
             `;
             document.body.appendChild(_exitToast);
             setTimeout(() => {
@@ -4499,14 +4501,59 @@
           }
 
           function handleBack() {
+            // Önce açık panel/modal varsa kapat, ana menüye gitme
+            const shopModal = document.getElementById('shopModal');
+            if (shopModal && shopModal.style.display !== 'none' && shopModal.style.display !== '') {
+              shopModal.style.display = 'none';
+              return;
+            }
+
+            const leaderboardScreen = document.getElementById('leaderboardScreen');
+            if (leaderboardScreen && !leaderboardScreen.classList.contains('hidden')) {
+              leaderboardScreen.classList.add('hidden');
+              return;
+            }
+
+            const themesScreen = document.getElementById('themesScreen');
+            if (themesScreen && !themesScreen.classList.contains('hidden')) {
+              themesScreen.classList.add('hidden');
+              return;
+            }
+
+            const statsScreen = document.getElementById('statsScreen');
+            if (statsScreen && !statsScreen.classList.contains('hidden')) {
+              statsScreen.classList.add('hidden');
+              return;
+            }
+
+            const achieveScreen = document.getElementById('achieveScreen');
+            if (achieveScreen && !achieveScreen.classList.contains('hidden')) {
+              achieveScreen.classList.add('hidden');
+              return;
+            }
+
+            const igsPanel = document.getElementById('inGameSettingsPanel');
+            if (igsPanel && !igsPanel.classList.contains('hidden')) {
+              igsPanel.classList.add('hidden');
+              if (window.currentGameMode === 'timeattack' && window.timeLeft > 0) {
+                window.resumeTimer && window.resumeTimer();
+              }
+              return;
+            }
+
             const menuScreen = document.getElementById('menuScreen');
             const isMenuVisible = menuScreen && !menuScreen.classList.contains('hidden');
 
             if (isMenuVisible) {
-              // Ana menüdeyken → çift tıklama ile çık
+              // Tab kontrolü — home dışında aktif tab varsa home'a dön
+              const activeTab = document.querySelector('.menu-tab-panel.tab-active');
+              if (activeTab && activeTab.id !== 'tab-home') {
+                if (typeof switchTab === 'function') switchTab('tab-home');
+                return;
+              }
+              // Ana menü home tabındayken çift basış ile çık
               const now = Date.now();
               if (now - _lastBackTime < 2000) {
-                // 2 saniye içinde ikinci basış → çık
                 if (_exitToast) { _exitToast.remove(); _exitToast = null; }
                 try { AppPlugin && AppPlugin.exitApp(); } catch(e) {}
               } else {
@@ -4514,12 +4561,15 @@
                 showExitToast();
               }
             } else {
-              // Her yerde (oyun, tema, navbar) → ana menüye dön
+              // Oyundayken → ana menüye dön
               if (typeof window.goToMainMenu === 'function') {
                 window.goToMainMenu();
               }
             }
           }
+
+          // Java'dan çağrılabilmesi için window'a expose et
+          window.handleBack = handleBack;
 
           // Yöntem 1: Capacitor App plugin
           if (AppPlugin && typeof AppPlugin.addListener === 'function') {
