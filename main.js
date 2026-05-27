@@ -182,129 +182,141 @@ let sndGameOver = null;
 
 // === PARÇA ŞEKİLLERİ ===
 const PIECES = [
-  // === TEK KARE ===
-  [[1]],
+  // ============================================
+  // BAŞLANGIÇ BLOKLARI (0 skor) — index 0-31
+  // ============================================
 
-  // === I - Yatay ===
-  [[1,1,1,1]],
-  // I - Dikey
-  [[1],[1],[1],[1]],
+  // Tek kare
+  [[1]],                                    // 0
 
-  // === O - 2x2 Kare ===
-  [[1,1],[1,1]],
+  // 2li bloklar
+  [[1,1]],                                  // 1 - yatay
+  [[1],[1]],                                // 2 - dikey
 
-  // === L şekli ===
-  [[1,0],[1,0],[1,1]],
-  // L - 90° döndür
-  [[1,1,1],[1,0,0]],
-  // L - 180°
-  [[1,1],[0,1],[0,1]],
-  // L - 270°
-  [[0,0,1],[1,1,1]],
+  // 2x2 kare
+  [[1,1],[1,1]],                            // 3
 
-  // === J şekli (ters L) ===
-  [[0,1],[0,1],[1,1]],
-  // J - 90°
-  [[1,0,0],[1,1,1]],
-  // J - 180°
-  [[1,1],[1,0],[1,0]],
-  // J - 270°
-  [[1,1,1],[0,0,1]],
+  // Küçük L (3 blok) — 4 yön
+  [[1,0],[1,1]],                            // 4  ┘
+  [[1,1],[1,0]],                            // 5  └
+  [[0,1],[1,1]],                            // 6  ┘ ters
+  [[1,1],[0,1]],                            // 7  └ ters
 
-  // === T şekli ===
-  [[1,1,1],[0,1,0]],
-  // T - 90°
-  [[1,0],[1,1],[1,0]],
-  // T - 180°
-  [[0,1,0],[1,1,1]],
-  // T - 270°
-  [[0,1],[1,1],[0,1]],
+  // 3'lü bloklar
+  [[1,1,1]],                               // 8 - yatay
+  [[1],[1],[1]],                           // 9 - dikey
 
-  // === S şekli ===
-  [[0,1,1],[1,1,0]],
-  // S - 90°
-  [[1,0],[1,1],[0,1]],
+  // 4'lü bloklar (I)
+  [[1,1,1,1]],                             // 10 - yatay
+  [[1],[1],[1],[1]],                       // 11 - dikey
 
-  // === Z şekli ===
-  [[1,1,0],[0,1,1]],
-  // Z - 90°
-  [[0,1],[1,1],[1,0]],
+  // L şekli (4 blok) — 4 yön
+  [[1,0],[1,0],[1,1]],                     // 12
+  [[1,1,1],[1,0,0]],                       // 13
+  [[1,1],[0,1],[0,1]],                     // 14
+  [[0,0,1],[1,1,1]],                       // 15
 
-  // === Kısa I (3lü) ===
-  [[1,1,1]],
-  [[1],[1],[1]],
+  // J şekli (ters L, 4 blok) — 4 yön
+  [[0,1],[0,1],[1,1]],                     // 16
+  [[1,0,0],[1,1,1]],                       // 17
+  [[1,1],[1,0],[1,0]],                     // 18
+  [[1,1,1],[0,0,1]],                       // 19
 
-  // === Kısa I (2li) ===
-  [[1,1]],
-  [[1],[1]],
+  // S şekli — 4 yön
+  [[0,1,1],[1,1,0]],                       // 20 - yatay
+  [[1,0],[1,1],[0,1]],                     // 21 - dikey
+  [[1,1,0],[0,1,1]],                       // 22 - yatay ters (=Z yatay)
+  [[0,1],[1,1],[1,0]],                     // 23 - dikey ters (=Z dikey)
 
-  // === SCORE UNLOCK: 10.000 ===
-  // Büyük L (4'lü)
-  [[1,0],[1,0],[1,0],[1,1]],
-  // Büyük L - ters
-  [[0,1],[0,1],[0,1],[1,1]],
+  // Z şekli — 4 yön (S ile zıt, ayrı index'te tutuyoruz)
+  [[1,1,0],[0,1,1]],                       // 24 - yatay
+  [[0,1],[1,1],[1,0]],                     // 25 - dikey
+  [[0,1,1],[1,1,0]],                       // 26 - yatay ters (=S yatay)
+  [[1,0],[1,1],[0,1]],                     // 27 - dikey ters (=S dikey)
 
-  // === SCORE UNLOCK: 30.000 ===
-  // Büyük I (5'li yatay)
-  [[1,1,1,1,1]],
-  // Büyük I (5'li dikey)
-  [[1],[1],[1],[1],[1]],
+  // T şekli — 4 yön
+  [[1,1,1],[0,1,0]],                       // 28
+  [[1,0],[1,1],[1,0]],                     // 29
+  [[0,1,0],[1,1,1]],                       // 30
+  [[0,1],[1,1],[0,1]],                     // 31
 
-  // === SCORE UNLOCK: 50.000 ===
+  // ============================================
+  // 15.000 SKOR UNLOCK — index 32-35
+  // ============================================
+
+  // 3x2 dikdörtgen
+  [[1,1,1],[1,1,1]],                       // 32
+  [[1,1],[1,1],[1,1]],                     // 33
+
+  // Büyük L (4'lü) — 4 yön
+  [[1,0],[1,0],[1,0],[1,1]],              // 34
+  [[1,1,1,1],[1,0,0,0]],                  // 35
+
+  // ============================================
+  // 30.000 SKOR UNLOCK — index 36-39
+  // ============================================
+
+  // Büyük L (4'lü) diğer yönler
+  [[1,1],[0,1],[0,1],[0,1]],              // 36
+  [[0,0,0,1],[1,1,1,1]],                  // 37
+
+  // Büyük J (4'lü) — 4 yön
+  [[0,1],[0,1],[0,1],[1,1]],              // 38
+  [[1,0,0,0],[1,1,1,1]],                  // 39
+
+  // ============================================
+  // 50.000 SKOR UNLOCK — index 40-43
+  // ============================================
+
+  // Büyük J diğer yönler
+  [[1,1],[1,0],[1,0],[1,0]],              // 40
+  [[1,1,1,1],[0,0,0,1]],                  // 41
+
+  // 5'li I
+  [[1,1,1,1,1]],                          // 42
+  [[1],[1],[1],[1],[1]],                   // 43
+
+  // ============================================
+  // 70.000 SKOR UNLOCK — index 44-47
+  // ============================================
+
   // Artı şekli
-  [[0,1,0],[1,1,1],[0,1,0]],
-  // U şekli
-  [[1,0,1],[1,1,1]],
+  [[0,1,0],[1,1,1],[0,1,0]],             // 44
 
-  // === SCORE UNLOCK: 100.000 ===
+  // U şekli — 4 yön
+  [[1,0,1],[1,1,1]],                      // 45
+  [[1,1],[1,0],[1,1]],                    // 46
+  [[1,1,1],[1,0,1]],                      // 47
+
+  // ============================================
+  // 100.000 SKOR UNLOCK — index 48-49
+  // ============================================
+
   // 3x3 dolu kare
-  [[1,1,1],[1,1,1],[1,1,1]],
-  // Büyük T (5'li)
-  [[1,1,1,1,1],[0,0,1,0,0]],
+  [[1,1,1],[1,1,1],[1,1,1]],             // 48
 
-  // === YENİ: Dikdörtgen 2x3 ===
-  [[1,1],[1,1],[1,1]],
-  // Dikdörtgen 3x2
-  [[1,1,1],[1,1,1]],
-
-  // === YENİ: 3x3 L şekli (4 yön) ===
-  // Sağa bakan L (3x3)
-  [[1,0],[1,0],[1,1]],  // zaten var ama bu 3x3 versiyonu
-  // Aşağı bakan
-  [[1,1,1],[1,0,0],[1,0,0]],
-  // Sola bakan
-  [[1,1],[0,1],[0,1]],
-  // Yukarı bakan
-  [[0,0,1],[0,0,1],[1,1,1]],
-
-  // === YENİ: 2 karelik dik blok (her yön) — bunlar zaten var ama ekstra ağırlık için ===
-  // 2x1 yatay  (index 24 - var)
-  // 1x2 dikey  (index 25 - var)
+  // Büyük T (5'li) — 2 yön
+  [[1,1,1,1,1],[0,0,1,0,0]],             // 49
 ];
 
-// === SCORE BAZLI PARÇA UNLOCK SİSTEMİ ===
-// 0-23: temel, 24-25: Büyük L, 26-27: Büyük I
-// 28-29: Artı+U, 30-31: 3x3+BüyükT, 32-33: Dikdörtgenler
-// 34-37: 3x3 L şekilleri (temel havuzda)
+// === SKOR BAZLI UNLOCK SİSTEMİ ===
 const PIECE_UNLOCKS = [
-  { minScore: 0,       maxIndex: 23 },  // temel parçalar
-  { minScore: 0,       maxIndex: 37 },  // dikdörtgenler + 3x3 L'ler temel havuzda
-  { minScore: 10000,   maxIndex: 25 },  // +2: Büyük L halleri (24-25)
-  { minScore: 30000,   maxIndex: 27 },  // +2: Büyük I (5'li) (26-27)
-  { minScore: 50000,   maxIndex: 29 },  // +2: Artı + U (28-29)
-  { minScore: 100000,  maxIndex: 31 },  // +2: 3x3 + Büyük T (30-31)
+  { minScore: 0,      maxIndex: 31 },   // Başlangıç (S/Z 4 yön + T dahil)
+  { minScore: 15000,  maxIndex: 35 },   // +dikdörtgen + büyük L
+  { minScore: 30000,  maxIndex: 39 },   // +büyük L diğer yönler + büyük J
+  { minScore: 50000,  maxIndex: 43 },   // +büyük J diğer yönler + 5'li I
+  { minScore: 70000,  maxIndex: 47 },   // +artı + U şekli
+  { minScore: 100000, maxIndex: 49 },   // +3x3 kare + büyük T
 ];
 
 function getAvailablePieceIndices() {
-  let maxIdx = 23;
+  let maxIdx = 31;
   for (const unlock of PIECE_UNLOCKS) {
     if (score >= unlock.minScore) maxIdx = Math.max(maxIdx, unlock.maxIndex);
   }
-  // Dikdörtgenleri (32-33) her zaman dahil et, score-locked'ları filtrele
   const result = [];
-  for (let i = 0; i < PIECES.length; i++) {
-    if (i <= maxIdx) result.push(i);
-    else if (i >= 32) result.push(i); // Dikdörtgenler her zaman mevcut
+  for (let i = 0; i <= Math.min(maxIdx, PIECES.length - 1); i++) {
+    result.push(i);
   }
   return result;
 }
@@ -733,19 +745,20 @@ function updateAchievementStats(gameScore, blocksPlaced, linesCleared, comboMax)
 // === DAILY CHALLENGE + STREAK SİSTEMİ ===
 
 const DAILY_CHALLENGES = [
-  { id:'score_300',   icon:'🎯', desc:'300 puan kazan',         descEn:'Earn 300 points',          check: (s,b,l,c) => s >= 300,   xp: 80  },
-  { id:'score_500',   icon:'⭐', desc:'500 puan kazan',         descEn:'Earn 500 points',          check: (s,b,l,c) => s >= 500,   xp: 120 },
-  { id:'score_1000',  icon:'🏅', desc:'1000 puan kazan',        descEn:'Earn 1,000 points',        check: (s,b,l,c) => s >= 1000,  xp: 200 },
-  { id:'score_2000',  icon:'💎', desc:'2000 puan kazan',        descEn:'Earn 2,000 points',        check: (s,b,l,c) => s >= 2000,  xp: 350 },
-  { id:'combo_3',     icon:'🔥', desc:'3x combo yap',           descEn:'Get a 3x combo',           check: (s,b,l,c) => c >= 3,     xp: 100 },
-  { id:'combo_5',     icon:'⚡', desc:'5x combo yap',           descEn:'Get a 5x combo',           check: (s,b,l,c) => c >= 5,     xp: 200 },
-  { id:'lines_5',     icon:'💫', desc:'5 satır/sütun temizle',  descEn:'Clear 5 lines/cols',       check: (s,b,l,c) => l >= 5,     xp: 150 },
-  { id:'lines_10',    icon:'🌟', desc:'10 satır/sütun temizle', descEn:'Clear 10 lines/cols',      check: (s,b,l,c) => l >= 10,    xp: 250 },
-  { id:'blocks_50',   icon:'🧱', desc:'50 blok yerleştir',      descEn:'Place 50 blocks',          check: (s,b,l,c) => b >= 50,    xp: 100 },
-  { id:'blocks_100',  icon:'🏗️', desc:'100 blok yerleştir',    descEn:'Place 100 blocks',         check: (s,b,l,c) => b >= 100,   xp: 180 },
-  { id:'hard_mode',   icon:'💀', desc:'Zor modda oyna',         descEn:'Play Hard mode',           check: (s,b,l,c) => window.currentGameMode === 'hard', xp: 200 },
-  { id:'time_mode',   icon:'⏱️', desc:'Zaman modunda oyna',    descEn:'Play Time mode',           check: (s,b,l,c) => window.currentGameMode === 'timeattack', xp: 150 },
-  { id:'score_no_pu', icon:'🗡️', desc:'Powerupsuz 500 puan',   descEn:'500 points without powerups', check: (s,b,l,c) => s >= 500 && (window.currentGameMode === 'hard' || window.currentGameMode === 'timeattack'), xp: 300 },
+  { id:'score_5000',   icon:'🎯', desc:'5.000 puan kazan',         descEn:'Earn 5,000 points',           check: (s,b,l,c) => s >= 5000,   xp: 5  },
+  { id:'score_10000',  icon:'⭐', desc:'10.000 puan kazan',        descEn:'Earn 10,000 points',          check: (s,b,l,c) => s >= 10000,  xp: 8  },
+  { id:'score_20000',  icon:'🏅', desc:'20.000 puan kazan',        descEn:'Earn 20,000 points',          check: (s,b,l,c) => s >= 20000,  xp: 12 },
+  { id:'score_40000',  icon:'💎', desc:'40.000 puan kazan',        descEn:'Earn 40,000 points',          check: (s,b,l,c) => s >= 40000,  xp: 18 },
+  { id:'combo_3',      icon:'🔥', desc:'3x combo yap',             descEn:'Get a 3x combo',              check: (s,b,l,c) => c >= 3,      xp: 5  },
+  { id:'combo_5',      icon:'⚡', desc:'5x combo yap',             descEn:'Get a 5x combo',              check: (s,b,l,c) => c >= 5,      xp: 8  },
+  { id:'combo_7',      icon:'💥', desc:'7x combo yap',             descEn:'Get a 7x combo',              check: (s,b,l,c) => c >= 7,      xp: 15 },
+  { id:'lines_10',     icon:'💫', desc:'10 satır/sütun temizle',   descEn:'Clear 10 lines/cols',         check: (s,b,l,c) => l >= 10,     xp: 7  },
+  { id:'lines_20',     icon:'🌟', desc:'20 satır/sütun temizle',   descEn:'Clear 20 lines/cols',         check: (s,b,l,c) => l >= 20,     xp: 12 },
+  { id:'blocks_100',   icon:'🧱', desc:'100 blok yerleştir',       descEn:'Place 100 blocks',            check: (s,b,l,c) => b >= 100,    xp: 6  },
+  { id:'blocks_200',   icon:'🏗️', desc:'200 blok yerleştir',      descEn:'Place 200 blocks',            check: (s,b,l,c) => b >= 200,    xp: 10 },
+  { id:'hard_mode',    icon:'💀', desc:'Zor modda 10.000 puan',    descEn:'10,000 pts in Hard mode',     check: (s,b,l,c) => s >= 10000 && window.currentGameMode === 'hard', xp: 15 },
+  { id:'time_mode',    icon:'⏱️', desc:'Zaman modunda 5.000 puan', descEn:'5,000 pts in Time mode',     check: (s,b,l,c) => s >= 5000 && window.currentGameMode === 'timeattack', xp: 10 },
+  { id:'score_no_pu',  icon:'🗡️', desc:'Powerupsuz 20.000 puan',  descEn:'20,000 pts without powerups', check: (s,b,l,c) => s >= 20000 && window.currentGameMode === 'hard', xp: 20 },
 ];
 
 function getTodayStr() {
@@ -1571,19 +1584,25 @@ function renderBoard() {
 let lastUnlockNotified = parseInt(localStorage.getItem('bp_last_unlock') || '0');
 
 function checkScoreUnlocks() {
-  const thresholds = [10000, 30000, 50000, 100000];
-  for (const t of thresholds) {
-    if (score >= t && lastUnlockNotified < t) {
-      lastUnlockNotified = t;
-      localStorage.setItem('bp_last_unlock', t);
-      showUnlockToast(t);
+  const unlocks = [
+    { score: 10000, msg: 'Dikdörtgen + Büyük L Şekilleri' },
+    { score: 20000, msg: 'Büyük L & J Şekilleri (Tüm Yönler)' },
+    { score: 30000, msg: 'Büyük J + 5\'li I Şekilleri' },
+    { score: 40000, msg: 'Artı ve U Şekilleri' },
+    { score: 50000, msg: '3x3 Kare + Dev T Şekli' },
+  ];
+  for (const u of unlocks) {
+    if (score >= u.score && lastUnlockNotified < u.score) {
+      lastUnlockNotified = u.score;
+      localStorage.setItem('bp_last_unlock', u.score);
+      showUnlockToast(u.score, u.msg);
       vibrate([50, 30, 50, 30, 80]);
       break;
     }
   }
 }
 
-function showUnlockToast(threshold) {
+function showUnlockToast(threshold, msg) {
   const toast = document.createElement('div');
   toast.style.cssText = `
     position:fixed;top:80px;left:50%;transform:translateX(-50%);
@@ -1593,8 +1612,9 @@ function showUnlockToast(threshold) {
     pointer-events:none;text-align:center;
     box-shadow:0 4px 20px rgba(176,77,255,0.4);
     animation:xpToastAnim 2.5s ease forwards;
+    white-space:nowrap;
   `;
-  toast.innerHTML = `🎉 Yeni Bloklar Açıldı!<br><span style="font-size:11px;opacity:0.85">${threshold.toLocaleString()} skor → 2 yeni şekil</span>`;
+  toast.innerHTML = `🎉 Yeni Bloklar Açıldı!<br><span style="font-size:11px;opacity:0.85">${threshold.toLocaleString()} skor → ${msg}</span>`;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 2500);
 }
@@ -2197,13 +2217,13 @@ function generatePieces() {
   const mode = window.currentGameMode || 'classic';
   let smartChance;
   if (mode === 'easy')            smartChance = 1.00; // %100 — her zaman en uygun
-  else if (mode === 'normal')     smartChance = 0.80; // %80
+  else if (mode === 'normal')     smartChance = 0.90; // %90 — çok yardımcı
   else if (mode === 'hard')       smartChance = 0.00; // %0 — tamamen rastgele
   else if (mode === 'timeattack') smartChance = 0.75;
   else                            smartChance = 0.85;
 
-  // helpScore multiplier — easy'de satır/sütun tamamlamaya çok ağırlık ver
-  const helpMultiplier = mode === 'easy' ? 1.80 : mode === 'normal' ? 0.40 : 0.12;
+  // helpScore multiplier — easy çok yüksek, normal orta
+  const helpMultiplier = mode === 'easy' ? 0.60 : mode === 'normal' ? 0.30 : 0.12;
 
   for (let k = 0; k < 3; k++) {
     let shapeIndex;
@@ -2609,6 +2629,27 @@ function clearCompletedLines() {
   // Zaman modunda satır/sütun başına +3s
   if (typeof window.addTime === 'function') {
     window.addTime(lineCount * 3);
+  }
+
+  // Skora göre elmas ödülü
+  if (typeof window.addDiamonds === 'function' && lineCount > 0) {
+    let diamondReward = 0;
+    if      (score >= 100000) diamondReward = 30;
+    else if (score >= 80000)  diamondReward = 25;
+    else if (score >= 60000)  diamondReward = 20;
+    else if (score >= 40000)  diamondReward = 15;
+    else if (score >= 20000)  diamondReward = 10;
+    else if (score >= 10000)  diamondReward = 5;
+
+    if (diamondReward > 0) {
+      window.addDiamonds(diamondReward);
+      // Küçük elmas toast
+      const _dt = document.createElement('div');
+      _dt.style.cssText = `position:fixed;bottom:160px;right:16px;background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);border-radius:50px;padding:6px 14px;font-size:13px;font-weight:800;color:#60a5fa;z-index:9998;pointer-events:none;animation:xpToastAnim 1.8s ease forwards;`;
+      _dt.textContent = `+${diamondReward} 💎`;
+      document.body.appendChild(_dt);
+      setTimeout(() => _dt.remove(), 1800);
+    }
   }
 
   // Ses: satır/sütun kırılma + combo/streak
