@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blockpop-v29';
+const CACHE_NAME = 'blockpop-v26';
 
 const ASSETS = [
   './index.html',
@@ -17,9 +17,11 @@ const ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS).catch(err => {
-        console.warn('Bazı dosyalar cachelenemedi:', err);
-      });
+      return Promise.allSettled(
+        ASSETS.map(asset => cache.add(asset).catch(err => {
+          console.warn('Cache edilemedi:', asset, err);
+        }))
+      );
     })
   );
   self.skipWaiting();
@@ -38,25 +40,32 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Network-first: önce ağdan çek, başarısız olursa cache kullan
+// Cache-first: önce cache'ten sun, yoksa ağdan çek ve cache'e ekle
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  
+  // Harici istekleri (AdMob, Firebase vs) pass through
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, clone);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request).then(cached => {
-          return cached || caches.match('./index.html');
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      
+      return fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, clone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Offline fallback
+          return caches.match('./game.html') || caches.match('./index.html');
         });
-      })
+    })
   );
 });
