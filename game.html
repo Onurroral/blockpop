@@ -4300,15 +4300,32 @@
 
     // === BANNER ===
     async function showBanner() {
-      if (!AdMob || bannerShowing) return;
+      if (!AdMob) return;
       try {
+        await AdMob.removeBanner().catch(() => {});
+        bannerShowing = false;
+        await new Promise(r => setTimeout(r, 500));
+
+        // Navigation bar yüksekliğini hesapla (tüm cihazlar için)
+        let navBarHeight = 0;
+        if (window.AndroidInterface && window.AndroidInterface.getNavigationBarHeight) {
+          navBarHeight = window.AndroidInterface.getNavigationBarHeight();
+        }
+
         await AdMob.showBanner({
           adId: ADMOB_TESTING ? ADMOB_IDS.bannerTest : ADMOB_IDS.banner,
           adSize: 'BANNER',
-          position: 'BOTTOM_CENTER',
+          position: 'TOP_CENTER',
           margin: 0,
           isTesting: ADMOB_TESTING,
+          npa: false,
         });
+
+        // Banner yüklendi event'i - kayma varsa düzelt
+        AdMob.addListener('bannerAdLoaded', () => {
+          console.log('[AdMob] Banner loaded ✅');
+        });
+
         bannerShowing = true;
         console.log('[AdMob] Banner shown ✅');
       } catch(e) {
@@ -4458,23 +4475,51 @@
     window.showAdMobRewarded = showRewarded;
     window.showRewarded      = showRewarded; // main.js'den erişim için
 
+    // Tam ekran - StatusBar ve NavigationBar gizle
+    function setFullscreen() {
+      try {
+        if (window.Capacitor && window.Capacitor.Plugins) {
+          const { StatusBar, NavigationBar } = window.Capacitor.Plugins;
+          if (StatusBar) StatusBar.hide().catch(() => {});
+          if (NavigationBar) NavigationBar.hide().catch(() => {});
+        }
+      } catch(e) {}
+    }
+
+    // Uygulama arka plana geçince müziği durdur
+    document.addEventListener('visibilitychange', () => {
+      const bgMusic = document.getElementById('snd-bg');
+      if (!bgMusic) return;
+      if (document.hidden) {
+        bgMusic.pause();
+      } else {
+        const musicVal = localStorage.getItem('tgl-music');
+        const musicOn = musicVal === null || musicVal !== 'off';
+        if (musicOn) {
+          bgMusic.play().catch(() => {});
+        }
+        setFullscreen();
+      }
+    });
+
     // Oyun başlayınca AdMob başlat
     document.addEventListener('DOMContentLoaded', () => {
       setTimeout(initAdMob, 1000);
+      setTimeout(setFullscreen, 500);
 
       // Android geri butonu - Capacitor App plugin
+      window._lastBackTime = 0;
+      window._exitToast = null;
+
       function setupBackButton() {
         try {
           const AppPlugin = window.Capacitor &&
             window.Capacitor.Plugins &&
             window.Capacitor.Plugins.App;
 
-          let _lastBackTime = 0;
-          let _exitToast = null;
-
           window.showExitToast = function showExitToast() {
-            if (_exitToast) return;
-            _exitToast = document.createElement('div');
+            if (window._exitToast) return;
+            window._exitToast = document.createElement('div');
             _exitToast.textContent = '⬅️ Çıkmak için tekrar basın';
             _exitToast.style.cssText = `
               position:fixed;
@@ -4494,13 +4539,13 @@
               box-shadow:0 4px 24px rgba(0,0,0,0.5);
               pointer-events:none;
             `;
-            document.body.appendChild(_exitToast);
+            document.body.appendChild(window._exitToast);
             setTimeout(() => {
-              if (_exitToast) { _exitToast.remove(); _exitToast = null; }
+              if (window._exitToast) { window._exitToast.remove(); window._exitToast = null; }
             }, 2000);
           }
 
-          function handleBack() {
+          async function handleBack() {
             // Önce açık panel/modal varsa kapat, ana menüye gitme
             const shopModal = document.getElementById('shopModal');
             if (shopModal && shopModal.style.display !== 'none' && shopModal.style.display !== '') {
@@ -4553,11 +4598,24 @@
               }
               // Ana menü home tabındayken çift basış ile çık
               const now = Date.now();
-              if (now - _lastBackTime < 2000) {
-                if (_exitToast) { _exitToast.remove(); _exitToast = null; }
-                try { AppPlugin && AppPlugin.exitApp(); } catch(e) {}
+              if (now - window._lastBackTime < 2000) {
+                if (window._exitToast) { window._exitToast.remove(); window._exitToast = null; }
+                // Capacitor App.exitApp() - en güvenilir yöntem
+                try {
+                  const CapApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+                  if (CapApp && typeof CapApp.exitApp === 'function') {
+                    await CapApp.exitApp();
+                  } else if (navigator.app && navigator.app.exitApp) {
+                    navigator.app.exitApp();
+                  } else {
+                    window.close();
+                  }
+                } catch(e) {
+                  console.warn('[Back] exitApp error:', e);
+                  try { navigator.app && navigator.app.exitApp(); } catch(e2) {}
+                }
               } else {
-                _lastBackTime = now;
+                window._lastBackTime = now;
                 showExitToast();
               }
             } else {
@@ -4807,7 +4865,18 @@
 
       // Ana menüdeyse → çift geri ile çık
       if (now - _lastBackTime < 2000) {
-        history.back();
+        try {
+          const CapApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+          if (CapApp && typeof CapApp.exitApp === 'function') {
+            CapApp.exitApp();
+          } else if (navigator.app && navigator.app.exitApp) {
+            navigator.app.exitApp();
+          } else {
+            window.close();
+          }
+        } catch(e) {
+          try { navigator.app && navigator.app.exitApp(); } catch(e2) {}
+        }
         return;
       }
       _lastBackTime = now;
