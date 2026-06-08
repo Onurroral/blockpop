@@ -1418,11 +1418,26 @@ function updateBgMusic() {
 
 window.startBgMusic = startBgMusic;
 window.stopBgMusic = stopBgMusic;
+
+// Uygulama arka plana geçince müziği durdur, öne gelince devam ettir
+document.addEventListener('visibilitychange', () => {
+  if (!_bgMusic) _bgMusic = document.getElementById('snd-bg');
+  if (!_bgMusic) return;
+  if (document.hidden) {
+    _bgMusic.pause();
+  } else {
+    const musicVal = localStorage.getItem('tgl-music');
+    const musicOn = musicVal === null || musicVal !== 'off';
+    if (musicOn) {
+      _bgMusic.play().catch(() => {});
+    }
+  }
+});
 window.updateBgMusic = updateBgMusic;
 
-// İlk dokunuşta müziği başlat
+// İlk dokunuşta müziği başlat (sadece müzik açıksa)
 document.addEventListener('pointerdown', () => {
-  setTimeout(startBgMusic, 100);
+  if (_isMusicOn()) setTimeout(startBgMusic, 100);
 }, { once: true });
 
 // === TAHTA OLUŞTUR ===
