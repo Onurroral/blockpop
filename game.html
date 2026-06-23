@@ -2270,6 +2270,7 @@
     }
 
     function goToMenu() {
+      if (typeof cancelDrag === 'function') cancelDrag();
       if (typeof switchTab === 'function') switchTab('tab-home');
       const restartStyle = document.getElementById('restart-hide');
       if (restartStyle) restartStyle.remove();
@@ -2336,7 +2337,11 @@
       el.addEventListener('click', () => {
         el.classList.toggle('off');
         const isOn = !el.classList.contains('off');
-        localStorage.setItem(key, isOn ? 'on' : 'off');
+        if (key === 'tgl-music' && typeof _setMusicOn === 'function') {
+          _setMusicOn(isOn);
+        } else {
+          localStorage.setItem(key, isOn ? 'on' : 'off');
+        }
         applyToggle(key, isOn);
         // Kardeş toggle'ı da güncelle
         if (pairedId) {
@@ -3674,6 +3679,8 @@
 
     // Settings modal aç/kapat
     document.getElementById('btnInGameSettings').addEventListener('click', () => {
+      // Panel açılırken sürükleme varsa iptal et
+      if (typeof cancelDrag === 'function') cancelDrag();
       document.getElementById('inGameSettingsPanel').classList.toggle('hidden');
       updateIGSIcons();
     });
@@ -3715,7 +3722,8 @@
     });
     document.getElementById('igs-music-btn').addEventListener('click', () => {
       const cur = localStorage.getItem('tgl-music') !== 'off';
-      localStorage.setItem('tgl-music', cur ? 'off' : 'on');
+      if (typeof _setMusicOn === 'function') _setMusicOn(!cur);
+      else localStorage.setItem('tgl-music', cur ? 'off' : 'on');
       const mainTgl = document.getElementById('tgl-music');
       if (mainTgl) mainTgl.classList.toggle('off', cur);
       updateIGSIcons();
@@ -3744,6 +3752,7 @@
 
     // Game over ana menü butonu
     window.goToMainMenu = function() {
+      if (typeof cancelDrag === 'function') cancelDrag();
       const goScreen = document.getElementById('gameOverScreen');
       if (goScreen) { goScreen.style.visibility = 'hidden'; goScreen.style.pointerEvents = 'none'; goScreen.classList.remove('active'); }
       if (_restartCountdownTimer) clearInterval(_restartCountdownTimer);
@@ -3835,20 +3844,44 @@
       neon: {
         name: 'Neon',        emoji: '⚡',
         colors: ['#ff003c','#00cfff','#00ff88','#ffe600','#ff6600','#cc00ff'],
+        unlock: 'xp',        xpCost: 300,
+        desc: '300 💎',
+      },
+      forest: {
+        name: 'Forest',      emoji: '🌿',
+        colors: ['#2d6a4f','#52b788','#95d5b2','#b7e4c7','#74c69d','#1b4332'],
         unlock: 'xp',        xpCost: 500,
-        desc: '500 XP',
+        desc: '500 💎',
       },
       retro: {
         name: 'Retro',       emoji: '🕹️',
         colors: ['#c0392b','#2471a3','#1e8449','#d4ac0d','#ca6f1e','#7d3c98'],
-        unlock: 'xp',        xpCost: 1000,
-        desc: '1000 XP',
+        unlock: 'xp',        xpCost: 800,
+        desc: '800 💎',
+      },
+      sunset: {
+        name: 'Sunset',      emoji: '🌅',
+        colors: ['#f72585','#b5179e','#7209b7','#ff6b35','#f7931e','#ffcd3c'],
+        unlock: 'xp',        xpCost: 1200,
+        desc: '1200 💎',
       },
       galaxy: {
         name: 'Galaxy',      emoji: '🌌',
         colors: ['#7b2ff7','#2196f3','#e91e63','#00bcd4','#9c27b0','#3f51b5'],
-        unlock: 'xp',        xpCost: 2000,
-        desc: '2000 XP',
+        unlock: 'xp',        xpCost: 1800,
+        desc: '1800 💎',
+      },
+      ice: {
+        name: 'Ice',         emoji: '❄️',
+        colors: ['#caf0f8','#90e0ef','#48cae4','#0096c7','#0077b6','#ade8f4'],
+        unlock: 'xp',        xpCost: 2500,
+        desc: '2500 💎',
+      },
+      gold: {
+        name: 'Gold',        emoji: '✨',
+        colors: ['#f9c74f','#f8961e','#f3722c','#ffb700','#e9c46a','#f4a261'],
+        unlock: 'xp',        xpCost: 3500,
+        desc: '3500 💎',
       },
       lava: {
         name: 'Lava',        emoji: '🌋',
@@ -3909,23 +3942,21 @@
     // Oyun bitince XP ver — main.js'deki showGameOver'dan sonra çağrılır
     window.onGameEnd = function(finalScore) {
       let endDiamonds = 0;
-      if      (finalScore >= 100000) endDiamonds = 30;
-      else if (finalScore >= 80000)  endDiamonds = 25;
-      else if (finalScore >= 60000)  endDiamonds = 20;
-      else if (finalScore >= 40000)  endDiamonds = 15;
-      else if (finalScore >= 20000)  endDiamonds = 10;
-      else if (finalScore >= 10000)  endDiamonds = 5;
+      if      (finalScore >= 1000000) endDiamonds = 40;
+      else if (finalScore >= 500000)  endDiamonds = 35;
+      else if (finalScore >= 100000)  endDiamonds = 30;
+      else if (finalScore >= 80000)   endDiamonds = 25;
+      else if (finalScore >= 60000)   endDiamonds = 20;
+      else if (finalScore >= 40000)   endDiamonds = 15;
+      else if (finalScore >= 20000)   endDiamonds = 10;
+      else if (finalScore >= 10000)   endDiamonds = 5;
       if (endDiamonds > 0) addDiamondsAmount(endDiamonds);
-      autoUnlockXPThemes();
+      autoUnlockPurchasedThemes();
     };
 
-    function autoUnlockXPThemes() {
-      const diamonds = parseInt(localStorage.getItem('bp_diamonds') || '0');
-      Object.entries(THEME_DEFS).forEach(([key, def]) => {
-        if (def.unlock === 'xp' && diamonds >= def.xpCost) {
-          unlockTheme(key);
-        }
-      });
+    // Sadece daha önce satın alınmış (localStorage'da kayıtlı) temaları yükle — otomatik unlock YOK
+    function autoUnlockPurchasedThemes() {
+      // Bu fonksiyon artık hiçbir şey yapmıyor — temalar sadece manuel satın alımla açılır
     }
 
     // ===== KILIT SİSTEMİ =====
@@ -4041,25 +4072,63 @@
       });
     }
 
-    // ===== XP MODALİ (yetersiz XP) =====
+    // ===== XP MODALİ — elmas harcayarak satın alma =====
     function showXPModal(key, def, currentDiamonds) {
+      const canAfford = currentDiamonds >= def.xpCost;
       const needed = def.xpCost - currentDiamonds;
       const modal = document.createElement('div');
       modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:1200;`;
-      modal.innerHTML = `
-        <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:28px 24px;text-align:center;width:270px;">
-          <div style="font-size:36px;margin-bottom:8px;">${def.emoji}</div>
-          <div style="color:#fff;font-size:18px;font-weight:800;margin-bottom:6px;font-family:'Nunito',sans-serif;">${def.name}</div>
-          <div style="color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:20px;">Bu skin için <b style="color:#60a5fa">💎 ${def.xpCost}</b> gerekiyor.<br>Şu an: <b style="color:#fff">💎 ${currentDiamonds}</b> — <b style="color:#f87171">💎 ${needed} eksik</b></div>
-          <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px;margin-bottom:16px;font-size:12px;color:rgba(255,255,255,0.5);">
-            Reklam izle: <b style="color:#60a5fa">+15 💎</b><br>
-            Günlük giriş: <b style="color:#60a5fa">+5–50 💎</b>
+
+      if (canAfford) {
+        // Yeterli elmas var — satın alma onayı iste
+        modal.innerHTML = `
+          <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:28px 24px;text-align:center;width:270px;">
+            <div style="font-size:36px;margin-bottom:8px;">${def.emoji}</div>
+            <div style="color:#fff;font-size:18px;font-weight:800;margin-bottom:6px;font-family:'Nunito',sans-serif;">${def.name}</div>
+            <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:20px;">Bu temayı satın almak istiyor musun?<br><br><b style="color:#fbbf24;font-size:18px;">💎 ${def.xpCost}</b> elmas harcanacak.<br><span style="color:rgba(255,255,255,0.4);">Kalan: ${currentDiamonds - def.xpCost} 💎</span></div>
+            <div style="display:flex;gap:10px;">
+              <button id="xpModalCancel" style="flex:1;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">Vazgeç</button>
+              <button id="xpModalBuy" style="flex:1;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#000;font-size:14px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">💎 Satın Al</button>
+            </div>
           </div>
-          <button id="xpModalClose" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#7c6ff7,#a78bfa);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">Tamam, kazanayım!</button>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      modal.querySelector('#xpModalClose').addEventListener('click', () => modal.remove());
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('#xpModalCancel').addEventListener('click', () => modal.remove());
+        modal.querySelector('#xpModalBuy').addEventListener('click', () => {
+          // Elmasları harca ve temayı kilitle açılır hale getir
+          const fresh = parseInt(localStorage.getItem('bp_diamonds') || '0');
+          if (fresh < def.xpCost) { modal.remove(); return; } // son dakika kontrol
+          setDiamonds(fresh - def.xpCost);
+          unlockTheme(key);
+          modal.remove();
+          // Satın alındı bildirim
+          const toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,rgba(15,15,25,0.98),rgba(20,20,40,0.98));border:1px solid rgba(251,191,36,0.5);border-radius:18px;padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:9999;pointer-events:none;box-shadow:0 8px 32px rgba(251,191,36,0.2);animation:achieveSlide 2.5s ease forwards;min-width:200px;';
+          toast.innerHTML = `<div style="font-size:28px">${def.emoji}</div><div><div style="font-size:10px;font-weight:700;color:#fbbf24;letter-spacing:1px;">TEMA AÇILDI</div><div style="font-size:15px;font-weight:900;color:#fff;font-family:Nunito,sans-serif;">${def.name}</div></div>`;
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 2500);
+          // Temayı hemen uygula
+          selectTheme(key);
+          buildThemeGrid();
+        });
+      } else {
+        // Yetersiz elmas — kaç tane eksik olduğunu göster
+        modal.innerHTML = `
+          <div style="background:rgba(15,15,25,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:28px 24px;text-align:center;width:270px;">
+            <div style="font-size:36px;margin-bottom:8px;">${def.emoji}</div>
+            <div style="color:#fff;font-size:18px;font-weight:800;margin-bottom:6px;font-family:'Nunito',sans-serif;">${def.name}</div>
+            <div style="color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:20px;">Bu tema için <b style="color:#60a5fa">💎 ${def.xpCost}</b> gerekiyor.<br>Şu an: <b style="color:#fff">💎 ${currentDiamonds}</b> — <b style="color:#f87171">💎 ${needed} eksik</b></div>
+            <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px;margin-bottom:16px;font-size:12px;color:rgba(255,255,255,0.5);">
+              Reklam izle: <b style="color:#60a5fa">+15 💎</b><br>
+              Günlük giriş: <b style="color:#60a5fa">+5–50 💎</b><br>
+              Oyun sonu (100k+): <b style="color:#60a5fa">+30 💎</b>
+            </div>
+            <button id="xpModalClose" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#7c6ff7,#a78bfa);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">Tamam, kazanayım!</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('#xpModalClose').addEventListener('click', () => modal.remove());
+      }
       modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
     }
 
@@ -4132,7 +4201,6 @@
 
     // İlk yüklemede XP göster
     if(typeof updateDiamondDisplay==='function')updateDiamondDisplay();
-    autoUnlockXPThemes();
     updateDailyCardUI();
     refreshMenuHS();
 
@@ -4304,26 +4372,36 @@
       try {
         await AdMob.removeBanner().catch(() => {});
         bannerShowing = false;
-        await new Promise(r => setTimeout(r, 500));
 
-        // Navigation bar yüksekliğini hesapla (tüm cihazlar için)
-        let navBarHeight = 0;
-        if (window.AndroidInterface && window.AndroidInterface.getNavigationBarHeight) {
-          navBarHeight = window.AndroidInterface.getNavigationBarHeight();
-        }
+        // Fullscreen layout oturmasını bekle
+        await new Promise(r => setTimeout(r, 800));
 
         await AdMob.showBanner({
           adId: ADMOB_TESTING ? ADMOB_IDS.bannerTest : ADMOB_IDS.banner,
           adSize: 'BANNER',
-          position: 'TOP_CENTER',
+          position: 'BOTTOM_CENTER',
           margin: 0,
           isTesting: ADMOB_TESTING,
           npa: false,
         });
 
-        // Banner yüklendi event'i - kayma varsa düzelt
-        AdMob.addListener('bannerAdLoaded', () => {
+        // Banner yüklendikten sonra bazı cihazlarda pozisyon kayıyor
+        // Kısa bekle, kaldır ve yeniden göster — en güvenilir yöntem
+        AdMob.addListener('bannerAdLoaded', async () => {
           console.log('[AdMob] Banner loaded ✅');
+          await new Promise(r => setTimeout(r, 300));
+          try {
+            await AdMob.removeBanner().catch(() => {});
+            await new Promise(r => setTimeout(r, 200));
+            await AdMob.showBanner({
+              adId: ADMOB_TESTING ? ADMOB_IDS.bannerTest : ADMOB_IDS.banner,
+              adSize: 'BANNER',
+              position: 'BOTTOM_CENTER',
+              margin: 0,
+              isTesting: ADMOB_TESTING,
+              npa: false,
+            });
+          } catch(e) {}
         });
 
         bannerShowing = true;
@@ -4487,25 +4565,66 @@
     }
 
     // Uygulama arka plana geçince müziği durdur
+    // NOT: Müzik kontrolü main.js'deki _isMusicOn() + visibilitychange üzerinden yapılıyor.
+    // Burada sadece fullscreen restore ediliyor - duplicate müzik kodu kaldırıldı.
     document.addEventListener('visibilitychange', () => {
-      const bgMusic = document.getElementById('snd-bg');
-      if (!bgMusic) return;
-      if (document.hidden) {
-        bgMusic.pause();
-      } else {
-        const musicVal = localStorage.getItem('tgl-music');
-        const musicOn = musicVal === null || musicVal !== 'off';
-        if (musicOn) {
-          bgMusic.play().catch(() => {});
-        }
+      if (!document.hidden) {
         setFullscreen();
       }
     });
+
+    // ===== BİLDİRİM SİSTEMİ =====
+    async function setupDailyNotification() {
+      if (!IS_NATIVE) return;
+      try {
+        const { LocalNotifications } = window.Capacitor.Plugins;
+        if (!LocalNotifications) return;
+
+        // İzin iste
+        const perm = await LocalNotifications.requestPermissions();
+        if (perm.display !== 'granted') return;
+
+        // Mevcut bildirimi iptal et
+        try { await LocalNotifications.cancel({ notifications: [{ id: 101 }] }); } catch(e) {}
+
+        // Yarın saat 10:00
+        const at = new Date();
+        at.setDate(at.getDate() + 1);
+        at.setHours(10, 0, 0, 0);
+
+        const titles = [
+          '🎮 BlockPop seni bekliyor!',
+          '🧩 Bugünkü bulmacaya hazır mısın?',
+          '🏆 Günlük görevin seni bekliyor!',
+        ];
+        const bodies = [
+          'Günlük görevini tamamla ve ödülünü kazan! 💎',
+          'Rekoru kır ve zirveye çık! 🚀',
+          'Hızlı bir oyun? Hadi başlayalım! ⚡',
+        ];
+        const rand = Math.floor(Math.random() * titles.length);
+
+        await LocalNotifications.schedule({
+          notifications: [{
+            id: 101,
+            title: titles[rand],
+            body: bodies[rand],
+            schedule: { at, repeats: true, every: 'day' },
+            sound: null,
+            smallIcon: 'ic_stat_icon_config_sample',
+            iconColor: '#7c6ff7',
+          }]
+        });
+      } catch(e) {
+        console.warn('[Notification] Setup failed:', e);
+      }
+    }
 
     // Oyun başlayınca AdMob başlat
     document.addEventListener('DOMContentLoaded', () => {
       setTimeout(initAdMob, 1000);
       setTimeout(setFullscreen, 500);
+      setTimeout(setupDailyNotification, 3000);
 
       // Android geri butonu - Capacitor App plugin
       window._lastBackTime = 0;
