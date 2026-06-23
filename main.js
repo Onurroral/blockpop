@@ -606,42 +606,57 @@ function createFlashOverlay() {
 
 // === ACHİEVEMENT SİSTEMİ ===
 const ACHIEVEMENTS = [
-  // Skor
-  { id:'score_100',    icon:'🌱', name:'İlk Adım',       nameEn:'First Step',      desc:'100 puan kazan',           descEn:'Earn 100 points',         cat:'skor',  check: s => s.totalScore >= 100 },
-  { id:'score_500',    icon:'⭐', name:'Yükselen Yıldız', nameEn:'Rising Star',     desc:'500 puan kazan',           descEn:'Earn 500 points',         cat:'skor',  check: s => s.totalScore >= 500 },
-  { id:'score_1k',     icon:'🏅', name:'Bin Puan',        nameEn:'Thousand',        desc:'1,000 puan kazan',         descEn:'Earn 1,000 points',       cat:'skor',  check: s => s.totalScore >= 1000 },
-  { id:'score_5k',     icon:'🥈', name:'Usta',            nameEn:'Expert',          desc:'5,000 puan kazan',         descEn:'Earn 5,000 points',       cat:'skor',  check: s => s.totalScore >= 5000 },
-  { id:'score_10k',    icon:'🥇', name:'Efsane',          nameEn:'Legend',          desc:'10,000 puan kazan',        descEn:'Earn 10,000 points',      cat:'skor',  check: s => s.totalScore >= 10000 },
-  { id:'score_50k',    icon:'💎', name:'Elmas Seviye',    nameEn:'Diamond Tier',    desc:'50,000 puan kazan',        descEn:'Earn 50,000 points',      cat:'skor',  check: s => s.totalScore >= 50000 },
-  { id:'score_100k',   icon:'👑', name:'Kral',            nameEn:'King',            desc:'100,000 puan kazan',       descEn:'Earn 100,000 points',     cat:'skor',  check: s => s.totalScore >= 100000 },
+  // === SKOR ===
+  { id:'score_1k',     icon:'🌱', name:'İlk Adım',        nameEn:'First Step',       desc:'1.000 puan kazan',           descEn:'Earn 1,000 points',          cat:'skor',  check: s => s.totalScore >= 1000 },
+  { id:'score_5k',     icon:'⭐', name:'Yükselen Yıldız', nameEn:'Rising Star',      desc:'5.000 puan kazan',           descEn:'Earn 5,000 points',          cat:'skor',  check: s => s.totalScore >= 5000 },
+  { id:'score_10k',    icon:'🏅', name:'Bin Puan Ustası',  nameEn:'Ten K Master',     desc:'10.000 puan kazan',          descEn:'Earn 10,000 points',         cat:'skor',  check: s => s.totalScore >= 10000 },
+  { id:'score_50k',    icon:'🥈', name:'Uzman',            nameEn:'Expert',           desc:'50.000 puan kazan',          descEn:'Earn 50,000 points',         cat:'skor',  check: s => s.totalScore >= 50000 },
+  { id:'score_100k',   icon:'🥇', name:'Efsane',           nameEn:'Legend',           desc:'100.000 puan kazan',         descEn:'Earn 100,000 points',        cat:'skor',  check: s => s.totalScore >= 100000 },
+  { id:'score_250k',   icon:'💎', name:'Elmas Seviye',     nameEn:'Diamond Tier',     desc:'250.000 puan kazan',         descEn:'Earn 250,000 points',        cat:'skor',  check: s => s.totalScore >= 250000 },
+  { id:'score_500k',   icon:'👑', name:'Kral',             nameEn:'King',             desc:'500.000 puan kazan',         descEn:'Earn 500,000 points',        cat:'skor',  check: s => s.totalScore >= 500000 },
+  { id:'score_1m',     icon:'🌌', name:'Galaksi Hakimi',   nameEn:'Galaxy Master',    desc:'1.000.000 puan kazan',       descEn:'Earn 1,000,000 points',      cat:'skor',  check: s => s.totalScore >= 1000000 },
 
-  // Combo
-  { id:'combo_2',      icon:'🔥', name:'Combo!',          nameEn:'Combo!',          desc:'2x combo yap',             descEn:'Get a 2x combo',          cat:'combo', check: s => s.maxCombo >= 2 },
-  { id:'combo_3',      icon:'💥', name:'Üçlü Kombo',      nameEn:'Triple Combo',    desc:'3x combo yap',             descEn:'Get a 3x combo',          cat:'combo', check: s => s.maxCombo >= 3 },
-  { id:'combo_5',      icon:'⚡', name:'Beşli Fırtına',   nameEn:'Five Storm',      desc:'5x combo yap',             descEn:'Get a 5x combo',          cat:'combo', check: s => s.maxCombo >= 5 },
-  { id:'combo_10',     icon:'🌪️', name:'Kasırga',         nameEn:'Hurricane',       desc:'10x combo yap',            descEn:'Get a 10x combo',         cat:'combo', check: s => s.maxCombo >= 10 },
+  // === TEK OYUNDA SKOR ===
+  { id:'best_10k',     icon:'🎯', name:'Keskin Nişancı',   nameEn:'Sharpshooter',     desc:'Tek oyunda 10.000 puan',     descEn:'10,000 in one game',         cat:'skor',  check: s => s.bestScore >= 10000 },
+  { id:'best_30k',     icon:'🔭', name:'Gözlemci',         nameEn:'Observer',         desc:'Tek oyunda 30.000 puan',     descEn:'30,000 in one game',         cat:'skor',  check: s => s.bestScore >= 30000 },
+  { id:'best_60k',     icon:'🚀', name:'Roket',            nameEn:'Rocket',           desc:'Tek oyunda 60.000 puan',     descEn:'60,000 in one game',         cat:'skor',  check: s => s.bestScore >= 60000 },
+  { id:'best_100k',    icon:'🌠', name:'Meteor',           nameEn:'Meteor',           desc:'Tek oyunda 100.000 puan',    descEn:'100,000 in one game',        cat:'skor',  check: s => s.bestScore >= 100000 },
 
-  // Blok
-  { id:'blocks_100',   icon:'🧱', name:'İnşaatçı',        nameEn:'Builder',         desc:'100 blok yerleştir',       descEn:'Place 100 blocks',        cat:'blok',  check: s => s.totalBlocks >= 100 },
-  { id:'blocks_500',   icon:'🏗️', name:'Mimar',           nameEn:'Architect',       desc:'500 blok yerleştir',       descEn:'Place 500 blocks',        cat:'blok',  check: s => s.totalBlocks >= 500 },
-  { id:'blocks_1000',  icon:'🏰', name:'Kale Ustası',     nameEn:'Castle Master',   desc:'1000 blok yerleştir',      descEn:'Place 1,000 blocks',      cat:'blok',  check: s => s.totalBlocks >= 1000 },
-  { id:'blocks_5000',  icon:'🌆', name:'Şehir Kurucusu',  nameEn:'City Builder',    desc:'5000 blok yerleştir',      descEn:'Place 5,000 blocks',      cat:'blok',  check: s => s.totalBlocks >= 5000 },
+  // === COMBO ===
+  { id:'combo_3',      icon:'🔥', name:'Üçlü Kombo',       nameEn:'Triple Combo',     desc:'3x combo yap',               descEn:'Get a 3x combo',             cat:'combo', check: s => s.maxCombo >= 3 },
+  { id:'combo_5',      icon:'💥', name:'Beşli Fırtına',    nameEn:'Five Storm',       desc:'5x combo yap',               descEn:'Get a 5x combo',             cat:'combo', check: s => s.maxCombo >= 5 },
+  { id:'combo_8',      icon:'⚡', name:'Yıldırım',         nameEn:'Lightning',        desc:'8x combo yap',               descEn:'Get an 8x combo',            cat:'combo', check: s => s.maxCombo >= 8 },
+  { id:'combo_12',     icon:'🌪️', name:'Kasırga',          nameEn:'Hurricane',        desc:'12x combo yap',              descEn:'Get a 12x combo',            cat:'combo', check: s => s.maxCombo >= 12 },
+  { id:'combo_20',     icon:'🌋', name:'Volkan',           nameEn:'Volcano',          desc:'20x combo yap',              descEn:'Get a 20x combo',            cat:'combo', check: s => s.maxCombo >= 20 },
 
-  // Mod
-  { id:'mode_hard',    icon:'💀', name:'Cesur Yürek',     nameEn:'Brave Heart',     desc:'Zor modda oyna',           descEn:'Play Hard mode',          cat:'mod',   check: s => s.playedHard },
-  { id:'mode_time',    icon:'⏱️', name:'Zamana Karşı',    nameEn:'Against Time',    desc:'Zaman modunda oyna',       descEn:'Play Time mode',          cat:'mod',   check: s => s.playedTime },
-  { id:'mode_time_l5', icon:'🚀', name:'Işık Hızı',       nameEn:'Light Speed',     desc:'Zaman Modu Seviye 5 oyna', descEn:'Play Time Mode Level 5',  cat:'mod',   check: s => s.playedTimeL5 },
-  { id:'mode_hard_5k', icon:'🗡️', name:'Demir İrade',     nameEn:'Iron Will',       desc:'Zor modda 5000 puan kazan',descEn:'Earn 5,000 in Hard mode', cat:'mod',   check: s => s.hardModeScore >= 5000 },
+  // === BLOK ===
+  { id:'blocks_200',   icon:'🧱', name:'İnşaatçı',         nameEn:'Builder',          desc:'200 blok yerleştir',         descEn:'Place 200 blocks',           cat:'blok',  check: s => s.totalBlocks >= 200 },
+  { id:'blocks_1000',  icon:'🏗️', name:'Mimar',            nameEn:'Architect',        desc:'1.000 blok yerleştir',       descEn:'Place 1,000 blocks',         cat:'blok',  check: s => s.totalBlocks >= 1000 },
+  { id:'blocks_5000',  icon:'🏰', name:'Kale Ustası',       nameEn:'Castle Master',    desc:'5.000 blok yerleştir',       descEn:'Place 5,000 blocks',         cat:'blok',  check: s => s.totalBlocks >= 5000 },
+  { id:'blocks_15000', icon:'🌆', name:'Şehir Kurucusu',   nameEn:'City Builder',     desc:'15.000 blok yerleştir',      descEn:'Place 15,000 blocks',        cat:'blok',  check: s => s.totalBlocks >= 15000 },
+  { id:'blocks_50000', icon:'🌍', name:'Dünya İnşaatçısı', nameEn:'World Builder',    desc:'50.000 blok yerleştir',      descEn:'Place 50,000 blocks',        cat:'blok',  check: s => s.totalBlocks >= 50000 },
 
-  // Satır
-  { id:'lines_10',     icon:'💫', name:'Satır Avcısı',    nameEn:'Line Hunter',     desc:'10 satır/sütun temizle',   descEn:'Clear 10 lines/cols',     cat:'satır', check: s => s.totalLines >= 10 },
-  { id:'lines_50',     icon:'🌟', name:'Temizlikçi',      nameEn:'Cleaner',         desc:'50 satır/sütun temizle',   descEn:'Clear 50 lines/cols',     cat:'satır', check: s => s.totalLines >= 50 },
-  { id:'lines_200',    icon:'✨', name:'Süpürge',         nameEn:'Sweeper',         desc:'200 satır/sütun temizle',  descEn:'Clear 200 lines/cols',    cat:'satır', check: s => s.totalLines >= 200 },
+  // === SATIR ===
+  { id:'lines_20',     icon:'💫', name:'Satır Avcısı',     nameEn:'Line Hunter',      desc:'20 satır/sütun temizle',     descEn:'Clear 20 lines/cols',        cat:'satır', check: s => s.totalLines >= 20 },
+  { id:'lines_100',    icon:'🌟', name:'Temizlikçi',       nameEn:'Cleaner',          desc:'100 satır/sütun temizle',    descEn:'Clear 100 lines/cols',       cat:'satır', check: s => s.totalLines >= 100 },
+  { id:'lines_500',    icon:'✨', name:'Süpürge',          nameEn:'Sweeper',          desc:'500 satır/sütun temizle',    descEn:'Clear 500 lines/cols',       cat:'satır', check: s => s.totalLines >= 500 },
+  { id:'lines_1500',   icon:'🌊', name:'Tsunami',          nameEn:'Tsunami',          desc:'1.500 satır/sütun temizle',  descEn:'Clear 1,500 lines/cols',     cat:'satır', check: s => s.totalLines >= 1500 },
+  { id:'lines_5000',   icon:'🌀', name:'Girdap',           nameEn:'Vortex',           desc:'5.000 satır/sütun temizle',  descEn:'Clear 5,000 lines/cols',     cat:'satır', check: s => s.totalLines >= 5000 },
 
-  // Oyun sayısı
-  { id:'games_5',      icon:'🎮', name:'Oyun Sever',      nameEn:'Game Lover',      desc:'5 oyun oyna',              descEn:'Play 5 games',            cat:'oyun',  check: s => s.totalGames >= 5 },
-  { id:'games_20',     icon:'🎯', name:'Bağımlı',         nameEn:'Addicted',        desc:'20 oyun oyna',             descEn:'Play 20 games',           cat:'oyun',  check: s => s.totalGames >= 20 },
-  { id:'games_100',    icon:'🏆', name:'Veteran',         nameEn:'Veteran',         desc:'100 oyun oyna',            descEn:'Play 100 games',          cat:'oyun',  check: s => s.totalGames >= 100 },
+  // === MOD ===
+  { id:'mode_hard',    icon:'💀', name:'Cesur Yürek',      nameEn:'Brave Heart',      desc:'Zor modda oyna',             descEn:'Play Hard mode',             cat:'mod',   check: s => s.playedHard },
+  { id:'mode_time',    icon:'⏱️', name:'Zamana Karşı',    nameEn:'Against Time',     desc:'Zaman modunda oyna',         descEn:'Play Time mode',             cat:'mod',   check: s => s.playedTime },
+  { id:'mode_time_l5', icon:'🚀', name:'Işık Hızı',       nameEn:'Light Speed',      desc:'Zaman Modu Seviye 5 oyna',   descEn:'Play Time Mode Level 5',     cat:'mod',   check: s => s.playedTimeL5 },
+  { id:'mode_hard_10k',icon:'🗡️', name:'Demir İrade',     nameEn:'Iron Will',        desc:'Zor modda 10.000 puan',      descEn:'Earn 10,000 in Hard mode',   cat:'mod',   check: s => s.hardModeScore >= 10000 },
+  { id:'mode_hard_30k',icon:'⚔️', name:'Savaşçı',         nameEn:'Warrior',          desc:'Zor modda 30.000 puan',      descEn:'Earn 30,000 in Hard mode',   cat:'mod',   check: s => s.hardModeScore >= 30000 },
+  { id:'mode_hard_75k',icon:'🔱', name:'Tanrı Savaşçısı', nameEn:'Godlike',          desc:'Zor modda 75.000 puan',      descEn:'Earn 75,000 in Hard mode',   cat:'mod',   check: s => s.hardModeScore >= 75000 },
+
+  // === OYUN SAYISI ===
+  { id:'games_10',     icon:'🎮', name:'Oyun Sever',       nameEn:'Game Lover',       desc:'10 oyun oyna',               descEn:'Play 10 games',              cat:'oyun',  check: s => s.totalGames >= 10 },
+  { id:'games_50',     icon:'🎯', name:'Bağımlı',          nameEn:'Addicted',         desc:'50 oyun oyna',               descEn:'Play 50 games',              cat:'oyun',  check: s => s.totalGames >= 50 },
+  { id:'games_200',    icon:'🏆', name:'Veteran',          nameEn:'Veteran',          desc:'200 oyun oyna',              descEn:'Play 200 games',             cat:'oyun',  check: s => s.totalGames >= 200 },
+  { id:'games_500',    icon:'🎖️', name:'Efsane Oyuncu',   nameEn:'Legendary Player', desc:'500 oyun oyna',              descEn:'Play 500 games',             cat:'oyun',  check: s => s.totalGames >= 500 },
+  { id:'games_1000',   icon:'🌟', name:'Ölümsüz',          nameEn:'Immortal',         desc:'1.000 oyun oyna',            descEn:'Play 1,000 games',           cat:'oyun',  check: s => s.totalGames >= 1000 },
 ];
 
 function getAchievementStats() {
@@ -1380,11 +1395,27 @@ document.addEventListener('pointerdown', _getCtx, { once: true });
 
 // === ARKA PLAN MÜZİĞİ ===
 let _bgMusic = null;
+let _musicOnCache = null; // memory cache - localStorage tutarsız olursa yedek
 
 function _isMusicOn() {
-  const val = localStorage.getItem('tgl-music');
-  if (val === null) return true; // default açık
-  return val !== 'off';
+  try {
+    const val = localStorage.getItem('tgl-music');
+    if (val === null) {
+      // Henüz hiç ayar yapılmamış - cache varsa onu kullan, yoksa default açık
+      return _musicOnCache !== null ? _musicOnCache : true;
+    }
+    const isOn = val !== 'off';
+    _musicOnCache = isOn; // cache'i güncelle
+    return isOn;
+  } catch(e) {
+    // localStorage okunamıyorsa cache'e güven, o da yoksa kapalı say
+    return _musicOnCache !== null ? _musicOnCache : false;
+  }
+}
+
+function _setMusicOn(isOn) {
+  _musicOnCache = isOn;
+  try { localStorage.setItem('tgl-music', isOn ? 'on' : 'off'); } catch(e) {}
 }
 
 // Combo elementlerini preload et - oyun başlamadan önce hazırla
@@ -1418,6 +1449,8 @@ function updateBgMusic() {
 
 window.startBgMusic = startBgMusic;
 window.stopBgMusic = stopBgMusic;
+window._setMusicOn = _setMusicOn;
+window._isMusicOn = _isMusicOn;
 
 // Uygulama arka plana geçince müziği durdur, öne gelince devam ettir
 document.addEventListener('visibilitychange', () => {
@@ -1425,10 +1458,10 @@ document.addEventListener('visibilitychange', () => {
   if (!_bgMusic) return;
   if (document.hidden) {
     _bgMusic.pause();
+    // Ekran kapanınca/uygulama arka plana geçince takılı drag'i iptal et
+    if (typeof cancelDrag === 'function') cancelDrag();
   } else {
-    const musicVal = localStorage.getItem('tgl-music');
-    const musicOn = musicVal === null || musicVal !== 'off';
-    if (musicOn) {
+    if (_isMusicOn()) {
       _bgMusic.play().catch(() => {});
     }
   }
@@ -2065,6 +2098,8 @@ function createPieceElement(shapeIndex) {
   slotEl.addEventListener('pointerdown', (e) => {
     if (isGameOver || clearLineMode) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // İki parmak fix: drag zaten aktifse YENİ drag başlatma
+    if (isDragging) { e.preventDefault(); return; }
     e.preventDefault();
     startDragPiece(pieceEl, shape, e);
   });
@@ -2646,26 +2681,7 @@ function clearCompletedLines() {
     window.addTime(lineCount * 3);
   }
 
-  // Skora göre elmas ödülü
-  if (typeof window.addDiamonds === 'function' && lineCount > 0) {
-    let diamondReward = 0;
-    if      (score >= 100000) diamondReward = 30;
-    else if (score >= 80000)  diamondReward = 25;
-    else if (score >= 60000)  diamondReward = 20;
-    else if (score >= 40000)  diamondReward = 15;
-    else if (score >= 20000)  diamondReward = 10;
-    else if (score >= 10000)  diamondReward = 5;
-
-    if (diamondReward > 0) {
-      window.addDiamonds(diamondReward);
-      // Küçük elmas toast
-      const _dt = document.createElement('div');
-      _dt.style.cssText = `position:fixed;bottom:160px;right:16px;background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);border-radius:50px;padding:6px 14px;font-size:13px;font-weight:800;color:#60a5fa;z-index:9998;pointer-events:none;animation:xpToastAnim 1.8s ease forwards;`;
-      _dt.textContent = `+${diamondReward} 💎`;
-      document.body.appendChild(_dt);
-      setTimeout(() => _dt.remove(), 1800);
-    }
-  }
+  // Elmas oyun içinde verilmiyor — sadece oyun sonunda skor aralığına göre verilir
 
   // Ses: satır/sütun kırılma + combo/streak
   if (lineCount > 0) {
@@ -3040,6 +3056,7 @@ function createGridSizedPreview(shape, colorName) {
 
   // Container
   const el = document.createElement('div');
+  el.className = 'bp-drag-preview'; // takılı kalırsa DOM'dan bulunup silinebilsin
   el.style.cssText = `
     position: fixed;
     top: 0;
@@ -3085,11 +3102,16 @@ function createGridSizedPreview(shape, colorName) {
 
 // === DRAG & DROP (POINTER EVENTS) ===
 function startDragPiece(pieceEl, shape, event) {
+  // İki parmak fix: sürükleme zaten devam ediyorsa yeni drag başlatma
+  if (isDragging) return;
   isDragging = true;
   playSndPick(); // Blok alırken pop sesi
   dragShape = shape;
   dragPieceEl = pieceEl;
   dragPointerId = event.pointerId || null;
+
+  // setPointerCapture: bu pointer'ı yakala, diğer elementlere gitmesin
+  try { pieceEl.setPointerCapture(event.pointerId); } catch(e) {}
 
   // Lift: şeklin yüksekliğine göre dinamik — parmak şeklin alt merkezinde olsun
   const boardEl = document.getElementById('board');
@@ -3393,9 +3415,38 @@ function updateGhostFromEvent(e) {
   _updateAll(e);
 }
 
+function cancelDrag() {
+  if (!isDragging) {
+    // isDragging false olsa bile takılı kalmış preview varsa temizle
+    document.querySelectorAll('.bp-drag-preview').forEach(el => el.remove());
+    return;
+  }
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUp);
+  window.removeEventListener('pointercancel', onPointerUp);
+  if (dragPreviewEl) { dragPreviewEl.remove(); dragPreviewEl = null; }
+  if (dragPieceEl) { dragPieceEl.style.opacity = '1'; }
+  if (_dragRafId) { cancelAnimationFrame(_dragRafId); _dragRafId = null; }
+  isDragging = false;
+  dragShape = null;
+  dragPieceEl = null;
+  dragPointerId = null;
+  lastGhostCell = null;
+  _lastGhostX = -1;
+  _lastGhostY = -1;
+  clearGhostPreview();
+  clearPrediction();
+  // Son güvenlik: DOM'da kalmış orphan preview'ları da temizle
+  document.querySelectorAll('.bp-drag-preview').forEach(el => el.remove());
+}
+
 function onPointerUp(e) {
   if (!isDragging) return;
-  if (dragPointerId !== null && e.pointerId !== dragPointerId) return;
+  // İki parmak fix: orijinal pointer dışında başka bir parmak kalkarsa da drag'i bitir
+  if (dragPointerId !== null && e.pointerId !== dragPointerId) {
+    cancelDrag();
+    return;
+  }
 
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup', onPointerUp);
