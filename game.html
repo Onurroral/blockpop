@@ -3961,13 +3961,8 @@
 
     // ===== KILIT SİSTEMİ =====
     function getUnlockedThemes() {
-      const saved = localStorage.getItem('bp_unlocked_themes');
-      const list  = saved ? JSON.parse(saved) : [];
-      // Ücretsizleri her zaman dahil et
-      Object.entries(THEME_DEFS).forEach(([k,d]) => {
-        if (d.unlock === 'free' && !list.includes(k)) list.push(k);
-      });
-      return list;
+      // DEMO MODU: tüm temalar açık
+      return Object.keys(THEME_DEFS);
     }
 
     function unlockTheme(key) {
