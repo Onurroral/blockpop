@@ -3961,8 +3961,13 @@
 
     // ===== KILIT SİSTEMİ =====
     function getUnlockedThemes() {
-      // DEMO MODU: tüm temalar açık — test sonrası kaldır
-      return Object.keys(THEME_DEFS);
+      const saved = localStorage.getItem('bp_unlocked_themes');
+      const list  = saved ? JSON.parse(saved) : [];
+      // Ücretsizleri her zaman dahil et
+      Object.entries(THEME_DEFS).forEach(([k,d]) => {
+        if (d.unlock === 'free' && !list.includes(k)) list.push(k);
+      });
+      return list;
     }
 
     function unlockTheme(key) {
@@ -4371,36 +4376,31 @@
         // Fullscreen layout oturmasını bekle
         await new Promise(r => setTimeout(r, 800));
 
+        // Doğru margin hesapla:
+        // Gerçek ekran yüksekliği (px) - WebView yüksekliği (px) = navigation bar / gesture alanı
+        // Bu fark margin olarak verilirse banner tam altına oturur
+        let margin = 0;
+        if (window.AndroidInterface && window.AndroidInterface.getRealScreenHeight) {
+          try {
+            const density = window.AndroidInterface.getDensity() || window.devicePixelRatio || 1;
+            const realScreenPx = window.AndroidInterface.getRealScreenHeight();
+            const webViewPx = window.innerHeight * density;
+            margin = Math.max(0, Math.round((realScreenPx - webViewPx) / density));
+            console.log('[Banner] density:', density, 'realScreen:', realScreenPx, 'webView:', webViewPx, 'margin:', margin);
+          } catch(e) { margin = 0; }
+        }
+
         await AdMob.showBanner({
           adId: ADMOB_TESTING ? ADMOB_IDS.bannerTest : ADMOB_IDS.banner,
           adSize: 'BANNER',
           position: 'BOTTOM_CENTER',
-          margin: 0,
+          margin: margin,
           isTesting: ADMOB_TESTING,
           npa: false,
         });
 
-        // Banner yüklendikten sonra bazı cihazlarda pozisyon kayıyor
-        // Kısa bekle, kaldır ve yeniden göster — en güvenilir yöntem
-        AdMob.addListener('bannerAdLoaded', async () => {
-          console.log('[AdMob] Banner loaded ✅');
-          await new Promise(r => setTimeout(r, 300));
-          try {
-            await AdMob.removeBanner().catch(() => {});
-            await new Promise(r => setTimeout(r, 200));
-            await AdMob.showBanner({
-              adId: ADMOB_TESTING ? ADMOB_IDS.bannerTest : ADMOB_IDS.banner,
-              adSize: 'BANNER',
-              position: 'BOTTOM_CENTER',
-              margin: 0,
-              isTesting: ADMOB_TESTING,
-              npa: false,
-            });
-          } catch(e) {}
-        });
-
         bannerShowing = true;
-        console.log('[AdMob] Banner shown ✅');
+        console.log('[AdMob] Banner shown ✅ margin:', margin);
       } catch(e) {
         console.warn('[AdMob] Banner error:', e);
         bannerShowing = false;
