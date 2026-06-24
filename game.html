@@ -4322,11 +4322,25 @@
     }
 
     // ===== ADMOB SİSTEMİ =====
-    const ADMOB_IDS = {
-      banner:        'ca-app-pub-2002882488986544/4111726313',
-      interstitial:  'ca-app-pub-2002882488986544/1812866037',
-      rewarded:      'ca-app-pub-2002882488986544/7604689683',
-      // Test ID'leri
+    // Platform tespiti — iOS mu Android mi
+    const _platform = (typeof Capacitor !== 'undefined' && Capacitor.getPlatform) ? Capacitor.getPlatform() : 'web';
+    const _isIOS = _platform === 'ios';
+
+    const ADMOB_IDS = _isIOS ? {
+      // iOS reklam birimleri
+      banner:           'ca-app-pub-2002882488986544/8476114758',
+      interstitial:     'ca-app-pub-2002882488986544/8204652017',
+      rewarded:         'ca-app-pub-2002882488986544/6112841149',
+      // iOS test ID'leri
+      bannerTest:       'ca-app-pub-3940256099942544/2934735716',
+      interstitialTest: 'ca-app-pub-3940256099942544/4411468910',
+      rewardedTest:     'ca-app-pub-3940256099942544/1712485313',
+    } : {
+      // Android reklam birimleri
+      banner:           'ca-app-pub-2002882488986544/4111726313',
+      interstitial:     'ca-app-pub-2002882488986544/1812866037',
+      rewarded:         'ca-app-pub-2002882488986544/7604689683',
+      // Android test ID'leri
       bannerTest:       'ca-app-pub-3940256099942544/6300978111',
       interstitialTest: 'ca-app-pub-3940256099942544/1033173712',
       rewardedTest:     'ca-app-pub-3940256099942544/5224354917',
