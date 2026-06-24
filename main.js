@@ -42,7 +42,7 @@ const THEMES = {
   classic: {
     name: 'Classic',
     colors: { red:'#f87171', blue:'#60a5fa', green:'#34d399', yellow:'#fbbf24', orange:'#fb923c', purple:'#a78bfa' },
-    boardBg: 'transparent', cellBorder: 'rgba(255,255,255,0.04)', glow: false, cellBg: '#2e2a67',
+    boardBg: 'rgba(0,0,0,0.4)', cellBorder: 'rgba(255,255,255,0.04)', glow: false, cellBg: '#2e2a67',
   },
   pastel: {
     name: 'Pastel',
@@ -119,10 +119,10 @@ function applyTheme(themeKey) {
   // Board arka planı
   const boardEl = document.getElementById('board');
   if (boardEl) {
-    boardEl.style.background = t.boardBg || 'transparent';
+    boardEl.style.background = t.boardBg || 'rgba(0,0,0,0.4)';
   }
 
-  // Board hücrelerinin rengi — CSS değişkeni ile
+  // Board hücre rengi — CSS değişkeni ile tüm hücreler güncellenir
   document.documentElement.style.setProperty('--board-cell-bg', t.cellBg || '#2e2a67');
 
   // Glow efekti CSS class
