@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>BlockPop</title>
 
   <!-- PWA -->
@@ -193,9 +193,16 @@
 
   <style>
     /* ===== GENEL ===== */
+    :root {
+      --ad-height: 0px; /* Banner gösterilince JS ile güncellenir */
+    }
+
     body {
       background: linear-gradient(160deg, #1e2a3a 0%, #1a3148 55%, #1a3a5c 100%);
       min-height: 100vh;
+      /* Banner alanı + iOS safe area — içerik banner'ın altına girmesin */
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--ad-height));
+      box-sizing: border-box;
     }
 
     @keyframes blockFloat {
@@ -4382,48 +4389,54 @@
 
     // === BANNER ===
     async function showBanner() {
-      if (!AdMob) return;
       try {
-        await AdMob.removeBanner().catch(() => {});
-        bannerShowing = false;
-
-        // Fullscreen layout oturmasını bekle
-        await new Promise(r => setTimeout(r, 800));
-
-        // Doğru margin hesapla:
-        // Gerçek ekran yüksekliği (px) - WebView yüksekliği (px) = navigation bar / gesture alanı
-        // Bu fark margin olarak verilirse banner tam altına oturur
-        let margin = 0;
-        if (window.AndroidInterface && window.AndroidInterface.getRealScreenHeight) {
-          try {
-            const density = window.AndroidInterface.getDensity() || window.devicePixelRatio || 1;
-            const realScreenPx = window.AndroidInterface.getRealScreenHeight();
-            const webViewPx = window.innerHeight * density;
-            margin = Math.max(0, Math.round((realScreenPx - webViewPx) / density));
-            console.log('[Banner] density:', density, 'realScreen:', realScreenPx, 'webView:', webViewPx, 'margin:', margin);
-          } catch(e) { margin = 0; }
+        // Android: Native banner — MainActivity.java'da fiziksel ekranın en altına sabitli
+        if (!_isIOS) {
+          if (window.AndroidInterface && window.AndroidInterface.showNativeBanner) {
+            window.AndroidInterface.showNativeBanner();
+            bannerShowing = true;
+            // Oyun içeriğini banner'ın üstüne taşı
+            document.documentElement.style.setProperty('--ad-height', '56px');
+            console.log('[Banner] Android native banner shown ✅');
+          }
+          return;
         }
 
+        // iOS: AdMob plugin ile banner göster
+        if (!AdMob) return;
+        await AdMob.removeBanner().catch(() => {});
+        bannerShowing = false;
+        await new Promise(r => setTimeout(r, 800));
         await AdMob.showBanner({
           adId: ADMOB_TESTING ? ADMOB_IDS.bannerTest : ADMOB_IDS.banner,
           adSize: 'ADAPTIVE_BANNER',
           position: 'BOTTOM_CENTER',
-          margin: margin,
+          margin: 0,
           isTesting: ADMOB_TESTING,
           npa: false,
         });
-
         bannerShowing = true;
-        console.log('[AdMob] Banner shown ✅ margin:', margin);
+        // iOS safe area + banner yüksekliği
+        document.documentElement.style.setProperty('--ad-height', '56px');
+        console.log('[Banner] iOS banner shown ✅');
       } catch(e) {
-        console.warn('[AdMob] Banner error:', e);
+        console.warn('[Banner] error:', e);
         bannerShowing = false;
       }
     }
 
     async function hideBanner() {
-      if (!AdMob || !bannerShowing) return;
       try {
+        // Banner kapanınca padding'i sıfırla
+        document.documentElement.style.setProperty('--ad-height', '0px');
+        if (!_isIOS) {
+          if (window.AndroidInterface && window.AndroidInterface.hideNativeBanner) {
+            window.AndroidInterface.hideNativeBanner();
+          }
+          bannerShowing = false;
+          return;
+        }
+        if (!AdMob || !bannerShowing) return;
         await AdMob.hideBanner();
         bannerShowing = false;
       } catch(e) {}
