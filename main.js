@@ -1991,6 +1991,12 @@ function setupPowerups() {
         selectedPiece.classList.remove('selected');
         selectedPiece = null; selectedShape = null;
       }
+      // Banner: clearLine modu açıkken gizle, kapanınca göster
+      if (clearLineMode) {
+        if (typeof window.hideAdMobBanner === 'function') window.hideAdMobBanner();
+      } else {
+        if (typeof window.showAdMobBanner === 'function') setTimeout(window.showAdMobBanner, 300);
+      }
       renderBoard();
       playSndWhoosh();
       btnClearRow.classList.add('used-flash');
@@ -2803,6 +2809,9 @@ function showLinePicker(rowY, colX) {
   const existing = document.getElementById('line-picker');
   if (existing) existing.remove();
 
+  // Banner'ı gizle — native view picker'ın üstüne çıkıyor
+  if (typeof window.hideAdMobBanner === 'function') window.hideAdMobBanner();
+
   clearAllLineHighlights();
 
   // Satır + sütun highlight göster
@@ -2864,17 +2873,20 @@ function showLinePicker(rowY, colX) {
     picker.remove();
     clearAllLineHighlights();
     clearLineAt('row', rowY, colX);
+    if (typeof window.showAdMobBanner === 'function') setTimeout(window.showAdMobBanner, 300);
   };
   btnCol.onclick = () => {
     picker.remove();
     clearAllLineHighlights();
     clearLineAt('col', rowY, colX);
+    if (typeof window.showAdMobBanner === 'function') setTimeout(window.showAdMobBanner, 300);
   };
   btnCancel.onclick = () => {
     picker.remove();
     clearAllLineHighlights();
     clearLineMode = false;
     updatePowerupUI();
+    if (typeof window.showAdMobBanner === 'function') setTimeout(window.showAdMobBanner, 300);
   };
 
   picker.appendChild(btnRow);
