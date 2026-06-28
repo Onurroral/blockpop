@@ -4163,6 +4163,27 @@
       });
     }
 
+    // ===== OYUN EKRANI OTOMATİK ÖLÇEKLEME =====
+    // Tüm ekran boyutlarında oyunu otomatik küçült/büyüt
+    const GAME_BASE_W = 390; // Baz genişlik (iPhone 14)
+    const GAME_BASE_H = 844; // Baz yükseklik (iPhone 14)
+
+    function scaleGame() {
+      const gc = document.getElementById('game-container');
+      if (!gc) return;
+      const scaleX = window.innerWidth / GAME_BASE_W;
+      const scaleY = window.innerHeight / GAME_BASE_H;
+      const scale = Math.min(scaleX, scaleY, 1.0); // 1.0 max — büyütme
+      gc.style.transform = `translateX(-50%) scale(${scale})`;
+      gc.style.transformOrigin = 'top center';
+      // Ölçeklenmiş container'ın gerçek yüksekliğini body'ye bildir
+      const scaledH = GAME_BASE_H * scale;
+      document.body.style.setProperty('--game-scaled-h', scaledH + 'px');
+    }
+
+    scaleGame();
+    window.addEventListener('resize', scaleGame);
+
     // ===== DAILY CHALLENGE UI =====
     function updateDailyCardUI() {
       // getDailyChallenge ve getDailyStatus main.js'de tanımlı
