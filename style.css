@@ -89,11 +89,10 @@ body::after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   width: 390px;
   max-width: 390px;
-  padding: 0 10px;
-  padding-top: 6px;
+  padding: 6px 4px 0;
   box-sizing: border-box;
   height: 844px;
   overflow: hidden;
@@ -184,8 +183,8 @@ body::after {
    ======================================== */
 #board {
   width: 100%;
-  height: 370px;
-  max-width: 370px;
+  height: 382px;
+  max-width: 390px;
   aspect-ratio: unset;
   background: transparent;
   border: none;
@@ -406,7 +405,7 @@ body::after {
   gap: 6px;
   justify-content: center;
   align-items: center;
-  height: 100px;
+  height: 122px;
   flex-shrink: 0;
   touch-action: none;
   width: 100%;
@@ -419,7 +418,7 @@ body::after {
   flex: 1;
   max-width: none;
   flex: 1;
-  height: 110px;
+  height: 122px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -484,13 +483,13 @@ body::after {
   align-items: center;
   padding: 0;
   margin-top: 0;
-  height: 110px;
+  height: 160px;
 }
 
 #powerups button {
   position: relative;
   flex: 1;
-  height: 80px;
+  height: 150px;
   border-radius: 14px;
   border: 1.5px solid transparent;
   background: transparent;
@@ -513,8 +512,8 @@ body::after {
 
 .pu-icon {
   width: 100%;
-  height: 62px;
-  max-height: 52px;
+  height: 110px;
+  max-height: 86px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,15 +523,15 @@ body::after {
 .pu-icon img {
   width: auto;
   height: 100%;
-  max-width: 48px;
-  max-height: 48px;
+  max-width: 76px;
+  max-height: 76px;
   object-fit: contain;
 }
 
 .pu-label {
   width: 100%;
   text-align: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
   font-family: 'Nunito', sans-serif;
   color: #fff;
