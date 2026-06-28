@@ -4167,18 +4167,26 @@
     // Tüm ekran boyutlarında oyunu otomatik küçült/büyüt
     const GAME_BASE_W = 390; // Baz genişlik (iPhone 14)
     const GAME_BASE_H = 844; // Baz yükseklik (iPhone 14)
+    const AD_HEIGHT = 56;    // Banner reklam alanı (px)
 
     function scaleGame() {
       const gc = document.getElementById('game-container');
       if (!gc) return;
-      const scaleX = window.innerWidth / GAME_BASE_W;
-      const scaleY = window.innerHeight / GAME_BASE_H;
-      const scale = Math.min(scaleX, scaleY, 1.0); // 1.0 max — büyütme
+
+      // Kullanılabilir alan = ekran - banner alanı
+      const availW = window.innerWidth;
+      const availH = window.innerHeight - AD_HEIGHT;
+
+      const scaleX = availW / GAME_BASE_W;
+      const scaleY = availH / GAME_BASE_H;
+      const scale = Math.min(scaleX, scaleY, 1.0); // max 1.0, büyütme yok
+
       gc.style.transform = `translateX(-50%) scale(${scale})`;
       gc.style.transformOrigin = 'top center';
-      // Ölçeklenmiş container'ın gerçek yüksekliğini body'ye bildir
-      const scaledH = GAME_BASE_H * scale;
-      document.body.style.setProperty('--game-scaled-h', scaledH + 'px');
+
+      // CSS değişkenini güncelle
+      document.body.style.setProperty('--game-scaled-h', (GAME_BASE_H * scale) + 'px');
+      document.documentElement.style.setProperty('--ad-height', AD_HEIGHT + 'px');
     }
 
     scaleGame();
