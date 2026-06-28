@@ -110,7 +110,7 @@ body::after {
   width: 100%;
   gap: 0;
   padding-top: 0;
-  height: 8vh;
+  height: 68px;
   justify-content: center;
   margin-bottom: 0;
 }
@@ -146,7 +146,7 @@ body::after {
 .topbar-center {
   width: 100%;
   text-align: center;
-  height: 10vh;
+  height: 84px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -154,7 +154,7 @@ body::after {
 }
 
 #score {
-  font-size: clamp(36px, 8vh, 56px);
+  font-size: clamp(28px, 4.5vw, 52px);
   font-weight: 900;
   color: var(--text-1);
   line-height: 1;
@@ -184,8 +184,8 @@ body::after {
    ======================================== */
 #board {
   width: 100%;
-  height: 42vh;
-  max-width: 42vh;
+  height: 354px;
+  max-width: 354px;
   aspect-ratio: unset;
   background: transparent;
   border: none;
@@ -406,7 +406,7 @@ body::after {
   gap: 6px;
   justify-content: center;
   align-items: center;
-  height: 14vh;
+  height: 118px;
   flex-shrink: 0;
   touch-action: none;
   width: 100%;
@@ -419,7 +419,7 @@ body::after {
   flex: 1;
   max-width: none;
   flex: 1;
-  height: 13vh;
+  height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -484,13 +484,13 @@ body::after {
   align-items: center;
   padding: 0;
   margin-top: 0;
-  height: 13vh;
+  height: 110px;
 }
 
 #powerups button {
   position: relative;
   flex: 1;
-  height: 12vh;
+  height: 100px;
   border-radius: 14px;
   border: 1.5px solid transparent;
   background: transparent;
@@ -513,7 +513,7 @@ body::after {
 
 .pu-icon {
   width: 100%;
-  height: calc(12vh - 18px);
+  height: 82px;
   max-height: 52px;
   display: flex;
   align-items: center;
