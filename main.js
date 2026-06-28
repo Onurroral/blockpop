@@ -2070,7 +2070,7 @@ function updatePowerupUI() {
       btn.disabled = false;
       btn.classList.toggle('active', !!mode);
       btn.dataset.xpMode = 'false';
-      if (badge) { badge.textContent = charges; badge.classList.remove('hidden','buy-mode'); }
+      if (badge) { badge.textContent = ''; badge.classList.add('hidden'); }
       if (lbl) { lbl.textContent = '×' + charges; lbl.className = 'pu-label'; }
     } else if (!isGameOver) {
       btn.disabled = false;
@@ -2809,9 +2809,7 @@ function showLinePicker(rowY, colX) {
   const existing = document.getElementById('line-picker');
   if (existing) existing.remove();
 
-  // Banner'ı gizle — native view picker'ın üstüne çıkıyor
-  if (typeof window.hideAdMobBanner === 'function') window.hideAdMobBanner();
-
+  // Banner gizlenmez — picker powerup'ların üstünde çıkar, banner kalır
   clearAllLineHighlights();
 
   // Satır + sütun highlight göster
@@ -2820,24 +2818,26 @@ function showLinePicker(rowY, colX) {
   // Mini picker UI oluştur
   const picker = document.createElement('div');
   picker.id = 'line-picker';
-  // powerups'ın tam altına, ekran genişliğine göre ortala
+  // Powerup'ların hemen üstüne konumlandır
   const puEl = document.getElementById('powerups');
-  const puBottom = puEl ? puEl.getBoundingClientRect().bottom : window.innerHeight - 160;
+  const puRect = puEl ? puEl.getBoundingClientRect() : null;
+  const topPos = puRect ? puRect.top - 60 : window.innerHeight - 220;
 
   picker.style.cssText = `
     position:fixed;
-    top:${puBottom + 10}px;
+    top:${topPos}px;
     left:0;
     right:0;
     margin:0 auto;
     width:fit-content;
     background:rgba(20,20,40,0.97);
-    border:1px solid rgba(167,139,250,0.3);
+    border:1px solid rgba(167,139,250,0.4);
     border-radius:16px; padding:8px 12px;
     display:flex; gap:8px; z-index:9999;
     white-space:nowrap;
     max-width:calc(100vw - 32px);
     box-sizing:border-box;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     animation:gameoverPop 0.2s cubic-bezier(0.2,1.3,0.4,1) both;
   `;
 
@@ -2873,20 +2873,17 @@ function showLinePicker(rowY, colX) {
     picker.remove();
     clearAllLineHighlights();
     clearLineAt('row', rowY, colX);
-    if (typeof window.showAdMobBanner === 'function') setTimeout(window.showAdMobBanner, 300);
   };
   btnCol.onclick = () => {
     picker.remove();
     clearAllLineHighlights();
     clearLineAt('col', rowY, colX);
-    if (typeof window.showAdMobBanner === 'function') setTimeout(window.showAdMobBanner, 300);
   };
   btnCancel.onclick = () => {
     picker.remove();
     clearAllLineHighlights();
     clearLineMode = false;
     updatePowerupUI();
-    if (typeof window.showAdMobBanner === 'function') setTimeout(window.showAdMobBanner, 300);
   };
 
   picker.appendChild(btnRow);
