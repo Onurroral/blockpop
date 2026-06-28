@@ -84,18 +84,20 @@ body::after {
   top: 0;
   left: 50%;
   transform: translateX(-50%);
+  transform-origin: top center;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  width: 100%;
-  max-width: 400px;
+  width: 390px;
+  max-width: 390px;
   padding: 0 10px;
   padding-top: 6px;
   box-sizing: border-box;
-  height: 100vh;
+  height: 844px;
   overflow: hidden;
+  justify-content: space-between;
 }
 
 /* ========================================
