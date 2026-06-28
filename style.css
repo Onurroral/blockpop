@@ -512,6 +512,7 @@ body::after {
 .pu-icon {
   width: 100%;
   height: calc(12vh - 18px);
+  max-height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -519,8 +520,10 @@ body::after {
 }
 
 .pu-icon img {
-  width: 100%;
+  width: auto;
   height: 100%;
+  max-width: 48px;
+  max-height: 48px;
   object-fit: contain;
 }
 
