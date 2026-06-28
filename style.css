@@ -89,12 +89,12 @@ body::after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   width: 390px;
   max-width: 390px;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
   box-sizing: border-box;
-  height: 844px;
+  height: 700px;
   overflow: hidden;
   justify-content: space-evenly;
 }
@@ -405,7 +405,7 @@ body::after {
   gap: 6px;
   justify-content: center;
   align-items: center;
-  height: 122px;
+  height: 110px;
   flex-shrink: 0;
   touch-action: none;
   width: 100%;
@@ -418,7 +418,7 @@ body::after {
   flex: 1;
   max-width: none;
   flex: 1;
-  height: 122px;
+  height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -483,13 +483,13 @@ body::after {
   align-items: center;
   padding: 0;
   margin-top: 0;
-  height: 160px;
+  height: 96px;
 }
 
 #powerups button {
   position: relative;
   flex: 1;
-  height: 150px;
+  height: 86px;
   border-radius: 14px;
   border: 1.5px solid transparent;
   background: transparent;
@@ -512,8 +512,8 @@ body::after {
 
 .pu-icon {
   width: 100%;
-  height: 110px;
-  max-height: 86px;
+  height: 64px;
+  max-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -523,15 +523,15 @@ body::after {
 .pu-icon img {
   width: auto;
   height: 100%;
-  max-width: 76px;
-  max-height: 76px;
+  max-width: 52px;
+  max-height: 52px;
   object-fit: contain;
 }
 
 .pu-label {
   width: 100%;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
   font-family: 'Nunito', sans-serif;
   color: #fff;
