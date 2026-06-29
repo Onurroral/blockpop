@@ -92,7 +92,7 @@ body::after {
   gap: 4px;
   width: 390px;
   max-width: 390px;
-  padding: 4px 0 0;
+  padding: 4px 2px 0;
   box-sizing: border-box;
   height: 700px;
   overflow: hidden;
@@ -183,7 +183,7 @@ body::after {
    ======================================== */
 #board {
   width: 100%;
-  height: 390px;
+  height: 386px;
   max-width: 390px;
   aspect-ratio: unset;
   background: transparent;
