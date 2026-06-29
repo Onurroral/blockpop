@@ -183,8 +183,8 @@ body::after {
    ======================================== */
 #board {
   width: 100%;
-  height: 382px;
-  max-width: 390px;
+  height: 439px;
+  max-width: 449px;
   aspect-ratio: unset;
   background: transparent;
   border: none;
@@ -405,7 +405,7 @@ body::after {
   gap: 6px;
   justify-content: center;
   align-items: center;
-  height: 122px;
+  height: 140px;
   flex-shrink: 0;
   touch-action: none;
   width: 100%;
@@ -489,7 +489,7 @@ body::after {
 #powerups button {
   position: relative;
   flex: 1;
-  height: 150px;
+  height: 173px;
   border-radius: 14px;
   border: 1.5px solid transparent;
   background: transparent;
