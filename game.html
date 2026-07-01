@@ -1833,16 +1833,39 @@
         <div class="streak-day" id="sd5"><div class="sd-icon">💎</div><div class="sd-lbl" id="sdlbl5">30.gün</div><div class="sd-val">50</div></div>
       </div>
 
-      <!-- Günlük görev -->
-      <div class="daily-task-box">
-        <div id="dailyTaskLabel" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">🎯 Günlük Görev</div>
+      <!-- Günlük görevler — 3 adet -->
+      <div id="dailyTaskLabel" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">🎯 Günlük Görevler</div>
+
+      <div id="dailyTask0" class="daily-task-box" style="margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <span id="modalTaskIcon" style="font-size:28px;">🎯</span>
+          <span id="modalTaskIcon0" style="font-size:24px;">🎯</span>
           <div style="flex:1;">
-            <div id="modalTaskDesc" style="font-size:15px;font-weight:800;color:#fff;font-family:'Nunito',sans-serif;">Yükleniyor...</div>
-            <div id="modalTaskXP" style="font-size:12px;color:#60a5fa;font-weight:700;margin-top:2px;">+80 💎 ödül</div>
+            <div id="modalTaskDesc0" style="font-size:14px;font-weight:800;color:#fff;font-family:'Nunito',sans-serif;">Yükleniyor...</div>
+            <div id="modalTaskXP0" style="font-size:11px;color:#60a5fa;font-weight:700;margin-top:2px;">+? 💎 ödül</div>
           </div>
-          <div id="modalTaskDone" style="display:none;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:50px;padding:6px 14px;font-size:12px;font-weight:800;color:#34d399;">✓ <span id="modalTaskDoneText">Tamam</span></div>
+          <div id="modalTaskDone0" style="display:none;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:50px;padding:5px 12px;font-size:11px;font-weight:800;color:#34d399;">✓ Tamam</div>
+        </div>
+      </div>
+
+      <div id="dailyTask1" class="daily-task-box" style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span id="modalTaskIcon1" style="font-size:24px;">🎯</span>
+          <div style="flex:1;">
+            <div id="modalTaskDesc1" style="font-size:14px;font-weight:800;color:#fff;font-family:'Nunito',sans-serif;">Yükleniyor...</div>
+            <div id="modalTaskXP1" style="font-size:11px;color:#60a5fa;font-weight:700;margin-top:2px;">+? 💎 ödül</div>
+          </div>
+          <div id="modalTaskDone1" style="display:none;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:50px;padding:5px 12px;font-size:11px;font-weight:800;color:#34d399;">✓ Tamam</div>
+        </div>
+      </div>
+
+      <div id="dailyTask2" class="daily-task-box">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span id="modalTaskIcon2" style="font-size:24px;">🎯</span>
+          <div style="flex:1;">
+            <div id="modalTaskDesc2" style="font-size:14px;font-weight:800;color:#fff;font-family:'Nunito',sans-serif;">Yükleniyor...</div>
+            <div id="modalTaskXP2" style="font-size:11px;color:#60a5fa;font-weight:700;margin-top:2px;">+? 💎 ödül</div>
+          </div>
+          <div id="modalTaskDone2" style="display:none;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);border-radius:50px;padding:5px 12px;font-size:11px;font-weight:800;color:#34d399;">✓ Tamam</div>
         </div>
       </div>
 
@@ -2531,7 +2554,6 @@
       const status = typeof getDailyStatus === 'function' ? getDailyStatus() : {};
       const today  = typeof getTodayStr === 'function' ? getTodayStr() : '';
       const streak = status.streak || 0;
-      const done   = status.lastDate === today && status.completed;
 
       // Streak sayısı
       document.getElementById('modalStreakNum').textContent = streak;
@@ -2551,15 +2573,23 @@
         if (el) el.classList.toggle('reached', streak >= m);
       });
 
-      // Günlük görev
-      const ch = typeof getDailyChallenge === 'function' ? getDailyChallenge() : null;
-      if (ch) {
-        document.getElementById('modalTaskIcon').textContent = ch.icon;
-        document.getElementById('modalTaskDesc').textContent = (currentLang === 'en' && ch.descEn) ? ch.descEn : ch.desc;
-        document.getElementById('modalTaskXP').textContent  = '+' + ch.xp + ' ' + t('rewardLabel');
-        const doneEl = document.getElementById('modalTaskDone');
-        if (doneEl) doneEl.style.display = done ? 'block' : 'none';
-      }
+      // 3 günlük görevi göster
+      const challenges = typeof getDailyChallenges === 'function' ? getDailyChallenges() : [];
+      challenges.forEach((ch, idx) => {
+        const iconEl = document.getElementById(`modalTaskIcon${idx}`);
+        const descEl = document.getElementById(`modalTaskDesc${idx}`);
+        const xpEl   = document.getElementById(`modalTaskXP${idx}`);
+        const doneEl = document.getElementById(`modalTaskDone${idx}`);
+        const taskEl = document.getElementById(`dailyTask${idx}`);
+
+        if (iconEl) iconEl.textContent = ch.icon;
+        if (descEl) descEl.textContent = (currentLang === 'en' && ch.descEn) ? ch.descEn : ch.desc;
+        if (xpEl)   xpEl.textContent   = '+' + ch.xp + ' 💎 ödül';
+
+        const done = status.lastDate === today && status.completedTasks && status.completedTasks[idx];
+        if (doneEl) doneEl.style.display = done ? 'flex' : 'none';
+        if (taskEl) taskEl.style.opacity = done ? '0.5' : '1';
+      });
 
       document.getElementById('dailyModal').classList.remove('hidden');
     }
@@ -4194,26 +4224,35 @@
 
     // ===== DAILY CHALLENGE UI =====
     function updateDailyCardUI() {
-      // getDailyChallenge ve getDailyStatus main.js'de tanımlı
-      if (typeof getDailyChallenge !== 'function') return;
+      if (typeof getDailyChallenges !== 'function') return;
 
-      const challenge = getDailyChallenge();
-      const status    = getDailyStatus();
-      const today     = getTodayStr();
+      const challenges = getDailyChallenges();
+      const status     = getDailyStatus();
+      const today      = getTodayStr();
+      const lang       = (typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en' : 'tr';
 
-      const iconEl  = document.getElementById('dailyChallengeIcon');
-      const descEl  = document.getElementById('dailyChallengeDesc');
-      const xpEl    = document.getElementById('dailyChallengeXP');
-      const doneEl  = document.getElementById('dailyDone');
-      const streak  = document.getElementById('dailyStreak');
+      // Streak güncelle
+      const streak = document.getElementById('modalStreakNum');
+      if (streak) streak.textContent = status.streak || 0;
 
-      if (iconEl)  iconEl.textContent  = challenge.icon;
-      if (descEl)  descEl.textContent  = challenge.desc;
-      if (xpEl)    xpEl.textContent    = `+${challenge.xp} XP`;
-      if (streak)  streak.textContent  = `🔥 ${status.streak || 0} gün`;
+      // 3 görevi güncelle
+      challenges.forEach((ch, idx) => {
+        const iconEl = document.getElementById(`modalTaskIcon${idx}`);
+        const descEl = document.getElementById(`modalTaskDesc${idx}`);
+        const xpEl   = document.getElementById(`modalTaskXP${idx}`);
+        const doneEl = document.getElementById(`modalTaskDone${idx}`);
 
-      const done = status.lastDate === today && status.completed;
-      if (doneEl) doneEl.style.display = done ? 'block' : 'none';
+        if (iconEl) iconEl.textContent = ch.icon;
+        if (descEl) descEl.textContent = (lang === 'en' && ch.descEn) ? ch.descEn : ch.desc;
+        if (xpEl)   xpEl.textContent   = `+${ch.xp} 💎 ödül`;
+
+        const done = status.lastDate === today && status.completedTasks && status.completedTasks[idx];
+        if (doneEl) doneEl.style.display = done ? 'flex' : 'none';
+
+        // Tamamlananları soluk göster
+        const taskEl = document.getElementById(`dailyTask${idx}`);
+        if (taskEl) taskEl.style.opacity = done ? '0.5' : '1';
+      });
 
       // Tamamlandıysa kart rengi değişsin
       const card = document.getElementById('dailyCard');
