@@ -784,20 +784,20 @@ function updateAchievementStats(gameScore, blocksPlaced, linesCleared, comboMax)
 // === DAILY CHALLENGE + STREAK SİSTEMİ ===
 
 const DAILY_CHALLENGES = [
-  { id:'score_5000',   icon:'🎯', desc:'5.000 puan kazan',         descEn:'Earn 5,000 points',           check: (s,b,l,c) => s >= 5000,   xp: 5  },
-  { id:'score_10000',  icon:'⭐', desc:'10.000 puan kazan',        descEn:'Earn 10,000 points',          check: (s,b,l,c) => s >= 10000,  xp: 8  },
-  { id:'score_20000',  icon:'🏅', desc:'20.000 puan kazan',        descEn:'Earn 20,000 points',          check: (s,b,l,c) => s >= 20000,  xp: 12 },
-  { id:'score_40000',  icon:'💎', desc:'40.000 puan kazan',        descEn:'Earn 40,000 points',          check: (s,b,l,c) => s >= 40000,  xp: 18 },
-  { id:'combo_3',      icon:'🔥', desc:'3x combo yap',             descEn:'Get a 3x combo',              check: (s,b,l,c) => c >= 3,      xp: 5  },
-  { id:'combo_5',      icon:'⚡', desc:'5x combo yap',             descEn:'Get a 5x combo',              check: (s,b,l,c) => c >= 5,      xp: 8  },
-  { id:'combo_7',      icon:'💥', desc:'7x combo yap',             descEn:'Get a 7x combo',              check: (s,b,l,c) => c >= 7,      xp: 15 },
-  { id:'lines_10',     icon:'💫', desc:'10 satır/sütun temizle',   descEn:'Clear 10 lines/cols',         check: (s,b,l,c) => l >= 10,     xp: 7  },
-  { id:'lines_20',     icon:'🌟', desc:'20 satır/sütun temizle',   descEn:'Clear 20 lines/cols',         check: (s,b,l,c) => l >= 20,     xp: 12 },
-  { id:'blocks_100',   icon:'🧱', desc:'100 blok yerleştir',       descEn:'Place 100 blocks',            check: (s,b,l,c) => b >= 100,    xp: 6  },
-  { id:'blocks_200',   icon:'🏗️', desc:'200 blok yerleştir',      descEn:'Place 200 blocks',            check: (s,b,l,c) => b >= 200,    xp: 10 },
-  { id:'hard_mode',    icon:'💀', desc:'Zor modda 10.000 puan',    descEn:'10,000 pts in Hard mode',     check: (s,b,l,c) => s >= 10000 && window.currentGameMode === 'hard', xp: 15 },
-  { id:'time_mode',    icon:'⏱️', desc:'Zaman modunda 5.000 puan', descEn:'5,000 pts in Time mode',     check: (s,b,l,c) => s >= 5000 && window.currentGameMode === 'timeattack', xp: 10 },
-  { id:'score_no_pu',  icon:'🗡️', desc:'Powerupsuz 20.000 puan',  descEn:'20,000 pts without powerups', check: (s,b,l,c) => s >= 20000 && window.currentGameMode === 'hard', xp: 20 },
+  { id:'score_10000',  icon:'🎯', desc:'10.000 puan kazan',        descEn:'Earn 10,000 points',          check: (s,b,l,c) => s >= 10000,  xp: 8  },
+  { id:'score_20000',  icon:'⭐', desc:'20.000 puan kazan',        descEn:'Earn 20,000 points',          check: (s,b,l,c) => s >= 20000,  xp: 12 },
+  { id:'score_40000',  icon:'🏅', desc:'40.000 puan kazan',        descEn:'Earn 40,000 points',          check: (s,b,l,c) => s >= 40000,  xp: 18 },
+  { id:'score_70000',  icon:'💎', desc:'70.000 puan kazan',        descEn:'Earn 70,000 points',          check: (s,b,l,c) => s >= 70000,  xp: 25 },
+  { id:'combo_5',      icon:'🔥', desc:'5x combo yap',             descEn:'Get a 5x combo',              check: (s,b,l,c) => c >= 5,      xp: 8  },
+  { id:'combo_8',      icon:'⚡', desc:'8x combo yap',             descEn:'Get an 8x combo',             check: (s,b,l,c) => c >= 8,      xp: 15 },
+  { id:'combo_12',     icon:'💥', desc:'12x combo yap',            descEn:'Get a 12x combo',             check: (s,b,l,c) => c >= 12,     xp: 22 },
+  { id:'lines_20',     icon:'💫', desc:'20 satır/sütun temizle',   descEn:'Clear 20 lines/cols',         check: (s,b,l,c) => l >= 20,     xp: 10 },
+  { id:'lines_40',     icon:'🌟', desc:'40 satır/sütun temizle',   descEn:'Clear 40 lines/cols',         check: (s,b,l,c) => l >= 40,     xp: 18 },
+  { id:'blocks_200',   icon:'🧱', desc:'200 blok yerleştir',       descEn:'Place 200 blocks',            check: (s,b,l,c) => b >= 200,    xp: 10 },
+  { id:'blocks_400',   icon:'🏗️', desc:'400 blok yerleştir',      descEn:'Place 400 blocks',            check: (s,b,l,c) => b >= 400,    xp: 16 },
+  { id:'hard_mode',    icon:'💀', desc:'Zor modda 20.000 puan',    descEn:'20,000 pts in Hard mode',     check: (s,b,l,c) => s >= 20000 && window.currentGameMode === 'hard', xp: 22 },
+  { id:'time_mode',    icon:'⏱️', desc:'Zaman modunda 15.000 puan',descEn:'15,000 pts in Time mode',     check: (s,b,l,c) => s >= 15000 && window.currentGameMode === 'timeattack', xp: 18 },
+  { id:'score_no_pu',  icon:'🗡️', desc:'Powerupsuz 30.000 puan',  descEn:'30,000 pts without powerups', check: (s,b,l,c) => s >= 30000 && window.currentGameMode === 'hard', xp: 28 },
 ];
 
 function getTodayStr() {
@@ -806,16 +806,28 @@ function getTodayStr() {
 }
 
 function getDailyChallenge() {
-  // Günün challengei — tarihe göre sabit seçim
+  // Geriye dönük uyumluluk için tek görev
+  return getDailyChallenges()[0];
+}
+
+function getDailyChallenges() {
+  // Günün 3 görevi — tarihe göre sabit seçim
   const d = new Date();
   const seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
-  const idx = seed % DAILY_CHALLENGES.length;
-  return DAILY_CHALLENGES[idx];
+  const len = DAILY_CHALLENGES.length;
+  // 3 farklı görev seç (üst üste gelmeyecek şekilde)
+  const i1 = seed % len;
+  const i2 = (seed * 3 + 7) % len === i1 ? (seed * 3 + 8) % len : (seed * 3 + 7) % len;
+  const i3 = ((seed * 7 + 13) % len === i1 || (seed * 7 + 13) % len === i2) ? (seed * 7 + 14) % len : (seed * 7 + 13) % len;
+  return [DAILY_CHALLENGES[i1], DAILY_CHALLENGES[i2], DAILY_CHALLENGES[i3]];
 }
 
 function getDailyStatus() {
   const raw = localStorage.getItem('bp_daily');
-  return raw ? JSON.parse(raw) : { lastDate: '', completed: false, streak: 0, lastStreakDate: '' };
+  const status = raw ? JSON.parse(raw) : { lastDate: '', completed: false, streak: 0, lastStreakDate: '' };
+  // 3 görev için completedTasks array'i ekle (geriye dönük uyumluluk)
+  if (!status.completedTasks) status.completedTasks = [false, false, false];
+  return status;
 }
 
 function saveDailyStatus(status) {
@@ -864,16 +876,39 @@ window.getLoginBonusForStreak = getLoginBonusForStreak;
 function checkDailyChallenge(score, blocks, lines, combo) {
   const today = getTodayStr();
   const status = getDailyStatus();
-  if (status.lastDate === today && status.completed) return;
-  const challenge = getDailyChallenge();
-  if (!challenge.check(score, blocks, lines, combo)) return;
-  saveDailyStatus({ lastDate: today, completed: true, streak: status.streak || 0, lastStreakDate: status.lastStreakDate || today });
-  const xpBonus = challenge.xp + ((status.streak || 0) * 10);
-  if (typeof window.addXPDirect === 'function') window.addXPDirect(xpBonus);
-  if (typeof window.addDiamonds === 'function') window.addDiamonds(challenge.xp);
-  showDailyCompleteToast(challenge, status.streak || 0, challenge.xp);
-  if (typeof playSndZing === 'function') playSndZing();
-  if (typeof window.updateDailyBtnDot === 'function') window.updateDailyBtnDot();
+  const challenges = getDailyChallenges();
+
+  // Aynı gün içinde birden fazla görev tek seferde tamamlanabilir (örn. 7x combo hem 3x hem 7x şartını sağlar)
+  // Bu yüzden completedTasks'ı döngü boyunca canlı (mutable) tutuyoruz, her iterasyon öncekini korumalı
+  const workingCompleted = [...(status.completedTasks || [false, false, false])];
+  let anyCompleted = false;
+
+  challenges.forEach((challenge, idx) => {
+    // Bu görev zaten tamamlandıysa atla
+    if (status.lastDate === today && workingCompleted[idx]) return;
+    // Görev tamamlandı mı kontrol et
+    if (!challenge.check(score, blocks, lines, combo)) return;
+
+    // Görev tamamlandı!
+    workingCompleted[idx] = true;
+    anyCompleted = true;
+
+    if (typeof window.addDiamonds === 'function') window.addDiamonds(challenge.xp);
+    showDailyCompleteToast(challenge, status.streak || 0, challenge.xp);
+    if (typeof playSndZing === 'function') playSndZing();
+  });
+
+  if (anyCompleted) {
+    const allDone = workingCompleted.every(Boolean);
+    saveDailyStatus({
+      lastDate: today,
+      completed: allDone,
+      completedTasks: workingCompleted,
+      streak: status.streak || 0,
+      lastStreakDate: status.lastStreakDate || today
+    });
+    if (typeof window.updateDailyBtnDot === 'function') window.updateDailyBtnDot();
+  }
 }
 
 function showDailyCompleteToast(challenge, streak, diamonds) {
