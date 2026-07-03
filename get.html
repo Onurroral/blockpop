@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlockPop - Block Puzzle Game</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(160deg, #14162e 0%, #191c3a 55%, #171a34 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+  .logo { font-size: 48px; margin-bottom: 12px; }
+  h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+  p { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 28px; }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: #60a5fa;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 24px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn {
+    display: block;
+    width: 260px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 14px;
+    padding: 14px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  #manual { display: none; }
+</style>
+</head>
+<body>
+  <div class="logo">🧩</div>
+  <h1>BlockPop</h1>
+  <div class="spinner" id="spinner"></div>
+  <p id="statusText">Mağazaya yönlendiriliyorsun...</p>
+
+  <div id="manual">
+    <a class="btn" href="https://apps.apple.com/tr/app/blockpop-block-puzzle-game/id6773895746">🍎 App Store'da Aç</a>
+    <a class="btn" href="https://play.google.com/store/apps/details?id=com.onur.blockpop">▶️ Google Play'de Aç</a>
+  </div>
+
+<script>
+  var APP_STORE_URL = "https://apps.apple.com/tr/app/blockpop-block-puzzle-game/id6773895746";
+  var PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.onur.blockpop";
+
+  var ua = navigator.userAgent || navigator.vendor || window.opera;
+  var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  var isAndroid = /android/i.test(ua);
+
+  if (isIOS) {
+    document.getElementById('statusText').textContent = "App Store'a yönlendiriliyorsun...";
+    setTimeout(function() { window.location.href = APP_STORE_URL; }, 600);
+  } else if (isAndroid) {
+    document.getElementById('statusText').textContent = "Google Play'e yönlendiriliyorsun...";
+    setTimeout(function() { window.location.href = PLAY_STORE_URL; }, 600);
+  } else {
+    // Masaüstü veya tanınmayan cihaz - iki seçeneği göster
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('statusText').textContent = "Hangi mağazadan indirmek istersin?";
+    document.getElementById('manual').style.display = 'block';
+  }
+</script>
+</body>
+</html>
