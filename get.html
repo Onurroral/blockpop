@@ -59,7 +59,7 @@
 </style>
 </head>
 <body>
-  <img class="logo" src="icons/icon-512.png" alt="BlockPop">
+  <img class="logo" id="logoImg" src="assets/icons/icon-512.png" alt="BlockPop">
   <div class="brand">BlockPop</div>
   <h1>Block Puzzle Game</h1>
   <div class="spinner" id="spinner"></div>
@@ -71,6 +71,24 @@
   </div>
 
 <script>
+  // Logo yolu bulunamazsa alternatif yolları dene
+  var logoImg = document.getElementById('logoImg');
+  var logoPaths = [
+    'assets/icons/icon-512.png',
+    'icons/icon-512.png',
+    'www/assets/icons/icon-512.png',
+    'icon-512.png'
+  ];
+  var logoIdx = 0;
+  logoImg.onerror = function() {
+    logoIdx++;
+    if (logoIdx < logoPaths.length) {
+      logoImg.src = logoPaths[logoIdx];
+    } else {
+      logoImg.style.display = 'none';
+    }
+  };
+
   var APP_STORE_URL = "https://apps.apple.com/tr/app/blockpop-block-puzzle-game/id6773895746";
   var PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.onur.blockpop";
 
