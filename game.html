@@ -4243,7 +4243,7 @@
         const currentVersion = info.version; // örn "1.2.0"
         const platform = (typeof Capacitor !== 'undefined' && Capacitor.getPlatform) ? Capacitor.getPlatform() : 'android';
 
-        const res = await fetch('https://onurroral.github.io/blockpop/version.json', { cache: 'no-store' });
+        const res = await fetch('https://onurroral.github.io/blockpop/version.json?t=' + Date.now(), { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
 
