@@ -5198,7 +5198,7 @@
         showShopToast(g('İşleniyor... ⏳', 'Processing... ⏳'));
 
         const offeringsResult = await Purchases.getOfferings();
-        const current = offeringsResult && offeringsResult.offerings && offeringsResult.offerings.current;
+        const current = offeringsResult && offeringsResult.current;
         const pkgList = (current && current.availablePackages) || [];
         const pkg = pkgList.find(p => p.product && p.product.identifier === id);
 
@@ -5208,7 +5208,7 @@
           return;
         }
 
-        const purchaseResult = await Purchases.purchasePackage({ aPackage: pkg });
+        const purchaseResult = await Purchases.purchasePackage({ aPackage: pkg, packageToPurchase: pkg });
         const info = purchaseResult && purchaseResult.customerInfo;
 
         if (id === 'premium_bundle') {
